@@ -10,6 +10,7 @@
 
   vars:
     control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    debug_enabled: false
 
   tasks:
   

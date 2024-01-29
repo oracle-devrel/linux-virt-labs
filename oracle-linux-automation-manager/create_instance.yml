@@ -202,6 +202,7 @@
     username: "oracle"
     user_default_password: "oracle"
     private_key: "id_rsa"
+    debug_enabled: false
   
   tasks:
 
