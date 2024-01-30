@@ -278,3 +278,17 @@
     become_user: "{{ username }}"
 
 - ansible.builtin.import_playbook: deploy-olam.yml
+
+- name: Configure new instances
+  hosts: in_memory
+  become: yes
+
+  tasks:
+
+  - name: Print instance details
+    ansible.builtin.debug:
+      msg:
+        - "Instance name: {{ hostvars[item]['ansible_hostname'] }}"
+        - "  public ip: {{ hostvars[item]['ansible_host'] }}"
+        - "  private ip: {{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+    loop: "{{ groups['in_memory'] }}"
