@@ -13,6 +13,6 @@
 
   tasks:
   
-    - name: Print welcome message
-      ansible.builtlin.debug:
-        msg: "Hello! Welcome to Oracle Linux Automation Manager."
+  - name: Print welcome message
+    ansible.builtin.debug:
+      msg: "Hello! Welcome to Oracle Linux Automation Manager."
