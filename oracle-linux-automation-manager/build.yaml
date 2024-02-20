@@ -67,6 +67,7 @@
       - "Instance name: {{ instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
+  when: debug_enabled
   
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
