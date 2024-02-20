@@ -186,7 +186,7 @@
       ol_image_id: "{{ result.images[0].id }}"
 
   - name: Build an instance
-    ansible.builtin.include_tasks: "build.yml"
+    ansible.builtin.include_tasks: "build.yaml"
     loop: "{{ lookup('dict', compute_instances) }}"
 
   - name: Print in-memory inventory
@@ -277,7 +277,7 @@
       - "{{ groups['in_memory'] }}"
     become_user: "{{ username }}"
 
-- ansible.builtin.import_playbook: deploy-olam.yml
+- ansible.builtin.import_playbook: deploy-olam.yaml
 
 - name: Configure new instances
   hosts: in_memory
