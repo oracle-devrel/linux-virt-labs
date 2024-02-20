@@ -299,3 +299,12 @@
       with_items:
         - ol-automation-manager
 
+    - name: Check if user is lingering
+      ansible.builtin.stat:
+        path: "/var/lib/systemd/linger/awx"
+      register: user_lingering
+
+    - name: Enable lingering is needed
+      ansible.builtin.command: "loginctl enable-linger awx"
+      when: not user_lingering.stat.exists
+
