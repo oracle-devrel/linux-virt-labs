@@ -1,12 +1,9 @@
-# Copyright (c) 2024 Oracle and/or its affiliates.
-# Licensed under the Universal Permissive License v 1.0 as shown at
-# https://oss.oracle.com/licenses/upl.
-#
-# Description: Playbook that prints a hello_world message.
-#
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
-
 ---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 - name: Hello World sample playbook
   hosts: localhost
   gather_facts: false
