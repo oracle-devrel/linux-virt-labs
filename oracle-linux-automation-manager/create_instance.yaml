@@ -229,6 +229,9 @@
   - name: Wait for system to become reachable
     ansible.builtin.wait_for_connection:
 
+  - name: Run facts module to get latest information
+    ansible.builtin.setup:
+  
   - name: Add user account with access to sudo
     ansible.builtin.user:
       name: "{{ username }}"
@@ -296,7 +299,7 @@
     become_user: "{{ username }}"
 
   - name: Install Oracle Linux Automation Manager
-    ansible.builtin.import_tasks: deploy-olam-tasks.yaml
+    ansible.builtin.include_tasks: deploy-olam-tasks.yaml
     vars:
       control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
     when: inventory_hostname == 'olam-node'  
