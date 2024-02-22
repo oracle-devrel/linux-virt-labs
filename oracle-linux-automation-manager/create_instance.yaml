@@ -333,11 +333,11 @@
     - community.general
 
   tasks:
-  
+
   - name: Delete the subnet
-  oci_network_subnet:
-    id: "{{ my_subnet_id }}"
-    state: absent
+    oci_network_subnet:
+      id: "{{ my_subnet_id }}"
+      state: absent
 
   - name: Delete the security list
     oci_network_security_list:
