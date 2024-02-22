@@ -318,6 +318,8 @@
     - oracle.oci
     - community.general
 
+  tasks: 
+
   - name: Terminate the instances
     oci_compute_instance:
       id: "{{ instance_ocid }}"
@@ -330,6 +332,8 @@
     - oracle.oci
     - community.general
 
+  tasks:
+  
   - name: Delete the subnet
   oci_network_subnet:
     id: "{{ my_subnet_id }}"
