@@ -327,7 +327,7 @@
     oci_compute_instance:
       id: "{{ hostvars[item]['instance_ocid'] }}"
       state: absent
-    loop: groups['in_memory']
+    loop: "{{ groups['in_memory'] | flatten(levels=1) }}"
 
   - name: Delete the subnet
     oci_network_subnet:
