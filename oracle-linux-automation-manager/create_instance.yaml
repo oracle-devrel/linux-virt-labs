@@ -312,27 +312,19 @@
     ansible.builtin.pause:
       prompt: "Playbook paused... hit <enter> to continue or <ctrl-c a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
 
-- name: Terminate instances
-  hosts: in_memory
-  collections:
-    - oracle.oci
-    - community.general
-
-  tasks: 
-
-  - name: Terminate the instances
-    oci_compute_instance:
-      id: "{{ instance_ocid }}"
-      state: absent
-    delegate: 127.0.0.1
-
-- name: Delete OCI resources
+- name: Terminate instances and delete OCI resources
   hosts: localhost
   collections:
     - oracle.oci
     - community.general
 
   tasks:
+
+  - name: Terminate the instances
+    oci_compute_instance:
+      id: "{{ hostvars[item]['instance_ocid'] }}"
+      state: absent
+    loop: groups['in_memory']
 
   - name: Delete the subnet
     oci_network_subnet:
