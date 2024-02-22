@@ -309,8 +309,8 @@
         - "  private ip: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
 
   - name: Pause play to interact with the servers
-        pause:
-          prompt: "Playbook paused... hit <enter> to continue or <ctrl-c a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
+    ansible.builtin.pause:
+      prompt: "Playbook paused... hit <enter> to continue or <ctrl-c a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
 
 - name: Terminate instances
   hosts: in_memory
