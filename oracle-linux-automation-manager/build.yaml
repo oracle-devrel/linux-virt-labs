@@ -1,4 +1,9 @@
 ---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 - name: Launch an instance
   oci_compute_instance:
     availability_domain: "{{ my_availability_domain }}"
@@ -78,3 +83,10 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
+    instance_ocid: "{{ instance_id }}"
+
+- name: Add instance to the state file
+  ansible.builtin.lineinfile:
+    path: /tmp/ansible.state
+    line: "id{{ groups['in_memory'].index(instance_display_name) }}: {{ instance_id }}"
+    create: true

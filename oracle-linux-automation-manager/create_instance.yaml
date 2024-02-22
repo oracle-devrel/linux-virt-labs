@@ -1,4 +1,9 @@
 ---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 - name: Gather facts and create instances
   hosts: localhost
   collections:
@@ -26,15 +31,15 @@
 
   tasks:
 
-  - name: Check if hosts file exists
-    ansible.builtin.stat:
-      path: hosts
-    register: hosts_exists
+  # - name: Check if state file exists
+  #   ansible.builtin.stat:
+  #     path: /tmp/ansible.state
+  #   register: state_exists
 
-  - name: Fail if hosts file already exists
-    ansible.builtin.fail:
-      msg: "Exit instance creation as a hosts file already exists."
-    when: hosts_exists.stat.exists
+  # - name: Fail if state file already exists
+  #   ansible.builtin.fail:
+  #     msg: "Exit instance creation as a state file already exists."
+  #   when: hosts_exists.stat.exists
 
   - name: Get location of oci_config
     ansible.builtin.set_fact:
@@ -88,6 +93,11 @@
       msg: "{{ my_compartment_id }}"
     when: debug_enabled
 
+  - name: Fail when compartment_id is not defined
+    ansible.builtin.fail:
+      msg: "Variable for compartment_id is not defined."
+    when: my_compartment_id is not defined
+
   - name: Generate random hex string
     ansible.builtin.set_fact:
       vcn_code: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
@@ -115,9 +125,9 @@
       state: 'present'
     register: result
 
-  - name: Set gateway id
+  - name: Set internet gateway id
     ansible.builtin.set_fact:
-      my_gateway: "{{ result.internet_gateway.id }}"
+      my_internet_gateway_id: "{{ result.internet_gateway.id }}"
 
   - name: Create route_table
     oci_network_route_table:
@@ -125,7 +135,7 @@
       vcn_id: "{{ my_vcn_id }}"
       display_name: "Linuxvirt Route Table"
       route_rules:
-        - network_entity_id: "{{ my_gateway }}"
+        - network_entity_id: "{{ my_internet_gateway_id }}"
           cidr_block: "0.0.0.0/0"
           destination_type: CIDR_BLOCK
       state: 'present'
@@ -185,6 +195,16 @@
     ansible.builtin.set_fact:
       ol_image_id: "{{ result.images[0].id }}"
 
+  # - name: Create the state file
+  #   ansible.builtin.copy:
+  #     dest: /tmp/ansible.state
+  #     content: |
+  #       vcn_id: {{ my_vcn_id }}
+  #       internet_gateway_id: {{ my_internet_gateway_id }}
+  #       route_table_id: {{ my_rt_id }}
+  #       security_list_id: {{ my_security_list_id }}
+  #       subnet_id: {{ my_subnet_id }}
+
   - name: Build an instance
     ansible.builtin.include_tasks: "build.yaml"
     loop: "{{ lookup('dict', compute_instances) }}"
@@ -241,8 +261,6 @@
       - 'export LC_CTYPE="en_US.UTF-8"'
     become_user: "{{ username }}"
 
-# tasks for passwordless ssh
-
   - name: Generate ssh keypair for user
     community.crypto.openssh_keypair:
       path: ~/.ssh/id_rsa
@@ -277,13 +295,11 @@
       - "{{ groups['in_memory'] }}"
     become_user: "{{ username }}"
 
-- ansible.builtin.import_playbook: deploy-olam.yaml
-
-- name: Configure new instances
-  hosts: in_memory
-  become: yes
-
-  tasks:
+  - name: Install Oracle Linux Automation Manager
+    ansible.builtin.import_tasks: deploy-olam-tasks.yaml
+    vars:
+      control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    when: inventory_hostname == 'olam-node'  
 
   - name: Print instance details
     ansible.builtin.debug:
@@ -291,3 +307,50 @@
         - "Instance name: {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
         - "  public ip: {{ hostvars[inventory_hostname]['ansible_host'] }}"
         - "  private ip: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+  - name: Pause play to interact with the servers
+        pause:
+          prompt: "Playbook paused... hit <enter> to continue or <ctrl-c a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
+
+- name: Terminate instances
+  hosts: in_memory
+  collections:
+    - oracle.oci
+    - community.general
+
+  - name: Terminate the instances
+    oci_compute_instance:
+      id: "{{ instance_ocid }}"
+      state: absent
+    delegate: 127.0.0.1
+
+- name: Delete OCI resources
+  hosts: localhost
+  collections:
+    - oracle.oci
+    - community.general
+
+  - name: Delete the subnet
+  oci_network_subnet:
+    id: "{{ my_subnet_id }}"
+    state: absent
+
+  - name: Delete the security list
+    oci_network_security_list:
+      id: "{{ my_security_list_id }}"
+      state: absent
+
+  - name: Delete the route table
+    oci_network_route_table:
+      id: "{{ my_rt_id }}"
+      state: absent
+
+  - name: Delete the Internet Gateway
+    oci_network_internet_gateway:
+      id: "{{ my_internet_gateway_id }}"
+      state: absent
+
+  - name: Delete the VCN
+    oci_network_vcn:
+      vcn_id: "{{ my_vcn_id }}"
+      state: absent
