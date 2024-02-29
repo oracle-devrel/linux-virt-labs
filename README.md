@@ -1,23 +1,26 @@
-# linux-virt-labs
+# Linux and Virtualization Labs
 
 [![License: UPL](https://img.shields.io/badge/license-UPL-green)](https://img.shields.io/badge/license-UPL-green) [![Quality gate](https://sonarcloud.io/api/project_badges/quality_gate?project=oracle-devrel_linux-virt-labs)](https://sonarcloud.io/dashboard?id=oracle-devrel_linux-virt-labs)
 
-## THIS IS A NEW, BLANK REPO THAT IS NOT READY FOR USE YET.  PLEASE CHECK BACK SOON!
-
 ## Introduction
-MISSING
+
+This repository contains a growing group of assets that accompany our [training material](https://oracle-samples.github.io/oltrain/), that consists of hand-on labs and videos.
 
 ## Getting Started
-MISSING
+
+Many of the scripts consist of Oracle Linux Automation Engine playbooks to deploy our lab environments on OCI.
+
+- [Single-Host  Oracle Linux Automation Manager](https://github.com/oracle-devrel/linux-virt-labs/oracle-linux-automation-manager)
 
 ### Prerequisites
-MISSING
 
-## Notes/Issues
-MISSING
+To run these playbooks, ensure you have the following installed and configured:
 
-## URLs
-* Nothing at this time
+- Ansible
+- [OCI Ansible Collection](https://oci-ansible-collection.readthedocs.io/en/latest/installation/index.html)
+- [OCI Python SDK](https://docs.oracle.com/en-us/iaas/tools/python/2.122.0/installation.html)
+- [SDK CLI configuration file](https://docs.oracle.com/en-us/iaas/Content/API/Concepts/apisigningkey.htm#apisigningkey_topic_How_to_Generate_an_API_Signing_Key_Console)
+- public SSH key
 
 ## Contributing
 This project is open source.  Please submit your contributions by forking this repository and submitting a pull request!  Oracle appreciates any contributions that are made by the open source community.
