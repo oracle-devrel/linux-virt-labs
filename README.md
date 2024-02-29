@@ -10,7 +10,7 @@ This repository contains a growing group of assets that accompany our [training 
 
 Many of the scripts consist of Oracle Linux Automation Engine playbooks to deploy our lab environments on OCI.
 
-- [Single-Host  Oracle Linux Automation Manager](https://github.com/oracle-devrel/linux-virt-labs/oracle-linux-automation-manager)
+- [Single-Host  Oracle Linux Automation Manager](https://github.com/oracle-devrel/linux-virt-labs/tree/main/oracle-linux-automation-manager)
 
 ### Prerequisites
 
