@@ -124,8 +124,8 @@
       display_name: "Linuxvirt Internet Gateway"
       state: 'present'
     register: result
-    retries: 3
-    delay: 10
+    retries: 10
+    delay: 30
     until: result is not failed
 
   - name: Set internet gateway id
@@ -143,8 +143,8 @@
           destination_type: CIDR_BLOCK
       state: 'present'
     register: result
-    retries: 3
-    delay: 10
+    retries: 10
+    delay: 30
     until: result is not failed
 
   - name: Set route table id
@@ -167,8 +167,8 @@
             max: 22
             min: 22
     register: result
-    retries: 3
-    delay: 10
+    retries: 10
+    delay: 30
     until: result is not failed
 
   - name: Set security list id
@@ -186,8 +186,8 @@
       security_list_ids: "{{ my_security_list_id }}"
       dns_label: "lv"
     register: result
-    retries: 3
-    delay: 10
+    retries: 10
+    delay: 30
     until: result is not failed
 
   - name: Set subnet id
