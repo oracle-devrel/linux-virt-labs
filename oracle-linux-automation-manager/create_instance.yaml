@@ -111,7 +111,10 @@
       cidr_blocks: "10.0.0.0/16"
       dns_label: "vcn"
     register: result
-
+    retries: 10
+    delay: 30
+    until: result is not failed
+    
   - name: Set vcn id
     ansible.builtin.set_fact:
       my_vcn_id: "{{ result.vcn.id }}"
