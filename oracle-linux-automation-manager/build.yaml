@@ -31,6 +31,9 @@
   register: result
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
+  retries: 3
+  delay: 10
+  until: result is not failed
     
 - name: Print instance details
   ansible.builtin.debug:
