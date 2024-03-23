@@ -124,6 +124,9 @@
       display_name: "Linuxvirt Internet Gateway"
       state: 'present'
     register: result
+    retries: 3
+    delay: 10
+    until: result is not failed
 
   - name: Set internet gateway id
     ansible.builtin.set_fact:
@@ -140,6 +143,9 @@
           destination_type: CIDR_BLOCK
       state: 'present'
     register: result
+    retries: 3
+    delay: 10
+    until: result is not failed
 
   - name: Set route table id
     ansible.builtin.set_fact:
@@ -161,6 +167,9 @@
             max: 22
             min: 22
     register: result
+    retries: 3
+    delay: 10
+    until: result is not failed
 
   - name: Set security list id
     ansible.builtin.set_fact:
@@ -177,6 +186,9 @@
       security_list_ids: "{{ my_security_list_id }}"
       dns_label: "lv"
     register: result
+    retries: 3
+    delay: 10
+    until: result is not failed
 
   - name: Set subnet id
     ansible.builtin.set_fact:
@@ -187,9 +199,15 @@
       compartment_id: "{{ my_compartment_id }}"
       operating_system: "{{ os }}"
       operating_system_version: "{{ os_version }}"
+      shape: "{{ instance_shape }}"
       sort_by: TIMECREATED
-      sort_order: ASC
+      sort_order: DESC
     register: result
+
+  - name: Print image list
+    ansible.builtin.debug:
+      var: result
+    when: debug_enabled
 
   - name: Set compute image id
     ansible.builtin.set_fact:
