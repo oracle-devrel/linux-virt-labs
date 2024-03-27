@@ -1,0 +1,38 @@
+environments:
+  - environment-name: myenvironment
+    globals:
+      api-server: 127.0.0.1:8091
+      secret-manager-type: file
+      olcne-ca-path: /etc/olcne/configs/certificates/production/ca.cert
+      olcne-node-cert-path: /etc/olcne/configs/certificates/production/node.cert
+      olcne-node-key-path:  /etc/olcne/configs/certificates/production/node.key
+    modules:
+      - module: kubernetes
+        name: mycluster
+        args:
+          container-registry: {{ocne_registry_location}}
+{% if use_lb %}
+          load-balancer: {{ lb_ip }}:6443
+{% endif %}
+          control-plane-nodes:
+{% for host in range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list %}
+            - {{ host + '.' + subnet_domain_name + ':8090'}}
+{% endfor %}
+          worker-nodes:
+{% for host in range(groups['worker']|length|int) | map('extract',groups['worker'])|list %}
+            - {{ host + '.' + subnet_domain_name + ':8090'}}
+{% endfor %}
+          selinux: enforcing
+          restrict-service-externalip: true
+          restrict-service-externalip-ca-cert: /etc/olcne/configs/certificates/restrict_external_ip/production/ca.cert
+          restrict-service-externalip-tls-cert: /etc/olcne/configs/certificates/restrict_external_ip/production/node.cert
+          restrict-service-externalip-tls-key: /etc/olcne/configs/certificates/restrict_external_ip/production/node.key
+{% if use_oci_ccm %}
+      - module: oci-ccm
+        name: myoci
+        oci-ccm-kubernetes-module: mycluster
+        oci-use-instance-principals: true
+        oci-compartment: {{ my_compartment_id }}
+        oci-vcn: {{ my_vcn_id }}
+        oci-lb-subnet1: {{ my_subnet_id }}         
+{% endif %}

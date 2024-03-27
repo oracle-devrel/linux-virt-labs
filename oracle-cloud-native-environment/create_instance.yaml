@@ -326,12 +326,17 @@
   #     control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
   #   when: inventory_hostname == 'olam-node'
 
-  - name: Install Oracle Cloud Native Environment
-    ansible.builtin.import_playbook: deploy-ocne-quick.yaml
-    vars:
-      use_lb: false
-      use_oci_ccm: false
+- name: Install Oracle Cloud Native Environment
+  ansible.builtin.import_playbook: deploy-ocne-quick.yaml
 
+- name: Configure new instances
+  hosts: all
+  become: yes
+  gather_facts: false
+  vars:
+    debug_enabled: false
+  
+  tasks:
 
   - name: Print instance details
     ansible.builtin.debug:

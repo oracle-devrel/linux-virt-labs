@@ -11,20 +11,20 @@
 
   tasks:
 
-  - name: Print terraform compartment_ocid
-    ansible.builtin.debug:
-      msg: Luna compartment OCID is {{ compartment_ocid }}
-    when: debug_enabled
+  # - name: Print terraform compartment_ocid
+  #   ansible.builtin.debug:
+  #     msg: Luna compartment OCID is {{ compartment_ocid }}
+  #   when: debug_enabled
 
-  - name: Print terraform vcn_ocid
-    ansible.builtin.debug:
-      msg: Luna vcn OCID is {{ vcn_ocid }}
-    when: debug_enabled
+  # - name: Print terraform vcn_ocid
+  #   ansible.builtin.debug:
+  #     msg: Luna vcn OCID is {{ vcn_ocid }}
+  #   when: debug_enabled
 
-  - name: Print terraform lb_subnet_ocid
-    ansible.builtin.debug:
-      msg: Luna lb_subnet OCID is {{ lb_subnet_ocid }}
-    when: debug_enabled
+  # - name: Print terraform lb_subnet_ocid
+  #   ansible.builtin.debug:
+  #     msg: Luna lb_subnet OCID is {{ lb_subnet_ocid }}
+  #   when: debug_enabled
 
   - name: Setup olcne ol8 repos
     ansible.builtin.include_tasks: ol8-repo-config.yaml
