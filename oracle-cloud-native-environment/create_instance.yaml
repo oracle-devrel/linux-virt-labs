@@ -463,7 +463,7 @@
 
   - name: Accept new ssh fingerprints
     ansible.builtin.shell: |
-      ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_host }} >> ~/.ssh/known_hosts
+      ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_hostname }},{{ hostvars[item].ansible_default_ipv4.address }} >> ~/.ssh/known_hosts
     with_items:
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
