@@ -17,19 +17,16 @@
     compartment_id:
     compute_instances:
       1:
-        instance_name: "operator"
+        instance_name: "ocne-operator"
         type: "operator"
       2:
-        instance_name: "control-01"
-        type: "controlplane"
-      3:
-        instance_name: "control-02"
+        instance_name: "ocne-control-01"
         type: "controlplane"
       4:
-        instance_name: "worker-01"
+        instance_name: "ocne-worker-01"
         type: "worker"
       5:
-        instance_name: "worker-02"
+        instance_name: "ocne-worker-02"
         type: "worker"
     os: "Oracle Linux"
     os_version: "8"
@@ -327,7 +324,14 @@
   #   ansible.builtin.include_tasks: deploy-olam-tasks.yaml
   #   vars:
   #     control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-  #   when: inventory_hostname == 'olam-node'  
+  #   when: inventory_hostname == 'olam-node'
+
+  - name: Install Oracle Cloud Native Environment
+    ansible.builtin.import_playbook: deploy-ocne-quick.yaml
+    vars:
+      use_lb: false
+      use_oci_ccm: false
+
 
   - name: Print instance details
     ansible.builtin.debug:
