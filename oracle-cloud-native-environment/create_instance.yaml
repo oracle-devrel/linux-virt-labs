@@ -71,6 +71,9 @@
       compartment_id: "{{ my_tenancy_id }}"
       region: "{{ my_region_id }}"
     register: result
+    retries: 10
+    delay: 30
+    until: result is not failed
 
   - name: Print availability domains
     ansible.builtin.debug:
