@@ -8,23 +8,12 @@
     operator_node: "{{ groups['operator'] | join(',') }}"
     control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
     worker_nodes: "{{ groups['worker'] | join(',') }}"
+    username: "oracle"
+    lb_ip:
+    use_lb: false
+    use_oci_ccm: false
 
   tasks:
-
-  # - name: Print terraform compartment_ocid
-  #   ansible.builtin.debug:
-  #     msg: Luna compartment OCID is {{ compartment_ocid }}
-  #   when: debug_enabled
-
-  # - name: Print terraform vcn_ocid
-  #   ansible.builtin.debug:
-  #     msg: Luna vcn OCID is {{ vcn_ocid }}
-  #   when: debug_enabled
-
-  # - name: Print terraform lb_subnet_ocid
-  #   ansible.builtin.debug:
-  #     msg: Luna lb_subnet OCID is {{ lb_subnet_ocid }}
-  #   when: debug_enabled
 
   - name: Setup olcne ol8 repos
     ansible.builtin.include_tasks: ol8-repo-config.yaml
@@ -39,11 +28,11 @@
       name: olcnectl
       state: latest
 
-  - name: Create file myenvironment.yaml
-    ansible.builtin.template:
-      src: myenvironment.j2
-      dest: ~/myenvironment.yaml
-    become_user: "{{ username }}"
+  # - name: Create file myenvironment.yaml
+  #   ansible.builtin.template:
+  #     src: myenvironment.j2
+  #     dest: ~/myenvironment.yaml
+  #   become_user: "{{ username }}"
 
   - name: Create environment using quick install method
     ansible.builtin.shell: |
@@ -80,6 +69,8 @@
 - name: Setup kubectl on controlplane node
   hosts: controlplane
   become: yes
+  vars:
+    username: "oracle"
 
   tasks:
     
