@@ -205,6 +205,10 @@
     ansible.builtin.set_fact:
       my_subnet_id: "{{ result.subnet.id }}"
 
+  - name: Set subnet domain_name
+    ansible.builtin.set_fact:
+      my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
+
   - name: Get image
     oci_compute_image_facts:
       compartment_id: "{{ my_compartment_id }}"
