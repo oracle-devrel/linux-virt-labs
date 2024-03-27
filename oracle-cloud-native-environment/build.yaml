@@ -55,12 +55,18 @@
     compartment_id: "{{ my_compartment_id }}"
     instance_id: "{{ instance_id }}"
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Get vnic details
   oci_network_vnic_facts:
     id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
-
+  retries: 10
+  delay: 30
+  until: result is not failed
+  
 - name: Set the instance private ip address
   ansible.builtin.set_fact:
     instance_private_ip: "{{ result.vnic.private_ip }}"
