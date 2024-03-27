@@ -8,6 +8,7 @@
     operator_node: "{{ groups['operator'] | join(',') }}"
     control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
     worker_nodes: "{{ groups['worker'] | join(',') }}"
+    debug_enabled: false
     username: "oracle"
     lb_ip:
     use_lb: false
@@ -40,7 +41,7 @@
     args:
       chdir: ~/
     become_user: "{{ username }}"
-    register: provision_kubernetes
+    register: provision_kuberne
 
   # - name: Create environment using quick install method
   #   ansible.builtin.shell: |
