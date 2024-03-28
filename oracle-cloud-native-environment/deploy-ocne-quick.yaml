@@ -10,7 +10,7 @@
     control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
     worker_nodes: "{{ groups['worker'] | join(',') }}"
     debug_enabled: false
-    
+
   tasks:
 
   - name: Print operator node
@@ -56,7 +56,7 @@
 
   - name: Save out ocne config
     ansible.builtin.shell: |
-      olcnectl module instances --api-server ocne-operator:8091 --environment-name myenvironment --update-config
+      olcnectl module instances --api-server "{{ operator_node }}":8091 --environment-name myenvironment --update-config
     args:
       chdir: ~/
     become_user: "{{ username }}"
