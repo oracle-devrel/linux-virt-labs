@@ -9,7 +9,8 @@
     operator_node: "{{ groups['operator'] | join(',') }}"
     control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
     worker_nodes: "{{ groups['worker'] | join(',') }}"
-  
+    debug_enabled: false
+    
   tasks:
 
   - name: Print operator node

@@ -19,6 +19,7 @@ instance_memory: 32
 
 username: "oracle"
 user_default_password: "oracle"
+ocne_type: quick
 lb_ip:
 use_lb: false
 use_oci_ccm: false
