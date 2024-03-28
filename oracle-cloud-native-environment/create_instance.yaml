@@ -9,7 +9,8 @@
   collections:
     - oracle.oci
     - community.general
-
+  vars_files:
+    - default_vars.yaml
   vars:
     oci_config_section: DEFAULT
     ad_placement: 1
@@ -22,10 +23,10 @@
       2:
         instance_name: "ocne-control-01"
         type: "controlplane"
-      4:
+      3:
         instance_name: "ocne-worker-01"
         type: "worker"
-      5:
+      4:
         instance_name: "ocne-worker-02"
         type: "worker"
     os: "Oracle Linux"
@@ -388,6 +389,8 @@
   hosts: all
   become: yes
   gather_facts: false
+  vars_files:
+    - default_vars.yaml
   vars:
     username: "oracle"
     user_default_password: "oracle"
@@ -476,13 +479,12 @@
 
 - name: Install Oracle Cloud Native Environment
   ansible.builtin.import_playbook: deploy-ocne-quick.yaml
+  when: ocne_type == 'quick'
 
-- name: Configure new instances
+- name: Print instances
   hosts: all
   become: yes
   gather_facts: false
-  vars:
-    debug_enabled: false
   
   tasks:
 

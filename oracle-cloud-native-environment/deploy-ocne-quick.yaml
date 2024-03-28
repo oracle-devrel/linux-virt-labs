@@ -2,19 +2,30 @@
 - name: Run ocne quick install
   hosts: operator
   become: yes
-
+  vars_files:
+    - default_vars.yaml
   vars:
     ocne_registry_location: 'container-registry.oracle.com/olcne'
     operator_node: "{{ groups['operator'] | join(',') }}"
     control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
     worker_nodes: "{{ groups['worker'] | join(',') }}"
-    debug_enabled: false
-    username: "oracle"
-    lb_ip:
-    use_lb: false
-    use_oci_ccm: false
-
+  
   tasks:
+
+  - name: Print operator node
+    ansible.builtin.debug:
+      var: operator_node
+    when: debug_enabled
+
+  - name: Print control_plane nodes
+    ansible.builtin.debug:
+      var: control_plane_nodes
+    when: debug_enabled
+
+  - name: Print worker nodes
+    ansible.builtin.debug:
+      var: worker_nodes
+    when: debug_enabled
 
   - name: Setup olcne ol8 repos
     ansible.builtin.include_tasks: ol8-repo-config.yaml
@@ -29,27 +40,13 @@
       name: olcnectl
       state: latest
 
-  # - name: Create file myenvironment.yaml
-  #   ansible.builtin.template:
-  #     src: myenvironment.j2
-  #     dest: ~/myenvironment.yaml
-  #   become_user: "{{ username }}"
-
   - name: Create environment using quick install method
     ansible.builtin.shell: |
       olcnectl provision --api-server "{{ operator_node }}" --control-plane-nodes "{{ control_plane_nodes }}" --worker-nodes "{{ worker_nodes }}" --environment-name myenvironment --name mycluster --yes --selinux enforcing
     args:
       chdir: ~/
     become_user: "{{ username }}"
-    register: provision_kuberne
-
-  # - name: Create environment using quick install method
-  #   ansible.builtin.shell: |
-  #     olcnectl provision --config-file myenvironment.yaml --yes
-  #   args:
-  #     chdir: ~/
-  #   become_user: "{{ username }}"
-  #   register: provision
+    register: provision_kubernetes
 
   - name: Print kubernetes provision output
     ansible.builtin.debug:
@@ -70,8 +67,8 @@
 - name: Setup kubectl on controlplane node
   hosts: controlplane
   become: yes
-  vars:
-    username: "oracle"
+  vars_files:
+    - default_vars.yaml
 
   tasks:
     
