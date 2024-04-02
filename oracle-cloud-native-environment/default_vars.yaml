@@ -1,0 +1,25 @@
+compute_instances:
+  1:
+    instance_name: "ocne-operator"
+    type: "operator"
+  2:
+    instance_name: "ocne-control-01"
+    type: "controlplane"
+  3:
+    instance_name: "ocne-worker-01"
+    type: "worker"
+  4:
+    instance_name: "ocne-worker-02"
+    type: "worker"
+os: "Oracle Linux"
+os_version: "8"
+instance_shape: "VM.Standard.E4.Flex"
+instance_ocpus: 2
+instance_memory: 32
+
+username: "oracle"
+user_default_password: "oracle"
+ocne_type: quick
+lb_ip:
+use_lb: false
+use_oci_ccm: false

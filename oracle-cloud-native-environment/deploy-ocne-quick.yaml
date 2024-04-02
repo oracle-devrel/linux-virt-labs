@@ -1,0 +1,95 @@
+---
+- name: Run ocne quick install
+  hosts: operator
+  become: yes
+  vars_files:
+    - default_vars.yaml
+  vars:
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
+    operator_node: "{{ groups['operator'] | join(',') }}"
+    control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
+    worker_nodes: "{{ groups['worker'] | join(',') }}"
+    debug_enabled: false
+
+  tasks:
+
+  - name: Print operator node
+    ansible.builtin.debug:
+      var: operator_node
+    when: debug_enabled
+
+  - name: Print control_plane nodes
+    ansible.builtin.debug:
+      var: control_plane_nodes
+    when: debug_enabled
+
+  - name: Print worker nodes
+    ansible.builtin.debug:
+      var: worker_nodes
+    when: debug_enabled
+
+  - name: Setup olcne ol8 repos
+    ansible.builtin.include_tasks: ol8-repo-config.yaml
+    when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+  - name: Setup olcne ol9 repos
+    ansible.builtin.include_tasks: ol9-repo-config.yaml
+    when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+  - name: Install olcne package
+    ansible.builtin.dnf:
+      name: olcnectl
+      state: latest
+
+  - name: Create environment using quick install method
+    ansible.builtin.shell: |
+      olcnectl provision --api-server "{{ operator_node }}" --control-plane-nodes "{{ control_plane_nodes }}" --worker-nodes "{{ worker_nodes }}" --environment-name myenvironment --name mycluster --yes --selinux enforcing
+    args:
+      chdir: ~/
+    become_user: "{{ username }}"
+    register: provision_kubernetes
+
+  - name: Print kubernetes provision output
+    ansible.builtin.debug:
+      var: provision_kubernetes.stdout_lines
+    when: debug_enabled
+
+  - name: Save out ocne config
+    ansible.builtin.shell: |
+      olcnectl module instances --api-server "{{ operator_node }}":8091 --environment-name myenvironment --update-config
+    args:
+      chdir: ~/
+    become_user: "{{ username }}"
+    
+  # - name: Provision oci-ccm
+  #   ansible.builtin.include_tasks: provision-oci-ccm.yaml
+  #   when: use_oci_ccm
+  
+- name: Setup kubectl on controlplane node
+  hosts: controlplane
+  become: yes
+  vars_files:
+    - default_vars.yaml
+
+  tasks:
+    
+  - name: Create .kube directory
+    ansible.builtin.file:
+      path: ~/.kube
+      state: directory
+      mode: '0755'
+    become_user: "{{ username }}"
+
+  - name: Copy .kube/config
+    ansible.builtin.copy:
+      src: /etc/kubernetes/admin.conf
+      dest: '/home/{{ username }}/.kube/config'
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      remote_src: yes
+
+  - name: Add .kube/config to .bashrc file
+    ansible.builtin.lineinfile:
+      path: ~/.bashrc
+      line: 'export KUBECONFIG=$HOME/.kube/config'
+    become_user: "{{ username }}"
