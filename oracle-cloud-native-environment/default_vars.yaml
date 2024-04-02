@@ -1,15 +1,15 @@
 compute_instances:
   1:
-    instance_name: "ocne1-operator"
+    instance_name: "ocne-operator"
     type: "operator"
   2:
-    instance_name: "ocne1-control-01"
+    instance_name: "ocne-control-01"
     type: "controlplane"
   3:
-    instance_name: "ocne1-worker-01"
+    instance_name: "ocne-worker-01"
     type: "worker"
   4:
-    instance_name: "ocne1-worker-02"
+    instance_name: "ocne-worker-02"
     type: "worker"
 os: "Oracle Linux"
 os_version: "8"
