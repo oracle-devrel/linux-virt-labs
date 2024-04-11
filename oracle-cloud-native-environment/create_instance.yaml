@@ -497,7 +497,7 @@
 
   - name: Pause play to interact with the servers
     ansible.builtin.pause:
-      prompt: "Playbook paused... hit <enter> to continue or <ctrl-c a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
+      prompt: "Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
 
 - name: Terminate instances and delete OCI resources
   hosts: localhost
