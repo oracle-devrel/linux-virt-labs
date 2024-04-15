@@ -12,6 +12,8 @@ Many of the scripts consist of Oracle Linux Automation Engine playbooks to deplo
 
 - [Single-Host  Oracle Linux Automation Manager](https://github.com/oracle-devrel/linux-virt-labs/tree/main/oracle-linux-automation-manager)
 
+- [Quik Install of Oracle Cloud Native Environment](https://github.com/oracle-devrel/linux-virt-labs/tree/main/oracle-cloud-native-environment))
+
 ### Prerequisites
 
 To run these playbooks, ensure you have the following installed and configured:

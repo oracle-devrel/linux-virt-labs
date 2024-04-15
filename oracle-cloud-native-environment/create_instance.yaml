@@ -385,6 +385,14 @@
       msg: "{{ groups['all'] }}"
     when: debug_enabled
 
+  - name: Set file system storage
+    ansible.builtin.include_tasks: "fss.yaml"
+    when: use_fss
+
+  - name: Set load balancer
+    ansible.builtin.include_tasks: "lb.yaml"
+    when: use_lb
+
 - name: Configure new instances
   hosts: all
   become: yes

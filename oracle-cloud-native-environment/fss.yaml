@@ -1,0 +1,70 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Set file_system mount target
+  oci_file_storage_mount_target:
+    availability_domain: "{{ my_availability_domain }}"
+    compartment_id: "{{ my_compartment_id }}"
+    subnet_id: "{{ my_subnet_id }}"
+    display_name: "mt-ocne"
+    hostname_label: "ocne-fss"
+    state: present
+  register: result
+
+- name: Print file_system mount target
+  ansible.builtin.debug:
+    var: result
+  when: debug_enabled
+
+- name: Get file_system mount target facts
+  ansible.builtin.set_fact:
+    mount_target_id: "{{ result.mount_target.id }}"
+    export_set_id: "{{ result.mount_target.export_set_id }}"
+    mount_target_private_ip_id: "{{ result.mount_target.private_ip_ids[0] }}"
+
+- name: Get file_system mount target private ip facts
+  oci_network_private_ip_facts:
+    id: "{{ mount_target_private_ip_id }}"
+  register: result
+
+- name: Set file_system mount target private ip
+  ansible.builtin.set_fact:
+    mount_target_ip_address: "{{ result.private_ips[0].ip_address }}"
+
+- name: Print file_system mount target private ip
+  ansible.builtin.debug:
+    msg: "Mount Target Ip Address: {{ mount_target_ip_address }}"
+  when: debug_enabled
+
+- name: Set file_system
+  oci_file_storage_file_system:
+    availability_domain: "{{ my_availability_domain }}"
+    compartment_id: "{{ my_compartment_id }}"
+    display_name: "fss-ocne"
+    state: present
+  register: result
+
+- name: Get file_system id
+  ansible.builtin.set_fact:
+    file_system_id: "{{ result.file_system.id }}"
+
+- name: Set file_system export
+  oci_file_storage_export:
+    export_set_id: "{{ export_set_id }}"
+    file_system_id: "{{ file_system_id }}"
+    export_options:
+          - source: "0.0.0.0/0"
+            require_privileged_source_port: False
+            access: "READ_WRITE"
+            identity_squash: "NONE"
+    path: "/fss-ocne"
+    state: present
+  register: result
+
+- name: Get file_system export id and path
+  ansible.builtin.set_fact:
+    export_id: "{{ result.export.id }}"
+    export_path: "{{ result.export.path }}"
