@@ -479,15 +479,12 @@
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
 
-  # - name: Install Oracle Linux Automation Manager
-  #   ansible.builtin.include_tasks: deploy-olam-tasks.yaml
-  #   vars:
-  #     control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-  #   when: inventory_hostname == 'olam-node'
-
 - name: Install Oracle Cloud Native Environment
   ansible.builtin.import_playbook: deploy-ocne-quick.yaml
-  when: ocne_type == 'quick'
+  when: 
+    - install_ocne
+    - ocne_type == 'quick'
+
 
 - name: Print instances
   hosts: all
