@@ -100,22 +100,24 @@
     become_user: "{{ username }}"
 
   - name: Create fss deployment descriptors
-  block:
-    - name: Create file fss-pv.yaml
-      ansible.builtin.template:
-        src: fss-pv.j2
-        dest: ~/fss-pv.yaml
-      become_user: "{{ username }}"
+    block:
+      - name: Create file fss-pv.yaml
+        ansible.builtin.template:
+          src: fss-pv.j2
+          dest: ~/fss-pv.yaml
+        become_user: "{{ username }}"
 
-    - name: Create file fss-pvc.yaml
-      ansible.builtin.template:
-        src: fss-pvc.j2
-        dest: ~/fss-pvc.yaml
-      become_user: "{{ username }}"
+      - name: Create file fss-pvc.yaml
+        ansible.builtin.template:
+          src: fss-pvc.j2
+          dest: ~/fss-pvc.yaml
+        become_user: "{{ username }}"
 
-    - name: Create file fss-pod.yaml
-      ansible.builtin.template:
-        src: fss-pod.j2
-        dest: ~/fss-pod.yaml
-      become_user: "{{ username }}"
-  when: use_fss
+      - name: Create file fss-pod.yaml
+        ansible.builtin.template:
+          src: fss-pod.j2
+          dest: ~/fss-pod.yaml
+        become_user: "{{ username }}"
+    when: use_fss
+    vars_files:
+      - fss_vars.yaml

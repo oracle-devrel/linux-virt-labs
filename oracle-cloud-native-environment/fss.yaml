@@ -68,3 +68,11 @@
   ansible.builtin.set_fact:
     export_id: "{{ result.export.id }}"
     export_path: "{{ result.export.path }}"
+
+- name: Set file_system vars file
+  ansible.builtin.copy:
+    content:
+      file_system_id: "{{ file_system_id }}"
+      mount_target_ip_address: "{{ mount_target_ip_address }}"
+      export_path: "{{ export_path }}"
+    dest: fss_vars.yaml
