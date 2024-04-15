@@ -480,11 +480,7 @@
     become_user: "{{ username }}"
 
 - name: Install Oracle Cloud Native Environment
-  ansible.builtin.import_playbook: deploy-ocne-quick.yaml
-  when: 
-    - install_ocne
-    - ocne_type == 'quick'
-
+  ansible.builtin.import_playbook: "deploy-ocne-{{ (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('quick') }}.yaml"
 
 - name: Print instances
   hosts: all
