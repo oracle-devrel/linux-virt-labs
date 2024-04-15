@@ -101,6 +101,11 @@
 
   - name: Create fss deployment descriptors
     block:
+
+      - name: Include file_system vars
+        ansible.builtin.include_vars:
+          file: fss_vars.yaml
+
       - name: Create file fss-pv.yaml
         ansible.builtin.template:
           src: fss-pv.j2
@@ -119,5 +124,3 @@
           dest: ~/fss-pod.yaml
         become_user: "{{ username }}"
     when: use_fss
-    vars_files:
-      - fss_vars.yaml
