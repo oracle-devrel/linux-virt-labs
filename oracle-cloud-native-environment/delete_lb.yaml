@@ -4,3 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
+- name: Delete Private Load Balancer
+  oci_loadbalancer_load_balancer:
+    load_balancer_id: "{{ private_load_balancer_id }}"
+    state: 'absent'
