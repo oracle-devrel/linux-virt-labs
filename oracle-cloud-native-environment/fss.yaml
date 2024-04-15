@@ -13,6 +13,9 @@
     hostname_label: "ocne-fss"
     state: present
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Print file_system mount target
   ansible.builtin.debug:
@@ -29,6 +32,9 @@
   oci_network_private_ip_facts:
     id: "{{ mount_target_private_ip_id }}"
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Set file_system mount target private ip
   ansible.builtin.set_fact:
@@ -46,6 +52,9 @@
     display_name: "fss-ocne"
     state: present
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Get file_system id
   ansible.builtin.set_fact:
@@ -63,6 +72,9 @@
     path: "/fss-ocne"
     state: present
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Get file_system export id and path
   ansible.builtin.set_fact:

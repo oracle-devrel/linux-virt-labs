@@ -14,6 +14,9 @@
       - "{{ my_subnet_id }}"
     state: 'present'
   register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Print load balancer details
   ansible.builtin.debug:
@@ -23,7 +26,6 @@
   ansible.builtin.set_fact:
     private_load_balancer_id: "{{ result.load_balancer.id }}"
     private_load_balancer_ip_addresses: "{{ result.load_balancer.ip_addresses }}"
-
 
 - name: Create Backend Set
   oci_loadbalancer_backend_set:
@@ -40,6 +42,9 @@
       #return_code: 200
       #url_path: "/"
     state: 'present'
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Create Listener for HTTP traffic
   oci_loadbalancer_listener:
@@ -51,16 +56,23 @@
     # connection_configuration:
     #     idle_timeout: 300
     state: 'present'
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Create Backends
   oci_loadbalancer_backend:
     load_balancer_id: "{{ private_load_balancer_id }}"
     backend_set_name: 'ocne-lb-backend-set'
-    ip_address: "{{ hostvars[item]['instance_ocid'] }}"
+    ip_address: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
     port: '6443'
     state: 'present'
   loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  retries: 10
+  delay: 30
+  until: result is not failed
 
 - name: Print load balancer ip address
   ansible.builtin.debug:
     msg: "Load balancer Ip addresses details : {{ private_load_balancer_ip_addresses }}"
+  when: debug_enabled
