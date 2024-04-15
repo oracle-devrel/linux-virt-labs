@@ -19,7 +19,6 @@ instance_memory: 32
 
 username: "oracle"
 user_default_password: "oracle"
-install_ocne: true
 ocne_type: quick
 use_lb: false
 use_oci_ccm: false
