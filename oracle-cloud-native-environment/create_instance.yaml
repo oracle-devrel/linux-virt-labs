@@ -512,6 +512,8 @@
   collections:
     - oracle.oci
     - community.general
+  vars_files:
+    - default_vars.yaml  
 
   tasks:
 
