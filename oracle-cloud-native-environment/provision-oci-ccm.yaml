@@ -4,6 +4,10 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
+- name: Include oci vars
+  ansible.builtin.include_vars:
+    file: oci_vars.yaml
+
 - name: Provision oci-ccm
   ansible.builtin.shell: |
     olcnectl module create --environment-name myenvironment --module oci-ccm --name myoci --oci-ccm-kubernetes-module mycluster \
