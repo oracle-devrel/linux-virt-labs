@@ -10,6 +10,9 @@
     compartment_id: "{{ my_compartment_id }}"
     name: "ocne-load-balancer"
     shape_name: "flexible"
+    shape_details:
+      minimum_bandwidth_in_mbps: 10
+      maximum_bandwidth_in_mbps: 10
     subnet_ids:
       - "{{ my_subnet_id }}"
     state: 'present'
