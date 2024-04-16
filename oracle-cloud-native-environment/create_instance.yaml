@@ -555,4 +555,5 @@
       path: "{{ item }}"
     loop:
       - fss_vars.yaml
+      - lb_vars.yaml
       

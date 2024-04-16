@@ -87,6 +87,12 @@
   delay: 30
   until: result is not failed
 
+- name: Set load balancer vars file
+  ansible.builtin.copy:
+    content:
+      private_load_balancer_ip_addresses: "{{ private_load_balancer_ip_addresses }}"
+    dest: lb_vars.yaml
+
 - name: Print load balancer ip address
   ansible.builtin.debug:
     msg: "Load balancer Ip addresses details : {{ private_load_balancer_ip_addresses }}"

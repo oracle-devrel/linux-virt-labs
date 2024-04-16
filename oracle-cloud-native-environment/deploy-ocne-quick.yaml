@@ -60,7 +60,29 @@
       chdir: ~/
     become_user: "{{ username }}"
     register: provision_kubernetes
-    when: not ocne_provision.stat.exists
+    when: 
+      - not ocne_provision.stat.exists
+      - groups['controlplane'] | length < 2
+
+  - name: Create environment with lb using quick install method
+    block:
+
+    - name: Include file_system vars
+      ansible.builtin.include_vars:
+        file: lb_vars.yaml
+
+    - name: Provision environment
+      ansible.builtin.shell: |
+        olcnectl provision --api-server "{{ operator_node }}" --control-plane-nodes "{{ control_plane_nodes }}" --worker-nodes "{{ worker_nodes }}" --load-balancer "{{ private_load_balancer_ip_addresses }}" --environment-name myenvironment --name mycluster --yes --selinux enforcing
+        touch ~/.ocne-provisioned
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+      register: provision_kubernetes
+    when: 
+      - not ocne_provision.stat.exists
+      - groups['controlplane'] | length > 1
+      - use_lb
     
   - name: Print kubernetes provision output
     ansible.builtin.debug:
