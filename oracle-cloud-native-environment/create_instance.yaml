@@ -315,7 +315,7 @@
         tcp_options:
           destination_port_range:
             min: 10250
-            max: 10255
+            max: 10256
       -
         source: "0.0.0.0/0"
         protocol: 1
@@ -486,6 +486,25 @@
     with_items:
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
+
+- name: Configure oci-ccm firewall on instances
+  hosts: controlplane,worker
+  become: yes
+  vars_files:
+    - default_vars.yaml
+
+  tasks:
+
+  - name: add firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    loop:
+      - 10256/tcp
+      - 30000-32767/tcp
+    when: use_oci_ccm
 
 - name: Install Oracle Cloud Native Environment
   ansible.builtin.import_playbook: "deploy-ocne-{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}.yaml"
