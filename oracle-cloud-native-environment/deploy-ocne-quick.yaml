@@ -95,6 +95,7 @@
     args:
       chdir: ~/
     become_user: "{{ username }}"
+    when: ocne_provision.stat.exists
     
   - name: Provision oci-ccm
     ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
