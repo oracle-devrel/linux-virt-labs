@@ -7,7 +7,7 @@
 - name: Create private Load Balancer
   oci_loadbalancer_load_balancer:
     is_private: yes
-    compartment_id: "{{ compartment_id }}"
+    compartment_id: "{{ my_compartment_id }}"
     name: "ocne-load-balancer"
     shape_name: "flexible"
     subnet_ids:
