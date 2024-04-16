@@ -17,6 +17,7 @@
     chdir: ~/
   become_user: "{{ username }}"
   register: provision_ccm
+  when: ocne_provision.stat.exists
 
 - name: Print oci-ccm provision output
   ansible.builtin.debug:

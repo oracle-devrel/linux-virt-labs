@@ -76,7 +76,9 @@
     
   - name: Provision oci-ccm
     ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
-    when: use_oci_ccm
+    when: 
+      - use_oci_ccm
+      - ocne_type != 'none'
   
 - name: Setup kubectl on controlplane node
   hosts: controlplane
