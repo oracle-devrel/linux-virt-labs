@@ -73,7 +73,7 @@
         path: ~/.ocne-provisioned
         state: touch
       become_user: "{{ username }}"
-      when: provision_kubernetes|succeeded
+      when: provision_kubernetes.rc == 0
 
     when: 
       - not ocne_provision.stat.exists
@@ -105,7 +105,7 @@
         path: ~/.ocne-provisioned
         state: touch
       become_user: "{{ username }}"
-      when: provision_kubernetes|succeeded
+      when: provision_kubernetes.rc == 0
     
     when: 
       - not ocne_provision.stat.exists
