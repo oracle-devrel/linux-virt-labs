@@ -583,4 +583,5 @@
     loop:
       - fss_vars.yaml
       - lb_vars.yaml
+      - oci_vars.yaml
       
