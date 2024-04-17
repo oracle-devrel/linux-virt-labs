@@ -88,7 +88,7 @@
 
     - name: Create environment with lb using quick install method
       ansible.builtin.shell: |
-        olcnectl provision --api-server "{{ operator_node }}" --control-plane-nodes "{{ control_plane_nodes }}" --worker-nodes "{{ worker_nodes }}" --load-balancer "{{ private_load_balancer_ip_addresses }}" --environment-name myenvironment --name mycluster --yes --selinux enforcing
+        olcnectl provision --api-server "{{ operator_node }}" --control-plane-nodes "{{ control_plane_nodes }}" --worker-nodes "{{ worker_nodes }}" --load-balancer "{{ private_load_balancer_ip_addresses }}":6443 --environment-name myenvironment --name mycluster --yes --selinux enforcing
         touch ~/.ocne-provisioned
       args:
         chdir: ~/
