@@ -135,7 +135,6 @@
 
   - name: Provision kubectl
     ansible.builtin.include_tasks: "provision-kubectl.yaml"
-    delegate_to: groups['controlplane']
     when: 
       - ocne_provision.stat.exists
       - ocne_type != 'none'

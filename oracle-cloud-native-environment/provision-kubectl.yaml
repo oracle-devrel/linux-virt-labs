@@ -4,29 +4,32 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Create .kube directory
-  ansible.builtin.file:
-    path: ~/.kube
-    state: directory
-    mode: '0755'
-  become_user: "{{ username }}"
-  delegate_to: groups['controlplane']
+- name: Create kubectl config on controlplane
+  block:
+  - name: Create .kube directory
+    ansible.builtin.file:
+      path: ~/.kube
+      state: directory
+      mode: '0755'
+    become_user: "{{ username }}"
+    delegate_to: groups['controlplane']
 
-- name: Copy .kube/config
-  ansible.builtin.copy:
-    src: /etc/kubernetes/admin.conf
-    dest: '/home/{{ username }}/.kube/config'
-    owner: "{{ username }}"
-    group: "{{ username }}"
-    remote_src: yes
-  delegate_to: groups['controlplane']
+  - name: Copy .kube/config
+    ansible.builtin.copy:
+      src: /etc/kubernetes/admin.conf
+      dest: '/home/{{ username }}/.kube/config'
+      owner: "{{ username }}"
+      group: "{{ username }}"
+      remote_src: yes
+    delegate_to: groups['controlplane']
 
-- name: Add .kube/config to .bashrc file
-  ansible.builtin.lineinfile:
-    path: ~/.bashrc
-    line: 'export KUBECONFIG=$HOME/.kube/config'
-  become_user: "{{ username }}"
-  delegate_to: groups['controlplane']
+  - name: Add .kube/config to .bashrc file
+    ansible.builtin.lineinfile:
+      path: ~/.bashrc
+      line: 'export KUBECONFIG=$HOME/.kube/config'
+    become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
 
 - name: Create fss deployment descriptors
   block:
@@ -53,4 +56,5 @@
         dest: ~/fss-pod.yaml
       become_user: "{{ username }}"
   when: use_fss
-  delegate_to: groups['controlplane']
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
