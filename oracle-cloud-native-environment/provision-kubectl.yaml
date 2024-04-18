@@ -10,6 +10,7 @@
     state: directory
     mode: '0755'
   become_user: "{{ username }}"
+  delegate_to: groups['controlplane']
 
 - name: Copy .kube/config
   ansible.builtin.copy:
@@ -18,12 +19,14 @@
     owner: "{{ username }}"
     group: "{{ username }}"
     remote_src: yes
+  delegate_to: groups['controlplane']
 
 - name: Add .kube/config to .bashrc file
   ansible.builtin.lineinfile:
     path: ~/.bashrc
     line: 'export KUBECONFIG=$HOME/.kube/config'
   become_user: "{{ username }}"
+  delegate_to: groups['controlplane']
 
 - name: Create fss deployment descriptors
   block:
@@ -50,3 +53,4 @@
         dest: ~/fss-pod.yaml
       become_user: "{{ username }}"
   when: use_fss
+  delegate_to: groups['controlplane']
