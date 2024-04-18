@@ -167,10 +167,14 @@
       my_rt_id: "{{ result.route_table.id }}"
 
   - name: Create ingress rules yaml list
-    ansible.builtin.template: src=./templates/ingress_security_rules.j2 dest=/tmp/instance_ingress_security_rules.yaml
+    ansible.builtin.template: 
+      src: ingress_security_rules.j2 
+      dest: /tmp/instance_ingress_security_rules.yaml
   
   - name: Create egress yaml list
-    template: src=./templates/egress_security_rules.j2 dest=/tmp/instance_egress_security_rules.yaml
+    ansible.builtin.template: 
+      src: egress_security_rules.j2 
+      dest: /tmp/instance_egress_security_rules.yaml
  
   - name: Load the variables defined in the ingress rules yaml list
     ansible.builtin.include_vars:
@@ -183,12 +187,12 @@
     when: debug_enabled
 
   - name: Load the variables defined in the egress rules yaml list
-    include_vars:
+    ansible.builtin.include_vars:
       file: /tmp/instance_egress_security_rules.yaml
       name: loaded_egress
 
   - name: Print loaded_egress
-    debug:
+    ansible.builtin.debug:
       msg: "loaded egress is {{loaded_egress}}"
     when: debug_enabled
 
