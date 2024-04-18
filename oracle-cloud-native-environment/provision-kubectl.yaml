@@ -1,0 +1,52 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create .kube directory
+  ansible.builtin.file:
+    path: ~/.kube
+    state: directory
+    mode: '0755'
+  become_user: "{{ username }}"
+
+- name: Copy .kube/config
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: '/home/{{ username }}/.kube/config'
+    owner: "{{ username }}"
+    group: "{{ username }}"
+    remote_src: yes
+
+- name: Add .kube/config to .bashrc file
+  ansible.builtin.lineinfile:
+    path: ~/.bashrc
+    line: 'export KUBECONFIG=$HOME/.kube/config'
+  become_user: "{{ username }}"
+
+- name: Create fss deployment descriptors
+  block:
+
+    - name: Include file_system vars
+      ansible.builtin.include_vars:
+        file: fss_vars.yaml
+
+    - name: Create file fss-pv.yaml
+      ansible.builtin.template:
+        src: fss-pv.j2
+        dest: ~/fss-pv.yaml
+      become_user: "{{ username }}"
+
+    - name: Create file fss-pvc.yaml
+      ansible.builtin.template:
+        src: fss-pvc.j2
+        dest: ~/fss-pvc.yaml
+      become_user: "{{ username }}"
+
+    - name: Create file fss-pod.yaml
+      ansible.builtin.template:
+        src: fss-pod.j2
+        dest: ~/fss-pod.yaml
+      become_user: "{{ username }}"
+  when: use_fss
