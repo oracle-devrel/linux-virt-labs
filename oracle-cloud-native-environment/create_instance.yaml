@@ -166,162 +166,39 @@
     ansible.builtin.set_fact:
       my_rt_id: "{{ result.route_table.id }}"
 
+  - name: Create ingress rules yaml list
+    ansible.builtin.template: src=./templates/ingress_security_rules.j2 dest=/tmp/instance_ingress_security_rules.yaml
+  
+  - name: Create egress yaml list
+    template: src=./templates/egress_security_rules.j2 dest=/tmp/instance_egress_security_rules.yaml
+ 
+  - name: Load the variables defined in the ingress rules yaml list
+    ansible.builtin.include_vars:
+      file: /tmp/instance_ingress_security_rules.yaml
+      name: loaded_ingress
+
+  - name: Print loaded_ingress
+    ansible.builtin.debug:
+      msg: "loaded ingress is {{loaded_ingress}}"
+    when: debug_enabled
+
+  - name: Load the variables defined in the egress rules yaml list
+    include_vars:
+      file: /tmp/instance_egress_security_rules.yaml
+      name: loaded_egress
+
+  - name: Print loaded_egress
+    debug:
+      msg: "loaded egress is {{loaded_egress}}"
+    when: debug_enabled
+
   - name: Create security_list
     oci_network_security_list:
       display_name: "Linuxvirt Security List"
       compartment_id: "{{ my_compartment_id }}"
       vcn_id: "{{ my_vcn_id }}"
-      egress_security_rules:
-      - 
-        destination: "0.0.0.0/0"
-        protocol: 6
-      - 
-        destination: "10.0.0.0/24"
-        protocol: 6
-        tcp_options:
-          source_port_range:
-            min: 2048
-            max: 2050
-      - 
-        destination: "10.0.0.0/24"
-        protocol: 6
-        tcp_options:
-          source_port_range:
-            min: 111
-            max: 111
-      - 
-        destination: "10.0.0.0/24"
-        protocol: 17
-        udp_options:
-          source_port_range:
-            min: 111
-            max: 111 
-      ingress_security_rules:
-      - 
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            max: 22
-            min: 22
-      -
-        source: "10.0.0.0/24"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 2048
-            max: 2050
-      -
-        source: "10.0.0.0/24"
-        protocol: 17
-        udp_options:
-          destination_port_range:
-            min: 2048
-            max: 2048
-      -
-        source: "10.0.0.0/24"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 111
-            max: 111
-      -
-        source: "10.0.0.0/24"
-        protocol: 17
-        udp_options:
-          destination_port_range:
-            min: 111
-            max: 111
-      -
-        source: "0.0.0.0/0"
-        protocol: 17
-        udp_options:
-          destination_port_range:
-            min: 2049
-            max: 2049
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 80
-            max: 80
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 443
-            max: 443
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 7803
-            max: 7803
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 8080
-            max: 8080
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 50002
-            max: 50002
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 8090
-            max: 8091
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 2379
-            max: 2380
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 5443
-            max: 5444
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 6443
-            max: 6444
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 8472
-            max: 8472
-      -
-        source: "0.0.0.0/0"
-        protocol: 6
-        tcp_options:
-          destination_port_range:
-            min: 10250
-            max: 10256
-      -
-        source: "0.0.0.0/0"
-        protocol: 1
-        icmp_options:
-          type: 3
-          code: 4
+      ingress_security_rules: "{{ loaded_ingress.instance_ingress_security_rules }}"
+      egress_security_rules:  "{{ loaded_egress.instance_egress_security_rules }}"
     register: result
     retries: 10
     delay: 30
