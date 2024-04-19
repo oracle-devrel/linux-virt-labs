@@ -1,0 +1,99 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create private Load Balancer
+  oci_loadbalancer_load_balancer:
+    is_private: yes
+    compartment_id: "{{ my_compartment_id }}"
+    name: "ocne-load-balancer"
+    shape_name: "flexible"
+    shape_details:
+      minimum_bandwidth_in_mbps: 10
+      maximum_bandwidth_in_mbps: 10
+    subnet_ids:
+      - "{{ my_subnet_id }}"
+    state: 'present'
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Print load balancer details
+  ansible.builtin.debug:
+    msg: "Load balancer details: {{ result.load_balancer}}"
+
+- name: Set load balancer facts
+  ansible.builtin.set_fact:
+    private_load_balancer_id: "{{ result.load_balancer.id }}"
+    private_load_balancer_ip_addresses: "{{ result.load_balancer.ip_addresses }}"
+
+- name: Create Backend Set
+  oci_loadbalancer_backend_set:
+    load_balancer_id: "{{ private_load_balancer_id }}"
+    name: 'ocne-lb-backend-set'
+    policy: 'WEIGHTED_ROUND_ROBIN'
+    health_checker:
+      interval_in_millis: 10000
+      port: 6443
+      protocol: "TCP"
+      #response_body_regex: ".*"
+      retries: 3
+      timeout_in_millis: 3000
+      #return_code: 200
+      #url_path: "/"
+    state: 'present'
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Create Listener for TCP traffic
+  oci_loadbalancer_listener:
+    load_balancer_id: "{{ private_load_balancer_id }}"
+    name: 'ocne-lb-listener'
+    default_backend_set_name: 'ocne-lb-backend-set'
+    port: 6443
+    protocol: "TCP"
+    # connection_configuration:
+    #     idle_timeout: 300
+    state: 'present'
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Gather facts for ocne controlplane
+  ansible.builtin.setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+
+- name: Print loop var
+  ansible.builtin.debug:
+    msg: "{{ hostvars[item] }}"
+  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  when: debug_enabled
+
+- name: Create Backends
+  oci_loadbalancer_backend:
+    load_balancer_id: "{{ private_load_balancer_id }}"
+    backend_set_name: 'ocne-lb-backend-set'
+    ip_address: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
+    port: '6443'
+    state: 'present'
+  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Set load balancer vars file
+  ansible.builtin.copy:
+    content:
+      private_load_balancer_ip_addresses: "{{ private_load_balancer_ip_addresses[0].ip_address }}"
+    dest: lb_vars.yaml
+
+- name: Print load balancer ip address
+  ansible.builtin.debug:
+    msg: "Load balancer Ip addresses details : {{ private_load_balancer_ip_addresses }}"
+  when: debug_enabled
