@@ -118,6 +118,17 @@
     become_user: "{{ username }}"
     register: ocne_provision
 
+
+  - name: Add user to olcne group
+    ansible.builtin.user:                                              
+      name: "{{ username }}"                                                                
+      groups: olcne                  
+      append: true
+    when: ocne_provision.stat.exists                                             
+                                                     
+  - name: Reset ssh connection to allow user changes to affect 'current login user'
+    ansible.builtin.meta: reset_connection
+
   - name: Save out ocne config
     ansible.builtin.shell: |
       olcnectl module instances --api-server "{{ operator_node }}":8091 --environment-name myenvironment --update-config
