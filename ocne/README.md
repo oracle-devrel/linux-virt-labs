@@ -18,7 +18,7 @@ To run the sample, after ensuring that you have the prerequisites for OCI Ansibl
  > ```text
  > ad_placement: <Enter the OCI Availability Domain to use [1,2,3]>
  > compartment_id: <Enter the OCID for the compartment within your tenancy>
- > private_key: <Enter the name of your SSH key without the extension.
+ > private_key: <Enter the name of your SSH key without the extension>.
  > ```
 
  Playbook defaults to looking for the file `id_rsa` in your $HOME/.ssh directory> 
