@@ -1,3 +1,9 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 - name: Add olcne ol8 repository
   dnf:
     name: oracle-olcne-release-el8
@@ -5,8 +11,8 @@
 
 - name: Enable ol8 current ocne repo
   shell:
-    cmd: dnf config-manager --enable ol8_olcne18 ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+    cmd: dnf config-manager --enable "{{ ol8_enable_repo }}" ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
 
 - name: Disable ol8 old ocne repos
   shell:
-    cmd: dnf config-manager --disable ol8_olcne12 ol8_olcne13 ol8_olcne14 ol8_olcne15 ol8_olcne16 ol8_olcne17 ol8_developer
+    cmd: dnf config-manager --disable "{{ ol8_disable_repo }}" ol8_developer

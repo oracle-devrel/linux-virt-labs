@@ -1,3 +1,9 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 - name: Add olcne ol9 repository
   dnf:
     name: oracle-olcne-release-el9
@@ -5,8 +11,8 @@
 
 - name: Enable ol9 current ocne repo
   shell:
-    cmd: dnf config-manager --enable ol9_olcne18 ol9_addons ol9_baseos_latest ol9_appstream ol9_UEKR7
+    cmd: dnf config-manager --enable "{{ ol9_enable_repo }}" ol9_addons ol9_baseos_latest ol9_appstream ol9_UEKR7
 
 - name: Disable ol9 old repos
   shell:
-    cmd: dnf config-manager --disable ol9_olcne17 ol9_developer
+    cmd: dnf config-manager --disable "{{ ol9_disable_repo }}" ol9_developer
