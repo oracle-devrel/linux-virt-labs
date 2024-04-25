@@ -11,8 +11,8 @@
 
 - name: Enable ol8 current ocne repo
   shell:
-    cmd: dnf config-manager --enable "{{ ol8_enable_repo }}" ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+    cmd: dnf config-manager --enable {{ ol8_enable_repo }} ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
 
 - name: Disable ol8 old ocne repos
   shell:
-    cmd: dnf config-manager --disable "{{ ol8_disable_repo }}" ol8_developer
+    cmd: dnf config-manager --disable {{ ol8_disable_repo }} ol8_developer

@@ -11,8 +11,8 @@
 
 - name: Enable ol9 current ocne repo
   shell:
-    cmd: dnf config-manager --enable "{{ ol9_enable_repo }}" ol9_addons ol9_baseos_latest ol9_appstream ol9_UEKR7
+    cmd: dnf config-manager --enable {{ ol9_enable_repo }} ol9_addons ol9_baseos_latest ol9_appstream ol9_UEKR7
 
 - name: Disable ol9 old repos
   shell:
-    cmd: dnf config-manager --disable "{{ ol9_disable_repo }}" ol9_developer
+    cmd: dnf config-manager --disable {{ ol9_disable_repo }} ol9_developer
