@@ -23,3 +23,7 @@ ocne_type: quick
 use_lb: false
 use_oci_ccm: false
 use_fss: false
+ol8_enable_repo: "ol8_olcne18"
+ol8_disable_repo: "ol8_olcne12 ol8_olcne13 ol8_olcne14 ol8_olcne15 ol8_olcne16 ol8_olcne17"
+ol9_enable_repo: "ol9_olcne18"
+ol9_disable_repo: "ol9_olcne17"

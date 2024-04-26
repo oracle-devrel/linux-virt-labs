@@ -19,6 +19,7 @@
     dest: '/home/{{ username }}/.kube/config'
     owner: "{{ username }}"
     group: "{{ username }}"
+    mode: '0600'
     remote_src: yes
   delegate_to: "{{ item }}"
   loop: "{{ groups['controlplane'] }}"
