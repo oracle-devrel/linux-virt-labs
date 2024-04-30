@@ -137,6 +137,10 @@
     become_user: "{{ username }}"
     when: ocne_provision.stat.exists
     
+  - name: Include oci-ccm bash env vars
+    ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
+    when: oci_ccm_bash
+
   - name: Provision oci-ccm
     ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
     when: 
