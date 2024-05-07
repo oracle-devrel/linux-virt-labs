@@ -12,7 +12,7 @@ Many of the scripts consist of Oracle Linux Automation Engine playbooks to deplo
 
 - [Single-Host  Oracle Linux Automation Manager](https://github.com/oracle-devrel/linux-virt-labs/tree/main/olam)
 
-- [Quick Install of Oracle Cloud Native Environment](https://github.com/oracle-devrel/linux-virt-labs/tree/main/ocne))
+- [Quick Install of Oracle Cloud Native Environment](https://github.com/oracle-devrel/linux-virt-labs/tree/main/ocne)
 
 ### Prerequisites
 
