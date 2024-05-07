@@ -11,16 +11,10 @@
     - default_vars.yaml
   vars:
     ocne_registry_location: 'container-registry.oracle.com/olcne'
-    operator_node: "{{ groups['operator'] | join(',') }}"
-    control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
+    control_plane_nodes: "{{ groups['operator'] | join(',') }}"
     debug_enabled: false
 
   tasks:
-
-  - name: Print operator node
-    ansible.builtin.debug:
-      var: operator_node
-    when: debug_enabled
 
   - name: Print control_plane nodes
     ansible.builtin.debug:
