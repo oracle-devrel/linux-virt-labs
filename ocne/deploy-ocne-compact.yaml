@@ -1,0 +1,161 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Run ocne compact pre-install
+  hosts: operator
+  become: yes
+  vars_files:
+    - default_vars.yaml
+  vars:
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
+    control_plane_nodes: "{{ groups['operator'] | join(',') }}"
+    debug_enabled: false
+
+  tasks:
+
+  - name: Print control_plane nodes
+    ansible.builtin.debug:
+      var: control_plane_nodes
+    when: debug_enabled
+
+  - name: Setup olcne ol8 repos
+    ansible.builtin.include_tasks: ol8-repo-config.yaml
+    when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+  - name: Setup olcne ol9 repos
+    ansible.builtin.include_tasks: ol9-repo-config.yaml
+    when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+  - name: Install chrony
+    ansible.builtin.dnf:
+      name: chrony
+      state: latest
+
+  - name: Enable chrony service
+    ansible.builtin.systemd:
+      name: chronyd
+      state: started
+      enabled: yes
+
+  - name: Disable swap
+    ansible.builtin.shell: |
+      swapoff -a
+
+  - name: Disable swap in fstab
+    ansible.builtin.replace:
+      path: /etc/fstab
+      regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+      replace: '# \1'
+
+  - name: Add firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    with_items:
+      - 8090/tcp
+      - 8091/tcp
+      - 10250/tcp
+      - 10255/tcp
+      - 8472/udp
+      - 6443/tcp
+      - 6444/tcp
+      - 10251/tcp
+      - 10252/tcp
+      - 2379/tcp
+      - 2380/tcp
+       
+  - name: Add additional firewall rule
+    ansible.posix.firewalld:
+      zone: trusted
+      interface: cni0
+      permanent: yes
+      state: enabled
+      immediate: yes
+
+  - name: Load br_netfilter module
+    community.general.modprobe:
+      name: br_netfilter
+      state: present
+
+  - name: Ensure br_netfilter module loads on boot
+    ansible.builtin.shell: |
+      echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
+
+  - name: Install olcne packages
+    ansible.builtin.dnf:
+      name: ['olcnectl', 'olcne-api-server', 'olcne-utils', 'olcne-agent']
+      state: latest
+
+  - name: Add user to olcne group
+    ansible.builtin.user:
+      name: "{{ username }}"
+      groups: olcne
+      append: true
+
+  - name: Reset ssh connection to allow user changes to affect 'current login user'
+    ansible.builtin.meta: reset_connection
+      
+  - name: Enable olcne api-server and agent service
+    ansible.builtin.systemd:
+      name: "{{ item }}"
+      state: stopped
+      enabled: yes
+    with_items:
+      - olcne-api-server
+      - olcne-agent
+  
+  - name: Disable docker and containerd services
+    ansible.builtin.systemd:
+      name: "{{ item }}"
+      state: stopped
+      enabled: no
+    with_items:
+      - docker.service
+      - containerd.service
+    when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
+
+  - name: Generate X.509 Certificate Authority
+    ansible.builtin.command: |
+      olcnectl certificates generate --nodes {{ control_plane_nodes }} --cert-dir /tmp/certificates --one-cert
+    become_user: "{{ username }}"
+    
+  - name: Create X.509 Certificates and Copy to Nodes
+    ansible.builtin.command: |
+      olcnectl certificates distribute --byo-ca-cert /tmp/certificates/ca/ca.cert --byo-ca-key /tmp/certificates/ca/ca.key --cert-dir /tmp/certificates --nodes {{ control_plane_nodes }}
+    become_user: "{{ username }}"
+
+  - name: Create X.509 Certificates for restricted external IPs webhook
+    ansible.builtin.shell: |
+      olcnectl certificates generate \
+        --nodes externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local \
+        --cert-dir /tmp/certificates/restrict_external_ip \
+        --byo-ca-cert /tmp/certificates/ca/ca.cert \
+        --byo-ca-key /tmp/certificates/ca/ca.key \
+        --one-cert
+    become_user: "{{ username }}"
+  
+  - name: Start OLCNE API Server with Certificate
+    ansible.builtin.shell: 
+      cmd: |
+        /etc/olcne/bootstrap-olcne.sh \
+        --secret-manager-type file \
+        --olcne-node-cert-path /etc/olcne/certificates/node.cert \
+        --olcne-ca-path /etc/olcne/certificates/ca.cert \
+        --olcne-node-key-path /etc/olcne/certificates/node.key \
+        --vault-cert-sans 127.0.0.1 \
+        --olcne-component api-server
+      
+  - name: Start OLCNE Agent with the Certificates
+    ansible.builtin.shell: 
+      cmd: |
+        /etc/olcne/bootstrap-olcne.sh \
+        --secret-manager-type file \
+        --olcne-node-cert-path /etc/olcne/certificates/node.cert \
+        --olcne-ca-path /etc/olcne/certificates/ca.cert \
+        --olcne-node-key-path /etc/olcne/certificates/node.key \
+        --olcne-component agent

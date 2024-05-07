@@ -267,7 +267,7 @@
 
   - name: Build an instance
     ansible.builtin.include_tasks: "build.yaml"
-    loop: "{{ lookup('dict', compute_instances) }}"
+    loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
   - name: Print in-memory inventory
     ansible.builtin.debug:
