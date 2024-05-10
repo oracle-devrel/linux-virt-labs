@@ -289,6 +289,7 @@
   gather_facts: false
   vars_files:
     - default_vars.yaml
+    - oci_vars.yaml
   vars:
     username: "oracle"
     user_default_password: "oracle"
@@ -366,7 +367,7 @@
     ansible.builtin.debug:
       var: my_subnet_domain_name
     when: debug_enabled
-    
+
   - name: Accept new ssh fingerprints
     ansible.builtin.shell: |
       ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_hostname }},{{ hostvars[item].ansible_default_ipv4.address }},{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }} >> ~/.ssh/known_hosts
