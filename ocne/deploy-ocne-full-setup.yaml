@@ -67,17 +67,17 @@
 
   tasks:
 
-  - name: Print terraform compartment_ocid
+  - name: Print OCI compartment_ocid
     ansible.builtin.debug:
       msg: OCI compartment OCID is {{ my_compartment_id }}
     when: debug_enabled
 
-  - name: Print terraform vcn_ocid
+  - name: Print OCI vcn_ocid
     ansible.builtin.debug:
       msg: OCI vcn OCID is {{ my_vcn_id }}
     when: debug_enabled
 
-  - name: Print terraform lb_subnet_ocid
+  - name: Print OCI lb_subnet_ocid
     ansible.builtin.debug:
       msg: OCI lb_subnet OCID is {{ my_subnet_id }}
     when: debug_enabled
