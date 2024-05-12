@@ -240,7 +240,8 @@
       content:
         my_compartment_id: "{{ my_compartment_id }}"
         my_vcn_id: "{{ my_vcn_id }}"
-        my_subnet_id: "{{ my_subnet_id }}"  
+        my_subnet_id: "{{ my_subnet_id }}"
+        my_subnet_domain_name: "{{ my_subnet_domain_name }}"
       dest: oci_vars.yaml
       
   - name: Get image
@@ -288,6 +289,7 @@
   gather_facts: false
   vars_files:
     - default_vars.yaml
+    - oci_vars.yaml
   vars:
     username: "oracle"
     user_default_password: "oracle"
@@ -361,9 +363,14 @@
     loop: "{{ groups['all'] | flatten(levels=1) }}"
     when: debug_enabled
 
+  - name: Print vnc subnet_domain_name
+    ansible.builtin.debug:
+      var: my_subnet_domain_name
+    when: debug_enabled
+
   - name: Accept new ssh fingerprints
     ansible.builtin.shell: |
-      ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_hostname }},{{ hostvars[item].ansible_default_ipv4.address }} >> ~/.ssh/known_hosts
+      ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_hostname }},{{ hostvars[item].ansible_default_ipv4.address }},{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }} >> ~/.ssh/known_hosts
     with_items:
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
