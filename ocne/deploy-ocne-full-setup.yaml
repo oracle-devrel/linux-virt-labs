@@ -345,9 +345,14 @@
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
     delegate_to: "{{ item }}"
-    loop: 
-      - "{{ groups['controlplane'] }}"
-      - "{{ groups['worker'] }}"
+    loop: "{{ groups['controlplane'] }}"
+
+  - name: Start OLCNE Agent with the Certificates
+    become: yes
+    ansible.builtin.shell: |
+      /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
+    delegate_to: "{{ item }}"
+    loop: "{{ groups['worker'] }}"
     
   - name: Create X.509 Certificates for restricted external IPs webhook
     ansible.builtin.shell: |
