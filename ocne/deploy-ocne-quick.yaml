@@ -118,7 +118,6 @@
     become_user: "{{ username }}"
     register: ocne_provision
 
-
   - name: Add user to olcne group
     ansible.builtin.user:                                              
       name: "{{ username }}"                                                                
