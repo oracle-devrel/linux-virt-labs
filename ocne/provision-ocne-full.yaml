@@ -51,10 +51,23 @@
   args:
     chdir: ~/
   become_user: "{{ username }}"
+  register: provision_kubernetes
 
-- name: Validate Deployment
-  ansible.builtin.shell: |
-    olcnectl module instances --config-file myenvironment.yaml
-  args:
-    chdir: ~/
+- name: Print kubernetes provision output
+  ansible.builtin.debug:
+    var: provision_kubernetes
+  when: debug_enabled
+
+- name: Tag OCNE as provisioned
+  ansible.builtin.file:
+    path: ~/.ocne-provisioned
+    state: touch
   become_user: "{{ username }}"
+  when: provision_kubernetes.rc == 0
+
+# - name: Validate Deployment
+#   ansible.builtin.shell: |
+#     olcnectl module instances --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"

@@ -376,13 +376,6 @@
     - name: Include steps to fully install ocne      
       ansible.builtin.include_tasks: provision-ocne-full.yaml
     
-    - name: Tag OCNE as provisioned
-      ansible.builtin.file:
-        path: ~/.ocne-provisioned
-        state: touch
-      become_user: "{{ username }}"
-      when: provision_kubernetes.rc == 0
-
     - name: Include oci-ccm bash env vars
       ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
       when: oci_ccm_bash
