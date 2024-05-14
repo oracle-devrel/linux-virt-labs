@@ -7,7 +7,7 @@
 environments:
   - environment-name: myenvironment
     globals:
-      api-server: 127.0.0.1:8091
+      api-server: {{ groups['operator'][0] }}:8091
       secret-manager-type: file
       olcne-ca-path: /etc/olcne/certificates/ca.cert
       olcne-node-cert-path: /etc/olcne/certificates/node.cert
