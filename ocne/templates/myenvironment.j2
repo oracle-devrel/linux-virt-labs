@@ -1,11 +1,18 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
 environments:
   - environment-name: myenvironment
     globals:
       api-server: 127.0.0.1:8091
       secret-manager-type: file
-      olcne-ca-path: /etc/olcne/configs/certificates/production/ca.cert
-      olcne-node-cert-path: /etc/olcne/configs/certificates/production/node.cert
-      olcne-node-key-path:  /etc/olcne/configs/certificates/production/node.key
+      olcne-ca-path: /etc/olcne/certificates/ca.cert
+      olcne-node-cert-path: /etc/olcne/certificates/node.cert
+      olcne-node-key-path:  /etc/olcne/certificates/node.key
+      update-config: true
     modules:
       - module: kubernetes
         name: mycluster
@@ -16,23 +23,23 @@ environments:
 {% endif %}
           control-plane-nodes:
 {% for host in range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list %}
-            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
+            - {{ host + '.' + subnet_domain_name + ':8090'}}
 {% endfor %}
           worker-nodes:
 {% for host in range(groups['worker']|length|int) | map('extract',groups['worker'])|list %}
-            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
+            - {{ host + '.' + subnet_domain_name + ':8090'}}
 {% endfor %}
           selinux: enforcing
           restrict-service-externalip: true
-          restrict-service-externalip-ca-cert: /etc/olcne/configs/certificates/restrict_external_ip/production/ca.cert
-          restrict-service-externalip-tls-cert: /etc/olcne/configs/certificates/restrict_external_ip/production/node.cert
-          restrict-service-externalip-tls-key: /etc/olcne/configs/certificates/restrict_external_ip/production/node.key
+          restrict-service-externalip-ca-cert: /home/{{ username }}/certificates/ca/ca.cert
+          restrict-service-externalip-tls-cert: /home/{{ username }}/certificates/restrict_external_ip/node.cert
+          restrict-service-externalip-tls-key: /home/{{ username }}/certificates/restrict_external_ip/node.key
 {% if use_oci_ccm %}
       - module: oci-ccm
         name: myoci
         oci-ccm-kubernetes-module: mycluster
         oci-use-instance-principals: true
-        oci-compartment: {{ my_compartment_id }}
-        oci-vcn: {{ my_vcn_id }}
-        oci-lb-subnet1: {{ my_subnet_id }}         
+        oci-compartment: {{ compartment_ocid }}
+        oci-vcn: {{ vcn_ocid }}
+        oci-lb-subnet1: {{ lb_subnet_ocid }}         
 {% endif %}

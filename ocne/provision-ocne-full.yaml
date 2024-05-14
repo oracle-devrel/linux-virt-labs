@@ -1,0 +1,77 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Gather load balancer information
+  block:
+
+  - name: Get load balancer ip address
+    ansible.builtin.shell: |
+      oci lb load-balancer list --auth instance_principal --compartment-id {{ compartment_ocid }} | jq -r '.data[]."ip-addresses"[]."ip-address"'
+    register: command_output
+    become_user: "{{ username }}"
+  
+  - name: Set load balancer ip address
+    ansible.builtin.set_fact:
+      lb_ip: "{{ command_output.stdout }}"
+  
+  - name: Print load balancer ip address
+    ansible.builtin.debug:
+      msg: "{{ lb_ip }}"
+    when: debug_enabled
+  
+  when: use_lb    
+
+- name: Create file myenvironment.yaml
+  ansible.builtin.template:
+    src: myenvironment.j2
+    dest: ~/myenvironment.yaml
+  become_user: "{{ username }}"
+
+- name: Create environment
+  ansible.builtin.shell: |
+    olcnectl environment create --config-file myenvironment.yaml
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+
+- name: Create/Validate Kubernetes Module
+  ansible.builtin.shell: |
+    olcnectl module create --config-file myenvironment.yaml
+    olcnectl module validate --config-file myenvironment.yaml
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+
+- name: Install Kubernetes Module
+  ansible.builtin.shell: |
+    olcnectl module install --config-file myenvironment.yaml
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+
+- name: Validate Deployment
+  ansible.builtin.shell: |
+    olcnectl module instances --config-file myenvironment.yaml
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+
+- name: Include oci-ccm bash env vars
+  ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
+  when: oci_ccm_bash
+
+- name: Provision oci-ccm
+  ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
+  when: 
+    - ocne_provision.stat.exists
+    - ocne_type != 'none'
+    - use_oci_ccm
+
+- name: Provision kubectl
+  ansible.builtin.include_tasks: "provision-kubectl.yaml"
+  when: 
+    - ocne_provision.stat.exists
+    - ocne_type != 'none'

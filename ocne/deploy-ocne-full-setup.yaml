@@ -244,7 +244,6 @@
     with_items:
       - olcne-agent
 
-
 - name: Configure controlplane and worker nodes
   hosts: controlplane,worker
   collections:
@@ -266,8 +265,8 @@
       - containerd.service
     when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
 
-- name: Run ocne operator configuration steps
-  hosts: operator
+- name: Run ocne configuration steps
+  hosts: operator,controlplane,worker
   collections:
     - ansible.posix
     - community.general
@@ -281,34 +280,45 @@
     control_nodes: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
     worker_nodes: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
     all_nodes: "{{ operator_nodes + ',' + control_nodes + ',' + worker_nodes }}"
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:
 
   - name: Print vcn subnet_domain_name
     ansible.builtin.debug:
       msg: OCI Subnet Domain Name is {{ my_subnet_domain_name }}
-    when: debug_enabled
+    when: 
+      - debug_enabled
+      - inventory_hostname in groups['operator']
 
   - name: Print string of all operator nodes comma separated
     ansible.builtin.debug:
       msg: "{{ operator_nodes }}"
-    when: debug_enabled
+    when: 
+      - debug_enabled
+      - inventory_hostname in groups['operator']
 
   - name: Print string of all control plane nodes comma separated
     ansible.builtin.debug:
       msg: "{{ control_nodes }}"
-    when: debug_enabled
+    when: 
+      - debug_enabled
+      - inventory_hostname in groups['operator']
 
   - name: Print string of all worker nodes comma separated
     ansible.builtin.debug:
       msg: "{{ worker_nodes }}"
-    when: debug_enabled
+    when: 
+      - debug_enabled
+      - inventory_hostname in groups['operator']
 
   - name: Print string of all nodes comma separated
     ansible.builtin.debug:
       msg: "{{ all_nodes }}"
-    when: debug_enabled
-
+    when: 
+      - debug_enabled
+      - inventory_hostname in groups['operator']
+      
   - name: Add user to olcne group
     ansible.builtin.user:
       name: "{{ username }}"
@@ -322,6 +332,8 @@
     ansible.builtin.shell: |
       olcnectl certificates distribute --cert-dir /home/{{ username }}/certificates --nodes {{ all_nodes }}
     become_user: "{{ username }}"
+    when: 
+      - inventory_hostname in groups['operator']
 
   - name: Workaround for permissions on certificate files due to Ansible
     ansible.builtin.file:
@@ -330,39 +342,22 @@
     loop:
       - node
       - ca
+    when: 
+      - inventory_hostname in groups['operator']
 
   - name: Start OLCNE API Server with Certificate
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component api-server
-
-- name: Run ocne controlplane and worker configruation steps
-  hosts: controlplane,worker
-  collections:
-    - ansible.posix
-    - community.general
-  vars_files:
-    - default_vars.yaml
-    
-  tasks:
+    when: 
+      - inventory_hostname in groups['operator']
 
   - name: Start OLCNE Agent with the Certificates
     become: yes
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
-
-- name: Continue ocne operator configuration
-  hosts: operator
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-
-  vars:
-    ocne_registry_location: 'container-registry.oracle.com/olcne'
-
-  tasks:
+    when:
+      - inventory_hostname in groups['controlplane'] or
+        inventory_hostname in groups['worker']
 
   - name: Create X.509 Certificates for restricted external IPs webhook
     ansible.builtin.shell: |
@@ -373,88 +368,31 @@
       --byo-ca-key /home/{{ username }}/certificates/ca/ca.key \
       --one-cert
     become_user: "{{ username }}"
+    when:
+      - inventory_hostname in groups['operator']
 
-  # - name: Gather load balancer information
-  #   block:
-  #   - name: Get load balancer ip address
-  #     ansible.builtin.shell: |
-  #       oci lb load-balancer list --auth instance_principal --compartment-id {{ compartment_ocid }} | jq -r '.data[]."ip-addresses"[]."ip-address"'
-  #     register: command_output
-  #     become_user: "{{ username }}"
-    
-  #   - name: Set load balancer ip address
-  #     ansible.builtin.set_fact:
-  #       lb_ip: "{{ command_output.stdout }}"
-    
-  #   - name: Print load balancer ip address
-  #     ansible.builtin.debug:
-  #       msg: "{{ lb_ip }}"
-  #     when: debug_enabled
-  #   when: use_lb    
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
+    when:
+      - inventory_hostname in groups['operator']
 
-  # - name: Create file myenvironment.yaml
-  #   ansible.builtin.template:
-  #     src: myenvironment.j2
-  #     dest: ~/myenvironment.yaml
-  #   become_user: "{{ username }}"
+  - name: Create environment using full install method
+    block:
 
-#   - name: Create environment
-#     ansible.builtin.shell: |
-#       olcnectl environment create --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
+    - name: Include steps to fully install ocne      
+      ansible.builtin.include_tasks: provision-ocne-full.yaml
 
-#   - name: Create/Validate Kubernetes Module
-#     ansible.builtin.shell: |
-#       olcnectl module create --config-file myenvironment.yaml
-#       olcnectl module validate --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
+    - name: Tag OCNE as provisioned
+      ansible.builtin.file:
+        path: ~/.ocne-provisioned
+        state: touch
+      become_user: "{{ username }}"
+      when: provision_kubernetes.rc == 0
 
-#   # Comment/Uncomment all the steps below to complete the OCNE install or not.
-
-#   - name: Install Kubernetes Module
-#     ansible.builtin.shell: |
-#       olcnectl module install --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
-
-#   - name: Validate Deployment
-#     ansible.builtin.shell: |
-#       olcnectl module instances --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
-
-# - name: Setup kubectl on controlplane node
-#   hosts: controlplane
-#   collections:
-#     - ansible.posix
-#     - community.general
-#   become: yes
-
-#   tasks:
-
-#   - name: Make .kube directory
-#     ansible.builtin.file:
-#       path: ~/.kube
-#       state: directory
-#       mode: '0755'
-#     become_user: "{{ username }}"
-
-#   - name: Copy .kube/config
-#     ansible.builtin.copy:
-#       src: /etc/kubernetes/admin.conf
-#       dest: '/home/{{ username }}/.kube/config'
-#       owner: "{{ username }}"
-#       group: "{{ usergroup }}"
-#       remote_src: yes
-
-#   - name: Add .kube/config to .bashrc file
-#     ansible.builtin.lineinfile:
-#       path: ~/.bashrc
-#       line: 'export KUBECONFIG=$HOME/.kube/config'
-#     become_user: "{{ username }}"
+    when: 
+      - not ocne_provision.stat.exists
+      - use_ocne_full
+      - inventory_hostname in groups['operator']
