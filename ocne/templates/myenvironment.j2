@@ -34,12 +34,3 @@ environments:
           restrict-service-externalip-ca-cert: /home/{{ username }}/certificates/ca/ca.cert
           restrict-service-externalip-tls-cert: /home/{{ username }}/certificates/restrict_external_ip/node.cert
           restrict-service-externalip-tls-key: /home/{{ username }}/certificates/restrict_external_ip/node.key
-{% if use_oci_ccm %}
-      - module: oci-ccm
-        name: myoci
-        oci-ccm-kubernetes-module: mycluster
-        oci-use-instance-principals: true
-        oci-compartment: {{ compartment_ocid }}
-        oci-vcn: {{ vcn_ocid }}
-        oci-lb-subnet1: {{ lb_subnet_ocid }}         
-{% endif %}
