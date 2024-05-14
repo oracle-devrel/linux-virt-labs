@@ -266,7 +266,7 @@
     when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
 
 - name: Run ocne configuration and deployment steps
-  hosts: operator,controlplane,worker
+  hosts: operator
   collections:
     - ansible.posix
     - community.general
@@ -289,35 +289,30 @@
       msg: OCI Subnet Domain Name is {{ my_subnet_domain_name }}
     when: 
       - debug_enabled
-      - inventory_hostname in groups['operator']
-
+  
   - name: Print string of all operator nodes comma separated
     ansible.builtin.debug:
       msg: "{{ operator_nodes }}"
     when: 
       - debug_enabled
-      - inventory_hostname in groups['operator']
-
+  
   - name: Print string of all control plane nodes comma separated
     ansible.builtin.debug:
       msg: "{{ control_nodes }}"
     when: 
       - debug_enabled
-      - inventory_hostname in groups['operator']
-
+  
   - name: Print string of all worker nodes comma separated
     ansible.builtin.debug:
       msg: "{{ worker_nodes }}"
     when: 
       - debug_enabled
-      - inventory_hostname in groups['operator']
-
+  
   - name: Print string of all nodes comma separated
     ansible.builtin.debug:
       msg: "{{ all_nodes }}"
     when: 
       - debug_enabled
-      - inventory_hostname in groups['operator']
       
   - name: Add user to olcne group
     ansible.builtin.user:
@@ -332,9 +327,7 @@
     ansible.builtin.shell: |
       olcnectl certificates distribute --cert-dir /home/{{ username }}/certificates --nodes {{ all_nodes }}
     become_user: "{{ username }}"
-    when: 
-      - inventory_hostname in groups['operator']
-
+ 
   - name: Workaround for permissions on certificate files due to Ansible
     ansible.builtin.file:
       path: '/etc/olcne/certificates/{{ item }}.cert'
@@ -342,23 +335,20 @@
     loop:
       - node
       - ca
-    when: 
-      - inventory_hostname in groups['operator']
 
   - name: Start OLCNE API Server with Certificate
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component api-server
-    when: 
-      - inventory_hostname in groups['operator']
 
   - name: Start OLCNE Agent with the Certificates
     become: yes
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
-    when:
-      - inventory_hostname in groups['controlplane'] or
-        inventory_hostname in groups['worker']
-
+    delegate_to: "{{ item }}"
+    loop: 
+      - "{{ groups['controlplane'] }}"
+      - "{{ groups['worker'] }}"
+    
   - name: Create X.509 Certificates for restricted external IPs webhook
     ansible.builtin.shell: |
       olcnectl certificates generate \
@@ -368,23 +358,19 @@
       --byo-ca-key /home/{{ username }}/certificates/ca/ca.key \
       --one-cert
     become_user: "{{ username }}"
-    when:
-      - inventory_hostname in groups['operator']
-
+    
   - name: Check if OCNE provisioned
     ansible.builtin.stat:
       path: ~/.ocne-provisioned
     become_user: "{{ username }}"
     register: ocne_provision
-    when:
-      - inventory_hostname in groups['operator']
-
+    
   - name: Create environment using full install method
     block:
 
     - name: Include steps to fully install ocne      
       ansible.builtin.include_tasks: provision-ocne-full.yaml
-
+    
     - name: Tag OCNE as provisioned
       ansible.builtin.file:
         path: ~/.ocne-provisioned
@@ -412,4 +398,3 @@
     when: 
       - not ocne_provision.stat.exists
       - use_ocne_full
-      - inventory_hostname in groups['operator']
