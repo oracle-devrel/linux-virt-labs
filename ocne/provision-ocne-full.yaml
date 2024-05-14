@@ -58,20 +58,3 @@
   args:
     chdir: ~/
   become_user: "{{ username }}"
-
-- name: Include oci-ccm bash env vars
-  ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
-  when: oci_ccm_bash
-
-- name: Provision oci-ccm
-  ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
-  when: 
-    - ocne_provision.stat.exists
-    - ocne_type != 'none'
-    - use_oci_ccm
-
-- name: Provision kubectl
-  ansible.builtin.include_tasks: "provision-kubectl.yaml"
-  when: 
-    - ocne_provision.stat.exists
-    - ocne_type != 'none'
