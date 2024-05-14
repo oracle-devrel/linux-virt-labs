@@ -23,11 +23,11 @@ environments:
 {% endif %}
           control-plane-nodes:
 {% for host in range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list %}
-            - {{ host + '.' + subnet_domain_name + ':8090'}}
+            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
 {% endfor %}
           worker-nodes:
 {% for host in range(groups['worker']|length|int) | map('extract',groups['worker'])|list %}
-            - {{ host + '.' + subnet_domain_name + ':8090'}}
+            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
 {% endfor %}
           selinux: enforcing
           restrict-service-externalip: true
