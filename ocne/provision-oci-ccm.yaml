@@ -4,6 +4,42 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
+- name: Add firewall rules for oci-ccm
+  ansible.posix.firewalld:
+    port: 10256/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add firewall rules for oci-ccm lb
+  ansible.posix.firewalld:
+    port: 30000-32767/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add firewall rules for oci-ccm
+  ansible.posix.firewalld:
+    port: 10256/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['worker'] }}"
+
+- name: Add firewall rules for oci-ccm lb
+  ansible.posix.firewalld:
+    port: 30000-32767/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['worker'] }}"
+
 - name: Include oci vars
   ansible.builtin.include_vars:
     file: oci_vars.yaml
