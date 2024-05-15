@@ -44,6 +44,21 @@
   ansible.builtin.include_vars:
     file: oci_vars.yaml
 
+- name: Print compartment ocid
+  ansible.builtin.debug:
+    var: my_compartment_id
+  when: debug_enabled
+
+- name: Print vcn ocid
+  ansible.builtin.debug:
+    var: my_vcn_id
+  when: debug_enabled
+
+- name: Print subnet ocid
+  ansible.builtin.debug:
+    var: my_subnet_id
+  when: debug_enabled
+
 - name: Provision oci-ccm
   ansible.builtin.shell: |
     olcnectl module create --environment-name myenvironment --module oci-ccm --name myoci --oci-ccm-kubernetes-module mycluster \
