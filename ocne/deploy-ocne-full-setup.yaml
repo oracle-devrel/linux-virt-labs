@@ -40,7 +40,7 @@
       state: latest
 
   - name: Enable chrony service
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: chronyd
       state: started
       enabled: yes
@@ -123,13 +123,20 @@
       name: ['olcnectl', 'olcne-api-server', 'olcne-utils']
       state: latest
 
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
+
   - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: "{{ item }}"
       state: stopped
       enabled: yes
     with_items:
       - olcne-api-server
+    when: not ocne_provision.stat.exists
 
 - name: OCNE Software installation steps for control plane nodes
   hosts: controlplane
@@ -181,13 +188,20 @@
       name: ['olcne-utils', 'olcne-agent']
       state: latest
 
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
+
   - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: "{{ item }}"
       state: stopped
       enabled: yes
     with_items:
       - olcne-agent
+    when: not ocne_provision.stat.exists
 
 - name: OCNE Software installation steps for worker nodes
   hosts: worker
@@ -234,13 +248,20 @@
       name: ['olcne-utils', 'olcne-agent']
       state: latest
 
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
+
   - name: Enable olcne agent service
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: "{{ item }}"
       state: stopped
       enabled: yes
     with_items:
       - olcne-agent
+    when: not ocne_provision.stat.exists
 
 - name: Configure controlplane and worker nodes
   hosts: controlplane,worker
@@ -254,7 +275,7 @@
   tasks:
 
   - name: Disable docker and containerd services
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: "{{ item }}"
       state: stopped
       enabled: no
