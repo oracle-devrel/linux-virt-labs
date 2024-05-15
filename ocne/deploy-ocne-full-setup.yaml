@@ -159,6 +159,7 @@
       - 2379/tcp
       - 2380/tcp
       - 10256/tcp
+      - 30000-32767/tcp
 
   - name: Add additional firewall rule
     ansible.posix.firewalld:
@@ -213,6 +214,7 @@
       - 10255/tcp
       - 8472/udp
       - 10256/tcp
+      - 30000-32767/tcp
 
   - name: Add additional firewall rule
     ansible.posix.firewalld:
