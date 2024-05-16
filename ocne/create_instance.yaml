@@ -406,6 +406,28 @@
 
   tasks:
 
+  - name: List load balancers
+    oci_loadbalancer_load_balancer_facts:
+      compartment_id: "{{ my_compartment_id }}"
+    register: result
+    retries: 10
+    delay: 30
+    until: result is not failed
+
+  - name: Print load balancers list
+    ansible.builtin.debug:
+      var: result
+    when: debug_enabled
+
+  - name: Set list of oci-ccm load balancers
+    ansible.builtin.set_fact:
+      oci_ccm_lb_ids: "{{ result.load_balancers.id }}"
+
+  - name: Print load balancers id list
+    ansible.builtin.debug:
+      var: oci_ccm_lb_ids
+    when: debug_enabled
+
   - name: Terminate the instances
     oci_compute_instance:
       id: "{{ hostvars[item]['instance_ocid'] }}"
