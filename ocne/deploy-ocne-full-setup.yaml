@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: OCNE installation steps
+- name: OCNE OS pre-installation steps
   hosts: operator,controlplane,worker
   collections:
     - ansible.posix
@@ -56,196 +56,7 @@
       regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
       replace: '# \1'
 
-  - name: Print OCI compartment_ocid
-    ansible.builtin.debug:
-      msg: OCI compartment OCID is {{ my_compartment_id }}
-    when: debug_enabled
-
-  - name: Print OCI vcn_ocid
-    ansible.builtin.debug:
-      msg: OCI vcn OCID is {{ my_vcn_id }}
-    when: debug_enabled
-
-  - name: Print OCI lb_subnet_ocid
-    ansible.builtin.debug:
-      msg: OCI lb_subnet OCID is {{ my_subnet_id }}
-    when: debug_enabled
-
-  - name: Add compartment variable to .bashrc
-    ansible.builtin.blockinfile:
-      dest: /home/oracle/.bashrc
-      block: |
-        export COMPARTMENT_OCID={{ my_compartment_id }}
-        export LC_ALL=C.UTF-8
-        export LANG=C.UTF-8
-      insertafter: EOF
-      owner: "{{ username }}"
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['operator'] }}"
-
-  - name: Install oci-cli on ol8
-    ansible.builtin.dnf:
-      name: ['python36-oci-cli', 'jq']
-      enablerepo: ol8_developer
-      state: latest
-    when:
-      - ansible_facts['distribution'] == "OracleLinux"
-      - ansible_facts['distribution_major_version'] == "8"
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['operator'] }}"
-
-  - name: Install oci-cli on ol9
-    ansible.builtin.dnf:
-      name: ['python39-oci-cli', 'jq']
-      state: latest
-    when:
-      - ansible_facts['distribution'] == "OracleLinux"
-      - ansible_facts['distribution_major_version'] == "9"
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['operator'] }}"
-
-  - name: Add operator firewall rules
-    ansible.posix.firewalld:
-      port: 8091/tcp
-      permanent: yes
-      state: enabled
-      immediate: yes
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['operator'] }}"
-
-  - name: Add control plane firewall rules
-    ansible.posix.firewalld:
-      port: "{{ item[1] }}"
-      permanent: yes
-      state: enabled
-      immediate: yes
-    delegate_to: "{{ item[0] }}"
-    loop: "{{ groups['controlplane'] | product(['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']) | list }}"
-
-  - name: Add worker firewall rules
-    ansible.posix.firewalld:
-      port: "{{ item[1] }}"
-      permanent: yes
-      state: enabled
-      immediate: yes
-    delegate_to: "{{ item[0] }}"
-    loop: "{{ groups['worker'] | product(['8090/tcp','10250/tcp','10255/tcp','8472/udp']) | list }}"
-
-  - name: Add additional firewall rule
-    ansible.posix.firewalld:
-      zone: trusted
-      interface: cni0
-      permanent: yes
-      state: enabled
-      immediate: yes
-    delegate_to: "{{ item }}"
-    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
-
-  # - name: Add additional firewall rule
-  #   ansible.posix.firewalld:
-  #     zone: trusted
-  #     interface: cni0
-  #     permanent: yes
-  #     state: enabled
-  #     immediate: yes
-  #   delegate_to: "{{ item }}"
-  #   loop: "{{ groups['worker'] }}"
-
-  - name: Load br_netfilter module
-    community.general.modprobe:
-      name: br_netfilter
-      state: present
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-
-  - name: Load br_netfilter module
-    community.general.modprobe:
-      name: br_netfilter
-      state: present
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
-
-  - name: Ensure br_netfilter module loads on boot
-    ansible.builtin.shell: |
-      echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-
-  - name: Ensure br_netfilter module loads on boot
-    ansible.builtin.shell: |
-      echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
-
-  - name: Disable docker and containerd services
-    ansible.builtin.systemd_service:
-      name: ['docker.service','containerd.service']
-      state: stopped
-      enabled: no
-    when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-
-  - name: Disable docker and containerd services
-    ansible.builtin.systemd_service:
-      name: ['docker.service','containerd.service']
-      state: stopped
-      enabled: no
-    when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
-
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcnectl', 'olcne-api-server', 'olcne-utils']
-      state: latest
-
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcne-utils', 'olcne-agent']
-      state: latest
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcne-utils', 'olcne-agent']
-      state: latest
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
-
-  - name: Check if OCNE provisioned
-    ansible.builtin.stat:
-      path: ~/.ocne-provisioned
-    become_user: "{{ username }}"
-    register: ocne_provision
-
-  - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd_service:
-      name: ['olcne-api-server']
-      state: stopped
-      enabled: yes
-    when: not ocne_provision.stat.exists
-
-  - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd_service:
-      name: ['olcne-agent']
-      state: stopped
-      enabled: yes
-    when: not ocne_provision.stat.exists
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-
-  - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd_service:
-      name: ['olcne-agent']
-      state: stopped
-      enabled: yes
-    when: not ocne_provision.stat.exists
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
-
-- name: Run ocne configuration and deployment steps
+- name: OCNE installation steps
   hosts: operator
   collections:
     - ansible.posix
@@ -267,6 +78,21 @@
     ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:
+
+  - name: Print OCI compartment_ocid
+    ansible.builtin.debug:
+      msg: OCI compartment OCID is {{ my_compartment_id }}
+    when: debug_enabled
+
+  - name: Print OCI vcn_ocid
+    ansible.builtin.debug:
+      msg: OCI vcn OCID is {{ my_vcn_id }}
+    when: debug_enabled
+
+  - name: Print OCI lb_subnet_ocid
+    ansible.builtin.debug:
+      msg: OCI lb_subnet OCID is {{ my_subnet_id }}
+    when: debug_enabled
 
   - name: Print vcn subnet_domain_name
     ansible.builtin.debug:
@@ -297,7 +123,130 @@
       msg: "{{ all_nodes }}"
     when: 
       - debug_enabled
-      
+
+  - name: Add compartment variable to .bashrc
+    ansible.builtin.blockinfile:
+      dest: /home/oracle/.bashrc
+      block: |
+        export COMPARTMENT_OCID={{ my_compartment_id }}
+        export LC_ALL=C.UTF-8
+        export LANG=C.UTF-8
+      insertafter: EOF
+      owner: "{{ username }}"
+
+  - name: Install oci-cli on ol8
+    ansible.builtin.dnf:
+      name: ['python36-oci-cli', 'jq']
+      enablerepo: ol8_developer
+      state: latest
+    when:
+      - ansible_facts['distribution'] == "OracleLinux"
+      - ansible_facts['distribution_major_version'] == "8"
+
+  - name: Install oci-cli on ol9
+    ansible.builtin.dnf:
+      name: ['python39-oci-cli', 'jq']
+      state: latest
+    when:
+      - ansible_facts['distribution'] == "OracleLinux"
+      - ansible_facts['distribution_major_version'] == "9"
+
+  - name: Add operator firewall rules
+    ansible.posix.firewalld:
+      port: 8091/tcp
+      permanent: yes
+      state: enabled
+      immediate: yes
+
+  - name: Add control plane firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item[1] }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['controlplane'] | product(['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']) | list }}"
+
+  - name: Add worker firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item[1] }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['worker'] | product(['8090/tcp','10250/tcp','10255/tcp','8472/udp']) | list }}"
+
+  - name: Add cni0 firewall rule
+    ansible.posix.firewalld:
+      zone: trusted
+      interface: cni0
+      permanent: yes
+      state: enabled
+      immediate: yes
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
+  - name: Load br_netfilter module
+    community.general.modprobe:
+      name: br_netfilter
+      state: present
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
+  - name: Ensure br_netfilter module loads on boot
+    ansible.builtin.shell: |
+      echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
+  - name: Disable docker and containerd services
+    ansible.builtin.systemd_service:
+      name: "{{ item[1] }}"
+      state: stopped
+      enabled: no
+    when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) | product(['docker.service','containerd.service']) | list }}"
+
+  - name: Install olcne packages on operator
+    ansible.builtin.dnf:
+      name: 
+        - olcnectl
+        - olcne-api-server
+        - olcne-utils
+      state: latest
+
+  - name: Install olcne packages on control plane and worker
+    ansible.builtin.dnf:
+      name: 
+        - olcne-utils
+        - olcne-agent
+      state: latest
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
+
+  - name: Enable olcne api-server and agent service
+    ansible.builtin.systemd_service:
+      name: olcne-api-server
+      state: stopped
+      enabled: yes
+    when: not ocne_provision.stat.exists
+
+  - name: Enable olcne api-server and agent service
+    ansible.builtin.systemd_service:
+      name: olcne-agent
+      state: stopped
+      enabled: yes
+    when: not ocne_provision.stat.exists
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
   - name: Add user to olcne group
     ansible.builtin.user:
       name: "{{ username }}"
