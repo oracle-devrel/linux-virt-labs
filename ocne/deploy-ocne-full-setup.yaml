@@ -263,7 +263,7 @@
 
   - name: Create X.509 Certificates and Copy to Nodes
     ansible.builtin.shell: |
-      olcnectl certificates distribute --cert-dir /home/{{ username }}/certificates --nodes {{ all_nodes }}
+      olcnectl certificates distribute --cert-dir /home/{{ username }}/.olcne/certificates --nodes {{ all_nodes }}
     become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
  
