@@ -68,13 +68,12 @@
 
   vars:
     operator_nodes: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
-    control_nodes: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
-    worker_nodes: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
+    control_nodes: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    worker_nodes: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
     # operator_nodes_fqdn: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
     # control_nodes_fqdn: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
     # worker_nodes_fqdn: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
-    all_nodes: "{{ operator_nodes + ',' + control_nodes + ',' + worker_nodes }}"
-    # all_nodes_fqdn: "{{ operator_nodes_fqdn + ',' + control_nodes_fqdn + ',' + worker_nodes_fqdn }}"
+    all_nodes: "{{ range(groups['all']|length|int) | map('extract',groups['all'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
     ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:

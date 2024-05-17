@@ -24,34 +24,70 @@
   
   when: use_lb    
 
-- name: Create file myenvironment.yaml
-  ansible.builtin.template:
-    src: myenvironment.j2
-    dest: ~/myenvironment.yaml
-  become_user: "{{ username }}"
-
 - name: Create environment
   ansible.builtin.shell: |
-    olcnectl environment create --config-file myenvironment.yaml
+    olcnectl environment create --api-server 127.0.0.1:8091 --environment-name myenvironment --secret-manager-type file
   args:
     chdir: ~/
   become_user: "{{ username }}"
 
 - name: Create/Validate Kubernetes Module
   ansible.builtin.shell: |
-    olcnectl module create --config-file myenvironment.yaml
-    olcnectl module validate --config-file myenvironment.yaml
+    olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+    --container-registry {{ ocne_container_location }} \
+    --control-plane-nodes {{ control_nodes }} \
+    --worker-nodes {{ worker_nodes }} \
+    --selinux enforcing \
+    --restrict-service-externalip-ca-cert /etc/olcne/certificates/restrict_external_ip/ca.cert \
+    --restrict-service-externalip-tls-cert /etc/olcne/certificates/restrict_external_ip/node.cert \
+    --restrict-service-externalip-tls-key /etc/olcne/certificates/restrict_external_ip/node.key
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+
+- name: Validate Kubernetes Module
+  ansible.builtin.shell: |
+    olcnectl module validate --environment-name myenvironment --name mycluster
   args:
     chdir: ~/
   become_user: "{{ username }}"
 
 - name: Install Kubernetes Module
   ansible.builtin.shell: |
-    olcnectl module install --config-file myenvironment.yaml
+    olcnectl module install --environment-name myenvironment --name mycluster
   args:
     chdir: ~/
   become_user: "{{ username }}"
   register: provision_kubernetes
+
+# - name: Create file myenvironment.yaml
+#   ansible.builtin.template:
+#     src: myenvironment.j2
+#     dest: ~/myenvironment.yaml
+#   become_user: "{{ username }}"
+
+# - name: Create environment
+#   ansible.builtin.shell: |
+#     olcnectl environment create --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+
+# - name: Create/Validate Kubernetes Module
+#   ansible.builtin.shell: |
+#     olcnectl module create --config-file myenvironment.yaml
+#     olcnectl module validate --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+
+# - name: Install Kubernetes Module
+#   ansible.builtin.shell: |
+#     olcnectl module install --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+#   register: provision_kubernetes
 
 - name: Print kubernetes provision output
   ansible.builtin.debug:
@@ -65,10 +101,10 @@
   become_user: "{{ username }}"
   when: provision_kubernetes.rc == 0
 
-- name: Save out ocne config
-  ansible.builtin.shell: |
-    olcnectl module instances --config-file myenvironment.yaml --update-config
-  args:
-    chdir: ~/
-  become_user: "{{ username }}"
-  when: ocne_provision.stat.exists
+# - name: Save out ocne config
+#   ansible.builtin.shell: |
+#     olcnectl module instances --config-file myenvironment.yaml --update-config
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+#   when: ocne_provision.stat.exists
