@@ -7,12 +7,11 @@
 environments:
   - environment-name: myenvironment
     globals:
-      api-server: {{ groups['operator'][0] + '.' + my_subnet_domain_name + ':8091'}}
+      api-server: 127.0.0.1:8091
       secret-manager-type: file
       olcne-ca-path: /etc/olcne/certificates/ca.cert
       olcne-node-cert-path: /etc/olcne/certificates/node.cert
       olcne-node-key-path:  /etc/olcne/certificates/node.key
-      update-config: true
     modules:
       - module: kubernetes
         name: mycluster
@@ -23,11 +22,11 @@ environments:
 {% endif %}
           control-plane-nodes:
 {% for host in range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list %}
-            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
+            - {{ host + ':8090'}}
 {% endfor %}
           worker-nodes:
 {% for host in range(groups['worker']|length|int) | map('extract',groups['worker'])|list %}
-            - {{ host + '.' + my_subnet_domain_name + ':8090'}}
+            - {{ host + ':8090'}}
 {% endfor %}
           selinux: enforcing
           restrict-service-externalip: true
