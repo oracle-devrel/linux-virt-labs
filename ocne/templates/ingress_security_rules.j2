@@ -122,56 +122,67 @@ instance_ingress_security_rules:
   # Allow incoming Istio connections
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         min: 15000
         max: 15001
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         min: 15004
         max: 15004  
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         min: 15006
         max: 15006
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15008
         max: 15010
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15012
         max: 15012
   - source: "10.0.0.0/24"
     protocol: 6 
+    tcp_options:    
       destination_port_range:
         min: 15014
         max: 15014
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15017
         max: 15017
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15020
         max: 15021
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15053
         max: 15053
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 15090
         max: 15090
   - source: "10.0.0.0/24"
-    protocol: 6  
+    protocol: 6 
+    tcp_options:     
       destination_port_range:
         min: 9443
         max: 9443
