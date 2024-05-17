@@ -113,7 +113,7 @@
     delegate_to: "{{ item }}"
     loop: "{{ groups['operator'] }}"
 
-  - name: Add firewall rules
+  - name: Add control plane firewall rules
     ansible.posix.firewalld:
       port: "{{ item[1] }}"
       permanent: yes
@@ -122,14 +122,14 @@
     delegate_to: "{{ item[0] }}"
     loop: "{{ groups['controlplane'] | product(['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']) | list }}"
 
-  - name: Add firewall rules
+  - name: Add worker firewall rules
     ansible.posix.firewalld:
-      port: ['8090/tcp','10250/tcp','10255/tcp','8472/udp']
+      port: "{{ item[1] }}"
       permanent: yes
       state: enabled
       immediate: yes
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['worker'] | product(['8090/tcp','10250/tcp','10255/tcp','8472/udp']) | list }}"
 
   - name: Add additional firewall rule
     ansible.posix.firewalld:
@@ -139,17 +139,17 @@
       state: enabled
       immediate: yes
     delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
-  - name: Add additional firewall rule
-    ansible.posix.firewalld:
-      zone: trusted
-      interface: cni0
-      permanent: yes
-      state: enabled
-      immediate: yes
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
+  # - name: Add additional firewall rule
+  #   ansible.posix.firewalld:
+  #     zone: trusted
+  #     interface: cni0
+  #     permanent: yes
+  #     state: enabled
+  #     immediate: yes
+  #   delegate_to: "{{ item }}"
+  #   loop: "{{ groups['worker'] }}"
 
   - name: Load br_netfilter module
     community.general.modprobe:
