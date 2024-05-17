@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: OCNE OS pre-installation steps
+- name: OCNE installation steps
   hosts: operator,controlplane,worker
   collections:
     - ansible.posix
@@ -12,6 +12,7 @@
   become: yes
   vars_files:
     - default_vars.yaml
+    - oci_vars.yaml
 
   tasks:
 
@@ -55,18 +56,6 @@
       regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
       replace: '# \1'
 
-- name: OCNE Software installation steps
-  hosts: operator
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-    - oci_vars.yaml
-
-  tasks:
-
   - name: Print OCI compartment_ocid
     ansible.builtin.debug:
       msg: OCI compartment OCID is {{ my_compartment_id }}
@@ -91,6 +80,8 @@
         export LANG=C.UTF-8
       insertafter: EOF
       owner: "{{ username }}"
+    delegate_to: "{{ item }}"
+    loop: "{{ groups['operator'] }}"
 
   - name: Install oci-cli on ol8
     ansible.builtin.dnf:
@@ -100,6 +91,8 @@
     when:
       - ansible_facts['distribution'] == "OracleLinux"
       - ansible_facts['distribution_major_version'] == "8"
+    delegate_to: "{{ item }}"
+    loop: "{{ groups['operator'] }}"
 
   - name: Install oci-cli on ol9
     ansible.builtin.dnf:
@@ -108,22 +101,26 @@
     when:
       - ansible_facts['distribution'] == "OracleLinux"
       - ansible_facts['distribution_major_version'] == "9"
+    delegate_to: "{{ item }}"
+    loop: "{{ groups['operator'] }}"
 
-  - name: Add firewall rules
+  - name: Add operator firewall rules
     ansible.posix.firewalld:
-      port: ['8091/tcp']
-      permanent: yes
-      state: enabled
-      immediate: yes
-
-  - name: Add firewall rules
-    ansible.posix.firewalld:
-      port: ['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']
+      port: 8091/tcp
       permanent: yes
       state: enabled
       immediate: yes
     delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
+    loop: "{{ groups['operator'] }}"
+
+  - name: Add firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item[1] }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['controlplane'] | product(['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']) | list }}"
 
   - name: Add firewall rules
     ansible.posix.firewalld:
