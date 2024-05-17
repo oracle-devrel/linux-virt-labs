@@ -277,7 +277,6 @@
       - ca
     when: not ocne_provision.stat.exists
 
-
   - name: Start OLCNE API Server with Certificate
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component api-server

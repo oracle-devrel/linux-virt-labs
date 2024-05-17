@@ -64,3 +64,11 @@
     state: touch
   become_user: "{{ username }}"
   when: provision_kubernetes.rc == 0
+
+- name: Save out ocne config
+  ansible.builtin.shell: |
+    olcnectl module instances --config-file myenvironment.yaml --update-config
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  when: ocne_provision.stat.exists
