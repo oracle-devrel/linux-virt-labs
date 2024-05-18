@@ -38,9 +38,9 @@
     --control-plane-nodes {{ control_nodes }} \
     --worker-nodes {{ worker_nodes }} \
     --selinux enforcing \
-    --restrict-service-externalip-ca-cert /etc/olcne/certificates/restrict_external_ip/ca.cert \
-    --restrict-service-externalip-tls-cert /etc/olcne/certificates/restrict_external_ip/node.cert \
-    --restrict-service-externalip-tls-key /etc/olcne/certificates/restrict_external_ip/node.key
+    --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+    --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+    --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
   args:
     chdir: ~/
   become_user: "{{ username }}"
