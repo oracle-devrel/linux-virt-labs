@@ -261,20 +261,38 @@
     become_user: "{{ username }}"
     register: ocne_provision
 
-  - name: Create X.509 Certificates and Copy to Nodes
+  - name: Create Certificates for Kubernetes Nodes
     ansible.builtin.shell: |
-      olcnectl certificates distribute --cert-dir /home/{{ username }}/.olcne/certificates --nodes {{ all_nodes }}
+      olcnectl certificates distribute --nodes {{ all_nodes }}
     become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
  
-  - name: Workaround for permissions on certificate files due to Ansible
-    ansible.builtin.file:
-      path: '/etc/olcne/certificates/{{ item }}.cert'
-      mode: '0640'
-    loop:
-      - node
-      - ca
+  - name: Create Certificates for the Platform CLI
+    ansible.builtin.shell: |
+      olcnectl certificates generate --nodes {{ operator_nodes }},127.0.0.1 \
+      --cert-dir $HOME/.olcne/certificates/{{ operator_nodes }}:8091/  \
+      --byo-ca-cert $HOME/certificates/ca/ca.cert \
+      --byo-ca-key $HOME/certificates/ca/ca.key \
+      --one-cert
+    become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
+
+  - name: Copy CA Certificate for the Platform CLI
+    ansible.builtin.copy:
+      src: ~/certificates/ca/ca.cert
+      dest: ~/.olcne/certificates/operator.example.com:8091/ca.cert
+      remote_src: true
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists    
+
+  # - name: Workaround for permissions on certificate files due to Ansible
+  #   ansible.builtin.file:
+  #     path: '/etc/olcne/certificates/{{ item }}.cert'
+  #     mode: '0640'
+  #   loop:
+  #     - node
+  #     - ca
+  #   when: not ocne_provision.stat.exists
 
   - name: Start OLCNE API Server with Certificate
     ansible.builtin.shell: |
@@ -297,7 +315,7 @@
     loop: "{{ groups['worker'] }}"
     when: not ocne_provision.stat.exists
     
-  - name: Create X.509 Certificates for restricted external IPs webhook
+  - name: Create Certificates for ExternalIPs service
     ansible.builtin.shell: |
       olcnectl certificates generate \
       --nodes externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local \
@@ -305,6 +323,14 @@
       --byo-ca-cert /home/{{ username }}/certificates/ca/ca.cert \
       --byo-ca-key /home/{{ username }}/certificates/ca/ca.key \
       --one-cert
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists
+
+  - name: Copy CA Certificate for the ExternalIP service
+    ansible.builtin.copy:
+      src: ~/certificates/ca/ca.cert
+      dest: ~/.olcne/certificates/restrict_external_ip//ca.cert
+      remote_src: true
     become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
         
