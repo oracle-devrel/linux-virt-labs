@@ -263,16 +263,16 @@
 
   - name: Create Certificates for Kubernetes Nodes
     ansible.builtin.shell: |
-      olcnectl certificates distribute --nodes {{ all_nodes }}
+      olcnectl certificates distribute --cert-dir ~/certificates/ --nodes {{ all_nodes }}
     become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
  
   - name: Create Certificates for the Platform CLI
     ansible.builtin.shell: |
       olcnectl certificates generate --nodes {{ operator_nodes }},127.0.0.1 \
-      --cert-dir $HOME/.olcne/certificates/{{ operator_nodes }}:8091/  \
-      --byo-ca-cert $HOME/certificates/ca/ca.cert \
-      --byo-ca-key $HOME/certificates/ca/ca.key \
+      --cert-dir ~/.olcne/certificates/{{ operator_nodes }}:8091/  \
+      --byo-ca-cert ~/certificates/ca/ca.cert \
+      --byo-ca-key ~/certificates/ca/ca.key \
       --one-cert
     become_user: "{{ username }}"
     when: not ocne_provision.stat.exists
