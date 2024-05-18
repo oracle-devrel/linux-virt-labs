@@ -26,7 +26,7 @@
 
 - name: Create environment
   ansible.builtin.shell: |
-    olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file
+    olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
   args:
     chdir: ~/
   become_user: "{{ username }}"
