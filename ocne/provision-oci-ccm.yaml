@@ -41,14 +41,26 @@
     var: my_subnet_id
   when: debug_enabled
 
-- name: Provision oci-ccm
+- name: Create oci-ccm module
   ansible.builtin.shell: |
     olcnectl module create --environment-name myenvironment --module oci-ccm --name myoci --oci-ccm-kubernetes-module mycluster \
     --oci-use-instance-principals true \
     --oci-compartment {{ my_compartment_id }} \
     --oci-vcn {{ my_vcn_id }} \
     --oci-lb-subnet1 {{ my_subnet_id }}      
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  register: provision_ccm
+  when: ocne_provision.stat.exists
 
+- name: Print oci-ccm provision output
+  ansible.builtin.debug:
+    var: provision_ccm.stdout_lines
+  when: debug_enabled
+  
+- name: Install oci-ccm module
+  ansible.builtin.shell: |  
     olcnectl module install --environment-name myenvironment --name myoci
   args:
     chdir: ~/
