@@ -58,7 +58,7 @@
   ansible.builtin.debug:
     var: provision_ccm.stdout_lines
   when: debug_enabled
-  
+
 - name: Install oci-ccm module
   ansible.builtin.shell: |  
     olcnectl module install --environment-name myenvironment --name myoci

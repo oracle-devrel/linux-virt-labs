@@ -304,15 +304,7 @@
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
     delegate_to: "{{ item }}"
-    loop: "{{ groups['controlplane'] }}"
-    when: not ocne_provision.stat.exists
-
-  - name: Start OLCNE Agent with the Certificates
-    become: yes
-    ansible.builtin.shell: |
-      /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
-    delegate_to: "{{ item }}"
-    loop: "{{ groups['worker'] }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
     when: not ocne_provision.stat.exists
     
   - name: Create Certificates for ExternalIPs service

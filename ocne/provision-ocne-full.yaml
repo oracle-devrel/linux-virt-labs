@@ -101,6 +101,14 @@
   become_user: "{{ username }}"
   when: provision_kubernetes.rc == 0
 
+- name: Save out ocne config
+  ansible.builtin.shell: |
+    olcnectl module instances --api-server "{{ operator_node }}":8091 --environment-name myenvironment --update-config
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  when: provision_kubernetes.rc == 0
+
 # - name: Save out ocne config
 #   ansible.builtin.shell: |
 #     olcnectl module instances --config-file myenvironment.yaml --update-config
