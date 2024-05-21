@@ -419,14 +419,21 @@
       var: result
     when: debug_enabled
 
-  - name: Set list of oci-ccm load balancers
-    ansible.builtin.set_fact:
-      oci_ccm_lb_ids: "{{ result.load_balancers.id }}"
+  - block:
+    - name: Set list of oci-ccm load balancers
+      ansible.builtin.set_fact:
+        oci_ccm_lb_ids: "{{ result.load_balancers }}"
 
-  - name: Print load balancers id list
-    ansible.builtin.debug:
-      var: oci_ccm_lb_ids
-    when: debug_enabled
+    - name: Print load balancers id list
+      ansible.builtin.debug:
+        var: oci_ccm_lb_ids
+      when: debug_enabled
+    when:
+      - result.load_balancers is defined
+      - result.load_balancers is not string
+      - result.load_balancers is not mapping
+      - result.load_balancers is iterable
+      - result.load_balancers | length > 0
 
   - name: Terminate the instances
     oci_compute_instance:
