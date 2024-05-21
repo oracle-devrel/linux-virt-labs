@@ -171,7 +171,7 @@
       src: ingress_security_rules.j2 
       dest: /tmp/instance_ingress_security_rules.yaml
   
-  - name: Create egress yaml list
+  - name: Create egress rules yaml list
     ansible.builtin.template: 
       src: egress_security_rules.j2 
       dest: /tmp/instance_egress_security_rules.yaml
@@ -429,7 +429,7 @@
   - block:
     - name: Set list of oci-ccm load balancers
       ansible.builtin.set_fact:
-        oci_ccm_lb_ids: "{{ result.load_balancers }}"
+        oci_ccm_lb_ids: "{{ result.load_balancers.id }}"
 
     - name: Print load balancers id list
       ansible.builtin.debug:
