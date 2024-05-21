@@ -375,6 +375,13 @@
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
 
+  - name: Configure firewall to log denied packets
+    ansible.builtin.shell: |
+      firewall-cmd --set-log-denied=all
+    when: debug_enabled
+
+  # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
+
 - name: Install Oracle Cloud Native Environment
   ansible.builtin.import_playbook: "deploy-ocne-{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}.yaml"
 
