@@ -25,6 +25,7 @@ use_ocne_full: false
 use_lb: false
 oci_ccm_bash: false
 use_oci_ccm: false
+use_istio: false
 use_fss: false
 ol8_enable_repo: "ol8_olcne18"
 ol8_disable_repo: "ol8_olcne12 ol8_olcne13 ol8_olcne14 ol8_olcne15 ol8_olcne16 ol8_olcne17"

@@ -1,0 +1,41 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create custome istio configuration file
+  ansible.builtin.template:
+    src: istio-lb.j2
+    dest: ~/istio-lb.yaml
+  become_user: "{{ username }}"
+
+- name: Create istio module
+  ansible.builtin.shell: |
+    olcnectl module create --environment-name myenvironment --module istio --name myistio --istio-kubernetes-module mycluster --istio-profile=istio-lb.yaml
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  register: provision_istio
+  when: ocne_provision.stat.exists
+
+- name: Print istio provision output
+  ansible.builtin.debug:
+    var: provision_istio.stdout_lines
+  when: debug_enabled
+
+- name: Install istio module
+  ansible.builtin.shell: |  
+    olcnectl module install --environment-name myenvironment --name myistio
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  register: provision_istio
+  when: ocne_provision.stat.exists
+
+- name: Print istio provision output
+  ansible.builtin.debug:
+    var: provision_istio.stdout_lines
+  when: debug_enabled
+
+
