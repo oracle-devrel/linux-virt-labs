@@ -421,6 +421,12 @@
     ansible.builtin.include_tasks: "delete_lb.yaml"
     when: use_lb
 
+  - name: Terminate the instances
+    oci_compute_instance:
+      id: "{{ hostvars[item]['instance_ocid'] }}"
+      state: absent
+    loop: "{{ groups['all'] | flatten(levels=1) }}"
+
   - name: Get list oci-ccm load balancers
     oci_loadbalancer_load_balancer_facts:
       compartment_id: "{{ my_compartment_id }}"
@@ -457,12 +463,6 @@
       - result.load_balancers is not mapping
       - result.load_balancers is iterable
       - result.load_balancers | length > 0
-
-  - name: Terminate the instances
-    oci_compute_instance:
-      id: "{{ hostvars[item]['instance_ocid'] }}"
-      state: absent
-    loop: "{{ groups['all'] | flatten(levels=1) }}"
 
   - name: Delete the subnet
     oci_network_subnet:
