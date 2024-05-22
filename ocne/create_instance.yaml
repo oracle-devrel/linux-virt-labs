@@ -413,7 +413,15 @@
 
   tasks:
 
-  - name: List load balancers
+  - name: Delete file system storage
+    ansible.builtin.include_tasks: "delete_fss.yaml"
+    when: use_fss
+
+  - name: Delete control plane load balancer
+    ansible.builtin.include_tasks: "delete_lb.yaml"
+    when: use_lb
+
+  - name: Get list oci-ccm load balancers
     oci_loadbalancer_load_balancer_facts:
       compartment_id: "{{ my_compartment_id }}"
     register: result
@@ -421,7 +429,7 @@
     delay: 30
     until: result is not failed
 
-  - name: Print load balancers list
+  - name: Print oci-ccm load balancers
     ansible.builtin.debug:
       var: result
     when: debug_enabled
@@ -429,23 +437,19 @@
   - block:
     - name: Set list of oci-ccm load balancers
       ansible.builtin.set_fact:
-        oci_ccm_lb_ids: "{{ result.load_balancers.id }}"
+        oci_ccm_lb_ids: "{{ oci_ccm_lb_ids | default([]) + [item.id] }}"
+      loop: "{{ result.load_balancers }}"
 
-    - name: Print load balancers ids
+    - name: Print oci-ccm load balancers ids
       ansible.builtin.debug:
         var: oci_ccm_lb_ids
       when: debug_enabled
 
-    - name: Print load balancers ids as list
-      ansible.builtin.debug:
-        msg: "{{ oci_ccm_lb_ids | list }}"
-      when: debug_enabled
-
-    - name: Delete Private Load Balancer
+    - name: Delete oci-ccm load balancer
       oci_loadbalancer_load_balancer:
         load_balancer_id: "{{ item }}"
         state: 'absent'
-      loop: "{{ oci_ccm_lb_ids | list }}"
+      loop: "{{ oci_ccm_lb_ids }}"
 
     when:
       - result.load_balancers is defined
@@ -459,14 +463,6 @@
       id: "{{ hostvars[item]['instance_ocid'] }}"
       state: absent
     loop: "{{ groups['all'] | flatten(levels=1) }}"
-
-  - name: Delete file system storage
-    ansible.builtin.include_tasks: "delete_fss.yaml"
-    when: use_fss
-
-  - name: Delete load balancer
-    ansible.builtin.include_tasks: "delete_lb.yaml"
-    when: use_lb
 
   - name: Delete the subnet
     oci_network_subnet:
