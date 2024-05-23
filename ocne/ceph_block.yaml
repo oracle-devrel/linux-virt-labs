@@ -4,8 +4,3 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-instance_egress_security_rules:
-  - destination: "0.0.0.0/0"
-    protocol: 6
-  - destination: "10.0.0.0/24"
-    protocol: 17
