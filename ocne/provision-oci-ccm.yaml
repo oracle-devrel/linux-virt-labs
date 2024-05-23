@@ -4,18 +4,63 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
+- name: Add firewall rules for oci-ccm
+  ansible.posix.firewalld:
+    port: 10256/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
+- name: Add firewall rules for oci-ccm lb
+  ansible.posix.firewalld:
+    port: 30000-32767/tcp
+    permanent: yes
+    state: enabled
+    immediate: yes
+  delegate_to: "{{ item }}"
+  loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+
 - name: Include oci vars
   ansible.builtin.include_vars:
     file: oci_vars.yaml
 
-- name: Provision oci-ccm
+- name: Print compartment ocid
+  ansible.builtin.debug:
+    var: my_compartment_id
+  when: debug_enabled
+
+- name: Print vcn ocid
+  ansible.builtin.debug:
+    var: my_vcn_id
+  when: debug_enabled
+
+- name: Print subnet ocid
+  ansible.builtin.debug:
+    var: my_subnet_id
+  when: debug_enabled
+
+- name: Create oci-ccm module
   ansible.builtin.shell: |
     olcnectl module create --environment-name myenvironment --module oci-ccm --name myoci --oci-ccm-kubernetes-module mycluster \
     --oci-use-instance-principals true \
     --oci-compartment {{ my_compartment_id }} \
     --oci-vcn {{ my_vcn_id }} \
     --oci-lb-subnet1 {{ my_subnet_id }}      
+  args:
+    chdir: ~/
+  become_user: "{{ username }}"
+  register: provision_ccm
+  when: ocne_provision.stat.exists
 
+- name: Print oci-ccm provision output
+  ansible.builtin.debug:
+    var: provision_ccm.stdout_lines
+  when: debug_enabled
+
+- name: Install oci-ccm module
+  ansible.builtin.shell: |  
     olcnectl module install --environment-name myenvironment --name myoci
   args:
     chdir: ~/

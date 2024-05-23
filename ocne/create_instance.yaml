@@ -171,7 +171,7 @@
       src: ingress_security_rules.j2 
       dest: /tmp/instance_ingress_security_rules.yaml
   
-  - name: Create egress yaml list
+  - name: Create egress rules yaml list
     ansible.builtin.template: 
       src: egress_security_rules.j2 
       dest: /tmp/instance_egress_security_rules.yaml
@@ -375,24 +375,12 @@
       - "{{ groups['all'] }}"
     become_user: "{{ username }}"
 
-- name: Configure oci-ccm firewall on instances
-  hosts: controlplane,worker
-  become: yes
-  vars_files:
-    - default_vars.yaml
+  - name: Configure firewall to log denied packets
+    ansible.builtin.shell: |
+      firewall-cmd --set-log-denied=all
+    when: debug_enabled
 
-  tasks:
-
-  - name: add firewall rules
-    ansible.posix.firewalld:
-      port: "{{ item }}"
-      permanent: yes
-      state: enabled
-      immediate: yes
-    loop:
-      - 10256/tcp
-      - 30000-32767/tcp
-    when: use_oci_ccm
+  # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
 
 - name: Install Oracle Cloud Native Environment
   ansible.builtin.import_playbook: "deploy-ocne-{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}.yaml"
@@ -425,19 +413,56 @@
 
   tasks:
 
+  - name: Delete file system storage
+    ansible.builtin.include_tasks: "delete_fss.yaml"
+    when: use_fss
+
+  - name: Delete control plane load balancer
+    ansible.builtin.include_tasks: "delete_lb.yaml"
+    when: use_lb
+
   - name: Terminate the instances
     oci_compute_instance:
       id: "{{ hostvars[item]['instance_ocid'] }}"
       state: absent
     loop: "{{ groups['all'] | flatten(levels=1) }}"
 
-  - name: Delete file system storage
-    ansible.builtin.include_tasks: "delete_fss.yaml"
-    when: use_fss
+  - name: Get list oci-ccm load balancers
+    oci_loadbalancer_load_balancer_facts:
+      compartment_id: "{{ my_compartment_id }}"
+    register: result
+    retries: 10
+    delay: 30
+    until: result is not failed
 
-  - name: Delete load balancer
-    ansible.builtin.include_tasks: "delete_lb.yaml"
-    when: use_lb
+  - name: Print oci-ccm load balancers
+    ansible.builtin.debug:
+      var: result
+    when: debug_enabled
+
+  - block:
+    - name: Set list of oci-ccm load balancers
+      ansible.builtin.set_fact:
+        oci_ccm_lb_ids: "{{ oci_ccm_lb_ids | default([]) + [item.id] }}"
+      loop: "{{ result.load_balancers }}"
+
+    - name: Print oci-ccm load balancers ids
+      ansible.builtin.debug:
+        var: oci_ccm_lb_ids
+      when: debug_enabled
+
+    - name: Delete oci-ccm load balancer
+      oci_loadbalancer_load_balancer:
+        load_balancer_id: "{{ item }}"
+        state: 'absent'
+      loop: "{{ oci_ccm_lb_ids }}"
+
+    when:
+      - result.load_balancers is defined
+      - result.load_balancers is not string
+      - result.load_balancers is not mapping
+      - result.load_balancers is iterable
+      - result.load_balancers | length > 0
 
   - name: Delete the subnet
     oci_network_subnet:

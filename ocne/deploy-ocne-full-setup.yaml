@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: OCNE pre-installation steps for all nodes
+- name: OCNE OS pre-installation steps
   hosts: operator,controlplane,worker
   collections:
     - ansible.posix
@@ -12,6 +12,7 @@
   become: yes
   vars_files:
     - default_vars.yaml
+    - oci_vars.yaml
 
   tasks:
 
@@ -40,7 +41,7 @@
       state: latest
 
   - name: Enable chrony service
-    ansible.builtin.systemd:
+    ansible.builtin.systemd_service:
       name: chronyd
       state: started
       enabled: yes
@@ -55,7 +56,7 @@
       regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
       replace: '# \1'
 
-- name: OCNE Software installation steps for operator node
+- name: OCNE installation steps
   hosts: operator
   collections:
     - ansible.posix
@@ -64,6 +65,16 @@
   vars_files:
     - default_vars.yaml
     - oci_vars.yaml
+
+  vars:
+    operator_nodes: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
+    control_nodes: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    worker_nodes: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    # operator_nodes_fqdn: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
+    # control_nodes_fqdn: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
+    # worker_nodes_fqdn: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
+    all_nodes: "{{ range(groups['all']|length|int) | map('extract',groups['all'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:
 
@@ -81,6 +92,36 @@
     ansible.builtin.debug:
       msg: OCI lb_subnet OCID is {{ my_subnet_id }}
     when: debug_enabled
+
+  - name: Print vcn subnet_domain_name
+    ansible.builtin.debug:
+      msg: OCI Subnet Domain Name is {{ my_subnet_domain_name }}
+    when: 
+      - debug_enabled
+  
+  - name: Print string of all operator nodes comma separated
+    ansible.builtin.debug:
+      msg: "{{ operator_nodes }}"
+    when: 
+      - debug_enabled
+  
+  - name: Print string of all control plane nodes comma separated
+    ansible.builtin.debug:
+      msg: "{{ control_nodes }}"
+    when: 
+      - debug_enabled
+  
+  - name: Print string of all worker nodes comma separated
+    ansible.builtin.debug:
+      msg: "{{ worker_nodes }}"
+    when: 
+      - debug_enabled
+  
+  - name: Print string of all nodes comma separated
+    ansible.builtin.debug:
+      msg: "{{ all_nodes }}"
+    when: 
+      - debug_enabled
 
   - name: Add compartment variable to .bashrc
     ansible.builtin.blockinfile:
@@ -109,205 +150,101 @@
       - ansible_facts['distribution'] == "OracleLinux"
       - ansible_facts['distribution_major_version'] == "9"
 
-  - name: Add firewall rules
+  - name: Add operator firewall rules
     ansible.posix.firewalld:
-      port: "{{ item }}"
+      port: 8091/tcp
       permanent: yes
       state: enabled
       immediate: yes
-    with_items:
-      - 8091/tcp
 
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcnectl', 'olcne-api-server', 'olcne-utils']
-      state: latest
-
-  - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd:
-      name: "{{ item }}"
-      state: stopped
-      enabled: yes
-    with_items:
-      - olcne-api-server
-
-- name: OCNE Software installation steps for control plane nodes
-  hosts: controlplane
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-
-  tasks:
-
-  - name: Add firewall rules
+  - name: Add control plane firewall rules
     ansible.posix.firewalld:
-      port: "{{ item }}"
+      port: "{{ item[1] }}"
       permanent: yes
       state: enabled
       immediate: yes
-    with_items:
-      - 8090/tcp
-      - 10250/tcp
-      - 10255/tcp
-      - 8472/udp
-      - 6443/tcp
-      - 10251/tcp
-      - 10252/tcp
-      - 2379/tcp
-      - 2380/tcp
-      - 10256/tcp
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['controlplane'] | product(['2379/tcp','2380/tcp','6443/tcp','8090/tcp','8472/udp','10250/tcp','10255/tcp','10251/tcp','10252/tcp']) | list }}"
 
-  - name: Add additional firewall rule
+  - name: Add worker firewall rules
+    ansible.posix.firewalld:
+      port: "{{ item[1] }}"
+      permanent: yes
+      state: enabled
+      immediate: yes
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ groups['worker'] | product(['8090/tcp','10250/tcp','10255/tcp','8472/udp']) | list }}"
+
+  - name: Add cni0 firewall rule
     ansible.posix.firewalld:
       zone: trusted
       interface: cni0
       permanent: yes
       state: enabled
       immediate: yes
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
   - name: Load br_netfilter module
     community.general.modprobe:
       name: br_netfilter
       state: present
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
   - name: Ensure br_netfilter module loads on boot
     ansible.builtin.shell: |
       echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
-
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcne-utils', 'olcne-agent']
-      state: latest
-
-  - name: Enable olcne api-server and agent service
-    ansible.builtin.systemd:
-      name: "{{ item }}"
-      state: stopped
-      enabled: yes
-    with_items:
-      - olcne-agent
-
-- name: OCNE Software installation steps for worker nodes
-  hosts: worker
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-
-  tasks:
-
-  - name: Add firewall rules
-    ansible.posix.firewalld:
-      port: "{{ item }}"
-      permanent: yes
-      state: enabled
-      immediate: yes
-    with_items:
-      - 8090/tcp
-      - 10250/tcp
-      - 10255/tcp
-      - 8472/udp
-      - 10256/tcp
-
-  - name: Add additional firewall rule
-    ansible.posix.firewalld:
-      zone: trusted
-      interface: cni0
-      permanent: yes
-      state: enabled
-      immediate: yes
-
-  - name: Load br_netfilter module
-    community.general.modprobe:
-      name: br_netfilter
-      state: present
-
-  - name: Ensure br_netfilter module loads on boot
-    ansible.builtin.shell: |
-      echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
-
-  - name: Install olcne packages
-    ansible.builtin.dnf:
-      name: ['olcne-utils', 'olcne-agent']
-      state: latest
-
-  - name: Enable olcne agent service
-    ansible.builtin.systemd:
-      name: "{{ item }}"
-      state: stopped
-      enabled: yes
-    with_items:
-      - olcne-agent
-
-
-- name: Configure controlplane and worker nodes
-  hosts: controlplane,worker
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-
-  tasks:
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
   - name: Disable docker and containerd services
-    ansible.builtin.systemd:
-      name: "{{ item }}"
+    ansible.builtin.systemd_service:
+      name: "{{ item[1] }}"
       state: stopped
       enabled: no
-    with_items:
-      - docker.service
-      - containerd.service
     when: ansible_facts.services['docker.service'] is defined or ansible_facts.servcices['containerd.service'] is defined
+    delegate_to: "{{ item[0] }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) | product(['docker.service','containerd.service']) | list }}"
 
-- name: Run ocne operator configuration steps
-  hosts: operator
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-    - oci_vars.yaml
+  - name: Install olcne packages on operator
+    ansible.builtin.dnf:
+      name: 
+        - olcnectl
+        - olcne-api-server
+        - olcne-utils
+      state: latest
 
-  vars:
-    operator_nodes: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
-    control_nodes: "{{ range(groups['controlplane']|length|int) | map('extract',groups['controlplane'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
-    worker_nodes: "{{ range(groups['worker']|length|int) | map('extract',groups['worker'])|list | map('regex_replace', '^(.*)$', '\\1' + '.' + my_subnet_domain_name ) | join(',') }}"
-    all_nodes: "{{ operator_nodes + ',' + control_nodes + ',' + worker_nodes }}"
+  - name: Install olcne packages on control plane and worker
+    ansible.builtin.dnf:
+      name: 
+        - olcne-utils
+        - olcne-agent
+      state: latest
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
-  tasks:
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
 
-  - name: Print vcn subnet_domain_name
-    ansible.builtin.debug:
-      msg: OCI Subnet Domain Name is {{ my_subnet_domain_name }}
-    when: debug_enabled
+  - name: Enable olcne api-server and agent service
+    ansible.builtin.systemd_service:
+      name: olcne-api-server
+      state: stopped
+      enabled: yes
+    when: not ocne_provision.stat.exists
 
-  - name: Print string of all operator nodes comma separated
-    ansible.builtin.debug:
-      msg: "{{ operator_nodes }}"
-    when: debug_enabled
-
-  - name: Print string of all control plane nodes comma separated
-    ansible.builtin.debug:
-      msg: "{{ control_nodes }}"
-    when: debug_enabled
-
-  - name: Print string of all worker nodes comma separated
-    ansible.builtin.debug:
-      msg: "{{ worker_nodes }}"
-    when: debug_enabled
-
-  - name: Print string of all nodes comma separated
-    ansible.builtin.debug:
-      msg: "{{ all_nodes }}"
-    when: debug_enabled
+  - name: Enable olcne api-server and agent service
+    ansible.builtin.systemd_service:
+      name: olcne-agent
+      state: stopped
+      enabled: yes
+    when: not ocne_provision.stat.exists
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
   - name: Add user to olcne group
     ansible.builtin.user:
@@ -318,53 +255,59 @@
   - name: Reset ssh connection to allow user changes to affect 'current login user'
     ansible.builtin.meta: reset_connection
 
-  - name: Create X.509 Certificates and Copy to Nodes
-    ansible.builtin.shell: |
-      olcnectl certificates distribute --cert-dir /home/{{ username }}/certificates --nodes {{ all_nodes }}
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+      path: ~/.ocne-provisioned
     become_user: "{{ username }}"
+    register: ocne_provision
 
-  - name: Workaround for permissions on certificate files due to Ansible
-    ansible.builtin.file:
-      path: '/etc/olcne/certificates/{{ item }}.cert'
-      mode: '0640'
-    loop:
-      - node
-      - ca
+  - name: Create Certificates for Kubernetes Nodes
+    ansible.builtin.shell: |
+      olcnectl certificates distribute --cert-dir ~/certificates/ --nodes {{ all_nodes }}
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists
+ 
+  - name: Create Certificates for the Platform CLI
+    ansible.builtin.shell: |
+      olcnectl certificates generate --nodes {{ operator_nodes }},127.0.0.1 \
+      --cert-dir ~/.olcne/certificates/{{ operator_nodes }}:8091/  \
+      --byo-ca-cert ~/certificates/ca/ca.cert \
+      --byo-ca-key ~/certificates/ca/ca.key \
+      --one-cert
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists
+
+  - name: Copy CA Certificate for the Platform CLI
+    ansible.builtin.copy:
+      src: ~/certificates/ca/ca.cert
+      dest: ~/.olcne/certificates/ocne-operator:8091/ca.cert
+      remote_src: true
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists    
+
+  # - name: Workaround for permissions on certificate files due to Ansible
+  #   ansible.builtin.file:
+  #     path: '/etc/olcne/certificates/{{ item }}.cert'
+  #     mode: '0640'
+  #   loop:
+  #     - node
+  #     - ca
+  #   when: not ocne_provision.stat.exists
 
   - name: Start OLCNE API Server with Certificate
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component api-server
-
-- name: Run ocne controlplane and worker configruation steps
-  hosts: controlplane,worker
-  collections:
-    - ansible.posix
-    - community.general
-  vars_files:
-    - default_vars.yaml
-    
-  tasks:
+    when: not ocne_provision.stat.exists
 
   - name: Start OLCNE Agent with the Certificates
     become: yes
     ansible.builtin.shell: |
       /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component agent
-
-- name: Continue ocne operator configuration
-  hosts: operator
-  collections:
-    - ansible.posix
-    - community.general
-  become: yes
-  vars_files:
-    - default_vars.yaml
-
-  vars:
-    ocne_registry_location: 'container-registry.oracle.com/olcne'
-
-  tasks:
-
-  - name: Create X.509 Certificates for restricted external IPs webhook
+    delegate_to: "{{ item }}"
+    loop: "{{ (groups['controlplane'] + groups['worker']) }}"
+    when: not ocne_provision.stat.exists
+    
+  - name: Create Certificates for ExternalIPs service
     ansible.builtin.shell: |
       olcnectl certificates generate \
       --nodes externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local \
@@ -373,88 +316,48 @@
       --byo-ca-key /home/{{ username }}/certificates/ca/ca.key \
       --one-cert
     become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists
 
-  # - name: Gather load balancer information
-  #   block:
-  #   - name: Get load balancer ip address
-  #     ansible.builtin.shell: |
-  #       oci lb load-balancer list --auth instance_principal --compartment-id {{ compartment_ocid }} | jq -r '.data[]."ip-addresses"[]."ip-address"'
-  #     register: command_output
-  #     become_user: "{{ username }}"
-    
-  #   - name: Set load balancer ip address
-  #     ansible.builtin.set_fact:
-  #       lb_ip: "{{ command_output.stdout }}"
-    
-  #   - name: Print load balancer ip address
-  #     ansible.builtin.debug:
-  #       msg: "{{ lb_ip }}"
-  #     when: debug_enabled
-  #   when: use_lb    
+  - name: Copy CA Certificate for the ExternalIP service
+    ansible.builtin.copy:
+      src: ~/certificates/ca/ca.cert
+      dest: ~/certificates/restrict_external_ip/ca.cert
+      remote_src: true
+    become_user: "{{ username }}"
+    when: not ocne_provision.stat.exists
+        
+  - name: Include steps to fully install ocne      
+    ansible.builtin.include_tasks: provision-ocne-full.yaml
+    when: 
+      - not ocne_provision.stat.exists
+      - use_ocne_full
 
-  # - name: Create file myenvironment.yaml
-  #   ansible.builtin.template:
-  #     src: myenvironment.j2
-  #     dest: ~/myenvironment.yaml
-  #   become_user: "{{ username }}"
+  - name: Check if OCNE provisioned
+    ansible.builtin.stat:
+        path: ~/.ocne-provisioned
+    become_user: "{{ username }}"
+    register: ocne_provision
 
-#   - name: Create environment
-#     ansible.builtin.shell: |
-#       olcnectl environment create --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
+  - name: Include oci-ccm bash env vars
+    ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
+    when: oci_ccm_bash
 
-#   - name: Create/Validate Kubernetes Module
-#     ansible.builtin.shell: |
-#       olcnectl module create --config-file myenvironment.yaml
-#       olcnectl module validate --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
+  - name: Provision oci-ccm
+    ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
+    when: 
+      - ocne_provision.stat.exists
+      - ocne_type != 'none'
+      - use_oci_ccm
 
-#   # Comment/Uncomment all the steps below to complete the OCNE install or not.
-
-#   - name: Install Kubernetes Module
-#     ansible.builtin.shell: |
-#       olcnectl module install --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
-
-#   - name: Validate Deployment
-#     ansible.builtin.shell: |
-#       olcnectl module instances --config-file myenvironment.yaml
-#     args:
-#       chdir: ~/
-#     become_user: "{{ username }}"
-
-# - name: Setup kubectl on controlplane node
-#   hosts: controlplane
-#   collections:
-#     - ansible.posix
-#     - community.general
-#   become: yes
-
-#   tasks:
-
-#   - name: Make .kube directory
-#     ansible.builtin.file:
-#       path: ~/.kube
-#       state: directory
-#       mode: '0755'
-#     become_user: "{{ username }}"
-
-#   - name: Copy .kube/config
-#     ansible.builtin.copy:
-#       src: /etc/kubernetes/admin.conf
-#       dest: '/home/{{ username }}/.kube/config'
-#       owner: "{{ username }}"
-#       group: "{{ usergroup }}"
-#       remote_src: yes
-
-#   - name: Add .kube/config to .bashrc file
-#     ansible.builtin.lineinfile:
-#       path: ~/.bashrc
-#       line: 'export KUBECONFIG=$HOME/.kube/config'
-#     become_user: "{{ username }}"
+  - name: Provision istio
+    ansible.builtin.include_tasks: "provision-istio.yaml"
+    when: 
+      - ocne_provision.stat.exists
+      - ocne_type != 'none'
+      - use_istio
+      
+  - name: Provision kubectl
+    ansible.builtin.include_tasks: "provision-kubectl.yaml"
+    when: 
+      - ocne_provision.stat.exists
+      - ocne_type != 'none'
