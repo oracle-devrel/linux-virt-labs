@@ -87,6 +87,9 @@
         display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
         size_in_gbs: "{{ ceph_volume_size_in_gbs }}"
       register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
    
     - name: Set the ceph storage block volume id
       anaible.builtin.set_fact:
@@ -99,6 +102,9 @@
         volume_id: "{{ volume_id }}"
         is_read_only: false
         is_shareable: false
+      retries: 10
+      delay: 30
+      until: result is not failed
    
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
