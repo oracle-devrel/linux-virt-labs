@@ -8,6 +8,7 @@
   ansible.builtin.template:
     src: istio-lb.j2
     dest: ~/istio-lb.yaml
+  become: true
   become_user: "{{ username }}"
 
 - name: Create istio module
@@ -15,6 +16,7 @@
     olcnectl module create --environment-name myenvironment --module istio --name myistio --istio-kubernetes-module mycluster --istio-profile=istio-lb.yaml
   args:
     chdir: ~/
+  become: true
   become_user: "{{ username }}"
   register: provision_istio
   when: ocne_provision.stat.exists
@@ -25,10 +27,11 @@
   when: debug_enabled
 
 - name: Install istio module
-  ansible.builtin.shell: |  
+  ansible.builtin.shell: |
     olcnectl module install --environment-name myenvironment --name myistio
   args:
     chdir: ~/
+  become: true
   become_user: "{{ username }}"
   register: provision_istio
   when: ocne_provision.stat.exists
@@ -37,5 +40,3 @@
   ansible.builtin.debug:
     var: provision_istio.stdout_lines
   when: debug_enabled
-
-

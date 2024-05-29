@@ -6,10 +6,10 @@
 
 - name: Run ocne noop
   hosts: operator
-  become: yes
+  become: true
 
   tasks:
 
-  - name: Print noop message
-    ansible.builtin.debug:
-      msg: "This is a noop and does not deploy OCNE."
+    - name: Print noop message
+      ansible.builtin.debug:
+        msg: "This is a noop and does not deploy OCNE."

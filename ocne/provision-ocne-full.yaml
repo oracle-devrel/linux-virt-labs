@@ -4,118 +4,90 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-# - name: Gather load balancer information
-#   block:
-
-#   - name: Include oci vars
-#     ansible.builtin.include_vars:
-#       file: oci_vars.yaml
-
-#   - name: Get load balancer ip address
-#     ansible.builtin.shell: |
-#       oci lb load-balancer list --auth instance_principal --compartment-id {{ compartment_ocid }} | jq -r '.data[]."ip-addresses"[]."ip-address"'
-#     register: command_output
-#     become_user: "{{ username }}"
-  
-#   - name: Set load balancer ip address
-#     ansible.builtin.set_fact:
-#       lb_ip: "{{ command_output.stdout }}"
-  
-#   - name: Print load balancer ip address
-#     ansible.builtin.debug:
-#       msg: "{{ lb_ip }}"
-#     when: debug_enabled
-  
-#   when: use_lb    
-
 - name: Create environment using manual install method
-  block:
-
-  - name: Create environment
-    ansible.builtin.shell: |
-      olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Create Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
-      --container-registry {{ ocne_registry_location }} \
-      --control-plane-nodes {{ control_nodes }} \
-      --worker-nodes {{ worker_nodes }} \
-      --selinux enforcing \
-      --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
-      --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
-      --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Validate Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module validate --environment-name myenvironment --name mycluster
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Install Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module install --environment-name myenvironment --name mycluster
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-    register: provision_kubernetes
-
   when: groups['controlplane'] | length < 2
+  block:
+    - name: Create environment
+      ansible.builtin.shell: |
+        olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Create Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+        --container-registry {{ ocne_registry_location }} \
+        --control-plane-nodes {{ control_nodes }} \
+        --worker-nodes {{ worker_nodes }} \
+        --selinux enforcing \
+        --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+        --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+        --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Validate Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module validate --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Install Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module install --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+      register: provision_kubernetes
 
 - name: Create environment with lb using manual install method
-  block:
-
-  - name: Include lb vars
-    ansible.builtin.include_vars:
-      file: lb_vars.yaml
-
-  - name: Create environment
-    ansible.builtin.shell: |
-      olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Create Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
-      --container-registry {{ ocne_registry_location }} \
-      --load-balancer "{{ private_load_balancer_ip_addresses }}":6443 \
-      --control-plane-nodes {{ control_nodes }} \
-      --worker-nodes {{ worker_nodes }} \
-      --selinux enforcing \
-      --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
-      --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
-      --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Validate Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module validate --environment-name myenvironment --name mycluster
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-
-  - name: Install Kubernetes Module
-    ansible.builtin.shell: |
-      olcnectl module install --environment-name myenvironment --name mycluster
-    args:
-      chdir: ~/
-    become_user: "{{ username }}"
-    register: provision_kubernetes
-
-  when: 
+  when:
     - groups['controlplane'] | length > 1
     - use_lb
+  block:
+    - name: Include lb vars
+      ansible.builtin.include_vars:
+        file: lb_vars.yaml
+
+    - name: Create environment
+      ansible.builtin.shell: |
+        olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Create Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+        --container-registry {{ ocne_registry_location }} \
+        --load-balancer "{{ private_load_balancer_ip_addresses }}":6443 \
+        --control-plane-nodes {{ control_nodes }} \
+        --worker-nodes {{ worker_nodes }} \
+        --selinux enforcing \
+        --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+        --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+        --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Validate Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module validate --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+
+    - name: Install Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module install --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become_user: "{{ username }}"
+      register: provision_kubernetes
 
 # - name: Create file myenvironment.yaml
 #   ansible.builtin.template:

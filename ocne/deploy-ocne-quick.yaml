@@ -6,7 +6,7 @@
 
 - name: Run ocne quick install
   hosts: operator
-  become: yes
+  become: true
   vars_files:
     - default_vars.yaml
   vars:

@@ -65,10 +65,10 @@
     export_set_id: "{{ export_set_id }}"
     file_system_id: "{{ file_system_id }}"
     export_options:
-          - source: "0.0.0.0/0"
-            require_privileged_source_port: False
-            access: "READ_WRITE"
-            identity_squash: "NONE"
+      - source: "0.0.0.0/0"
+        require_privileged_source_port: false
+        access: "READ_WRITE"
+        identity_squash: "NONE"
     path: "/fss-ocne"
     state: present
   register: result

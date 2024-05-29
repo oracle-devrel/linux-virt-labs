@@ -25,9 +25,9 @@
       is_management_disabled: false
       are_all_plugins_disabled: false
       plugins_config:
-      -
-        name: "OS Management Service Agent"
-        desired_state: DISABLED
+        -
+          name: "OS Management Service Agent"
+          desired_state: DISABLED
   register: result
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
@@ -100,12 +100,12 @@
 
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
-    msg: 
+    msg:
       - "Instance name: {{ instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
-  
+
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
     name: "{{ instance_display_name }}"

@@ -5,8 +5,8 @@
 # See LICENSE.TXT for details.
 
 - name: Create private Load Balancer
-  oci_loadbalancer_load_balancer:
-    is_private: yes
+  oracle.oci.oci_loadbalancer_load_balancer:
+    is_private: true
     compartment_id: "{{ my_compartment_id }}"
     name: "ocne-load-balancer"
     shape_name: "flexible"
@@ -23,7 +23,7 @@
 
 - name: Print load balancer details
   ansible.builtin.debug:
-    msg: "Load balancer details: {{ result.load_balancer}}"
+    msg: "Load balancer details: {{ result.load_balancer }}"
 
 - name: Set load balancer facts
   ansible.builtin.set_fact:
@@ -31,7 +31,7 @@
     private_load_balancer_ip_addresses: "{{ result.load_balancer.ip_addresses }}"
 
 - name: Create Backend Set
-  oci_loadbalancer_backend_set:
+  oracle.oci.oci_loadbalancer_backend_set:
     load_balancer_id: "{{ private_load_balancer_id }}"
     name: 'ocne-lb-backend-set'
     policy: 'WEIGHTED_ROUND_ROBIN'
@@ -39,18 +39,18 @@
       interval_in_millis: 10000
       port: 6443
       protocol: "TCP"
-      #response_body_regex: ".*"
+      # response_body_regex: ".*"
       retries: 3
       timeout_in_millis: 3000
-      #return_code: 200
-      #url_path: "/"
+      # return_code: 200
+      # url_path: "/"
     state: 'present'
   retries: 10
   delay: 30
   until: result is not failed
 
 - name: Create Listener for TCP traffic
-  oci_loadbalancer_listener:
+  oracle.oci.oci_loadbalancer_listener:
     load_balancer_id: "{{ private_load_balancer_id }}"
     name: 'ocne-lb-listener'
     default_backend_set_name: 'ocne-lb-backend-set'
@@ -76,7 +76,7 @@
   when: debug_enabled
 
 - name: Create Backends
-  oci_loadbalancer_backend:
+  oracle.oci.oci_loadbalancer_backend:
     load_balancer_id: "{{ private_load_balancer_id }}"
     backend_set_name: 'ocne-lb-backend-set'
     ip_address: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"

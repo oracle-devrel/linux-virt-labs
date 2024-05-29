@@ -7,18 +7,18 @@
 - name: Add firewall rules for oci-ccm
   ansible.posix.firewalld:
     port: 10256/tcp
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   delegate_to: "{{ item }}"
   loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
 - name: Add firewall rules for oci-ccm lb
   ansible.posix.firewalld:
     port: 30000-32767/tcp
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   delegate_to: "{{ item }}"
   loop: "{{ (groups['controlplane'] + groups['worker']) }}"
 
@@ -47,7 +47,7 @@
     --oci-use-instance-principals true \
     --oci-compartment {{ my_compartment_id }} \
     --oci-vcn {{ my_vcn_id }} \
-    --oci-lb-subnet1 {{ my_subnet_id }}      
+    --oci-lb-subnet1 {{ my_subnet_id }}
   args:
     chdir: ~/
   become_user: "{{ username }}"
@@ -60,7 +60,7 @@
   when: debug_enabled
 
 - name: Install oci-ccm module
-  ansible.builtin.shell: |  
+  ansible.builtin.shell: |
     olcnectl module install --environment-name myenvironment --name myoci
   args:
     chdir: ~/
@@ -72,5 +72,3 @@
   ansible.builtin.debug:
     var: provision_ccm.stdout_lines
   when: debug_enabled
-
-
