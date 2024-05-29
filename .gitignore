@@ -26,7 +26,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# ignore common security keys
+# Ignore common security keys
 .key
 .crt
 .csr
@@ -34,3 +34,11 @@ Temporary Items
 
 # Ansible playbook runtime
 */buffer/*
+
+# VS Code files for those working on multiple tools
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
