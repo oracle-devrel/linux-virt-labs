@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Launch an instance
-  oci_compute_instance:
+  oracle.oci.oci_compute_instance:
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -51,7 +51,7 @@
     instance_display_name: "{{ result.instance.display_name }}"
 
 - name: Get the vnic attachment details of instance
-  oci_compute_vnic_attachment_facts:
+  oracle.oci.oci_compute_vnic_attachment_facts:
     compartment_id: "{{ my_compartment_id }}"
     instance_id: "{{ instance_id }}"
   register: result
@@ -60,7 +60,7 @@
   until: result is not failed
 
 - name: Get vnic details
-  oci_network_vnic_facts:
+  oracle.oci.oci_network_vnic_facts:
     id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
   retries: 10
@@ -76,12 +76,12 @@
     instance_public_ip: "{{ result.vnic.public_ip }}"
 
 - name: Add block volume to worker nodes for ceph storage
-  when: 
+  when:
     - item.value.type == "worker"
     - use_ceph
   block:
     - name: Create block volume for ceph storage
-      oci_blockstorage_volume:
+      oracle.oci.oci_blockstorage_volume:
         compartment_id: "{{ my_compartment_id }}"
         availability_domain: "{{ my_availability_domain }}"
         display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -90,13 +90,13 @@
       retries: 10
       delay: 30
       until: result is not failed
-   
+
     - name: Set the ceph storage block volume id
       anaible.builtin.set_fact:
         volume_id: "{{ result.volume.id }}"
-   
+
     - name: Attach ceph storage block volume
-      oci_compute_volume_attachment:
+      oracle.oci.oci_compute_volume_attachment:
         instance_id: "{{ instance_id }}"
         type: paravirtualized
         volume_id: "{{ volume_id }}"
@@ -105,7 +105,7 @@
       retries: 10
       delay: 30
       until: result is not failed
-   
+
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
     msg:
@@ -119,7 +119,7 @@
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
-    ansible_ssh_private_key_file: "{{ lookup('env','HOME') + '/.ssh/' + private_key }}"
+    ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
