@@ -93,10 +93,10 @@
 
     - name: Get compartment id from .oci/config or env OCI_COMPARTMENT_OCID
       vars:
-        env_lookup: "{{ default(lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID'), true) }}"
-        ini_lookup: "{{ default(lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}'), true) }}"
+        env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID') }}"
+        ini_lookup: "{{ lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}') }}"
       ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | env_lookup | ini_lookup }}"
+        my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
 
     - name: Print compartment id
       ansible.builtin.debug:
