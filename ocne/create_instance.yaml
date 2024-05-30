@@ -84,7 +84,7 @@
 
     - name: Set to availability domain from list
       ansible.builtin.set_fact:
-        my_availability_domain: "{{ availability_domains[(lookup('ansible.builtin.vars', 'ad_placement')| int) -1].name }}"
+        my_availability_domain: "{{ availability_domains[(lookup('ansible.builtin.vars', 'ad_placement') | int) - 1].name }}"
 
     - name: Print availability domain ad_placement
       ansible.builtin.debug:
@@ -93,7 +93,10 @@
 
     - name: Get compartment id from .oci/config or env OCI_COMPARTMENT_OCID
       ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | default(lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID'), true) | default(lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}'), true) }}"
+        my_compartment_id: "{{ compartment_id | env_lookup | ini_lookup }}"
+      var:
+        env_lookup: "{{ default(lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID'), true) }}"
+        ini_lookup: "{{ default(lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}'), true) }}"
 
     - name: Print compartment id
       ansible.builtin.debug:
@@ -165,11 +168,13 @@
       ansible.builtin.template:
         src: ingress_security_rules.j2
         dest: /tmp/instance_ingress_security_rules.yaml
+        mode: "0664"
 
     - name: Create egress rules yaml list
       ansible.builtin.template:
         src: egress_security_rules.j2
         dest: /tmp/instance_egress_security_rules.yaml
+        mode: "0664"
 
     - name: Load the variables defined in the ingress rules yaml list
       ansible.builtin.include_vars:
@@ -231,13 +236,16 @@
         my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
 
     - name: Set oci vars file
-      ansible.builtin.copy:
-        content:
+      vars:
+        content: |
           my_compartment_id: "{{ my_compartment_id }}"
           my_vcn_id: "{{ my_vcn_id }}"
           my_subnet_id: "{{ my_subnet_id }}"
-          my_subnet_domain_name: "{{ my_subnet_domain_name }}"
+          my_subnet_domain_name: "{{ my_subnet_domain_name }}"        
+      ansible.builtin.copy:
+        content: "{{ content | to_yaml }}"
         dest: oci_vars.yaml
+        mode: "0664"
 
     - name: Get image
       oracle.oci.oci_compute_image_facts:
@@ -298,11 +306,11 @@
 
     - name: Run facts module to get latest information
       ansible.builtin.setup:
-    
+
     - name: Add user account with access to sudo
       ansible.builtin.user:
         name: "{{ username }}"
-        password: "{{ user_default_password | password_hash('sha512') }}"     
+        password: "{{ user_default_password | password_hash('sha512') }}"
         comment: Ansible created user
         groups: wheel
         append: true
@@ -312,15 +320,18 @@
       ansible.posix.authorized_key:
         user: "{{ username }}"
         state: present
-        key: "{{ lookup('file', lookup('env','HOME') + '/.ssh/' + private_key + '.pub' ) }}"
-      
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+
     - name: Set user with passwordless sudo access
+      vars:
+        content: "{{ username}} ALL=(ALL:ALL) NOPASSWD: ALL"
       ansible.builtin.lineinfile:
-        path: '/etc/sudoers.d/{{ username }}'
-        regexp: '{{ username }} ALL='
-        line: '{{ username}} ALL=(ALL:ALL) NOPASSWD: ALL'
+        path: "/etc/sudoers.d/{{ username }}"
+        regexp: "{{ username }} ALL="
+        line: "{{ content }}"
         state: present
-        create: yes
+        create: true
+        mode: "0644"
 
     - name: Add locale settings to .bashrc
       ansible.builtin.lineinfile:
@@ -329,6 +340,7 @@
       with_items:
         - 'export LC_ALL="en_US.UTF-8"'
         - 'export LC_CTYPE="en_US.UTF-8"'
+      become: true
       become_user: "{{ username }}"
 
     - name: Generate ssh keypair for user
@@ -336,6 +348,7 @@
         path: ~/.ssh/id_rsa
         size: 2048
         comment: ocne ssh keypair
+      become: true
       become_user: "{{ username }}"
 
     - name: Fetch public key file from server
@@ -343,6 +356,7 @@
         src: "~/.ssh/id_rsa.pub"
         dest: "buffer/{{ inventory_hostname }}-id_rsa.pub"
         flat: true
+      become: true
       become_user: "{{ username }}"
 
     - name: Copy public key to each destination
@@ -364,21 +378,32 @@
       when: debug_enabled
 
     - name: Accept new ssh fingerprints
-      ansible.builtin.shell: |
-        ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item].ansible_hostname }},{{ hostvars[item].ansible_default_ipv4.address }},{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }} >> ~/.ssh/known_hosts
+      ansible.builtin.command:
+        cmd: ssh-keyscan -t ecdsa-sha2-nistp256 {{ instance_hostname }},{{ instance_ip_address }},{{ instance_fqdn }} >> ~/.ssh/known_hosts
+      vars:
+        instance_hostname: "{{ hostvars[item].ansible_hostname }}"
+        instance_ip_address: "{{ hostvars[item].ansible_default_ipv4.address }}"
+        instance_fqdn: "{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }}"
       with_items:
         - "{{ groups['all'] }}"
+      become: true
       become_user: "{{ username }}"
+      register: result
+      changed_when: result.rc == 0
 
     - name: Configure firewall to log denied packets
-      ansible.builtin.shell: |
-        firewall-cmd --set-log-denied=all
+      ansible.builtin.command:
+        cmd: firewall-cmd --set-log-denied=all
       when: debug_enabled
+      register: firewall_result
+      changed_when: firewall_result.rc == 0
 
     # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
 
     - name: Install Oracle Cloud Native Environment
-      ansible.builtin.import_playbook: "deploy-ocne-{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}.yaml"
+      ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
+      vars:
+        install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
 
 - name: Print instances
   hosts: all
@@ -396,7 +421,9 @@
 
     - name: Pause play to interact with the servers
       ansible.builtin.pause:
-        prompt: "Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort. Aborting at this stage requires manual removal of all cloud resources this playbook creates."
+        prompt: |
+          Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort.
+          Aborting at this stage requires manual removal of all cloud resources this playbook creates.
 
 - name: Terminate instances and delete OCI resources
   hosts: localhost
@@ -449,7 +476,7 @@
           ansible.builtin.debug:
             var: oci_ccm_lb_ids
           when: debug_enabled
-        
+
         - name: Delete oci-ccm load balancer
           oracle.oci.oci_loadbalancer_load_balancer:
             load_balancer_id: "{{ item }}"
