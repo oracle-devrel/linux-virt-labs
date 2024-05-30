@@ -88,10 +88,13 @@
   until: result is not failed
 
 - name: Set load balancer vars file
-  ansible.builtin.copy:
-    content:
+  vars:
+    content: |
       private_load_balancer_ip_addresses: "{{ private_load_balancer_ip_addresses[0].ip_address }}"
+  ansible.builtin.copy:
+    content: "{{ content | to_yaml }}"
     dest: lb_vars.yaml
+    mode: "0644"
 
 - name: Print load balancer ip address
   ansible.builtin.debug:

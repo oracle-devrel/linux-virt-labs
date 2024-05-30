@@ -92,11 +92,11 @@
       when: debug_enabled
 
     - name: Get compartment id from .oci/config or env OCI_COMPARTMENT_OCID
-      ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | env_lookup | ini_lookup }}"
-      var:
+      vars:
         env_lookup: "{{ default(lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID'), true) }}"
         ini_lookup: "{{ default(lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}'), true) }}"
+      ansible.builtin.set_fact:
+        my_compartment_id: "{{ compartment_id | env_lookup | ini_lookup }}"
 
     - name: Print compartment id
       ansible.builtin.debug:
@@ -109,10 +109,10 @@
       when: my_compartment_id is not defined
 
     - name: Generate random hex string
-      ansible.builtin.set_fact:
-        vcn_code: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
       vars:
         hex_chars: '0123456789abcdef'
+      ansible.builtin.set_fact:
+        vcn_code: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
 
     - name: Create a virtual cloud network
       oracle.oci.oci_network_vcn:
@@ -241,7 +241,7 @@
           my_compartment_id: "{{ my_compartment_id }}"
           my_vcn_id: "{{ my_vcn_id }}"
           my_subnet_id: "{{ my_subnet_id }}"
-          my_subnet_domain_name: "{{ my_subnet_domain_name }}"        
+          my_subnet_domain_name: "{{ my_subnet_domain_name }}"
       ansible.builtin.copy:
         content: "{{ content | to_yaml }}"
         dest: oci_vars.yaml
@@ -324,7 +324,7 @@
 
     - name: Set user with passwordless sudo access
       vars:
-        content: "{{ username}} ALL=(ALL:ALL) NOPASSWD: ALL"
+        content: "{{ username }} ALL=(ALL:ALL) NOPASSWD: ALL"
       ansible.builtin.lineinfile:
         path: "/etc/sudoers.d/{{ username }}"
         regexp: "{{ username }} ALL="
@@ -378,12 +378,12 @@
       when: debug_enabled
 
     - name: Accept new ssh fingerprints
-      ansible.builtin.command:
-        cmd: ssh-keyscan -t ecdsa-sha2-nistp256 {{ instance_hostname }},{{ instance_ip_address }},{{ instance_fqdn }} >> ~/.ssh/known_hosts
       vars:
         instance_hostname: "{{ hostvars[item].ansible_hostname }}"
         instance_ip_address: "{{ hostvars[item].ansible_default_ipv4.address }}"
         instance_fqdn: "{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }}"
+      ansible.builtin.command:
+        cmd: ssh-keyscan -t ecdsa-sha2-nistp256 {{ instance_hostname }},{{ instance_ip_address }},{{ instance_fqdn }} >> ~/.ssh/known_hosts
       with_items:
         - "{{ groups['all'] }}"
       become: true
@@ -401,9 +401,9 @@
     # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
 
     - name: Install Oracle Cloud Native Environment
-      ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
       vars:
         install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
+      ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
 
 - name: Print instances
   hosts: all

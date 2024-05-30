@@ -8,6 +8,7 @@
   ansible.builtin.template:
     src: istio-lb.j2
     dest: ~/istio-lb.yaml
+    mode: "0644"
   become: true
   become_user: "{{ username }}"
 
@@ -20,6 +21,7 @@
   become_user: "{{ username }}"
   register: provision_istio
   when: ocne_provision.stat.exists
+  change_when: provision_istio.rc == 0
 
 - name: Print istio provision output
   ansible.builtin.debug:
@@ -35,6 +37,7 @@
   become_user: "{{ username }}"
   register: provision_istio
   when: ocne_provision.stat.exists
+  change_when: provision_istio.rc == 0
 
 - name: Print istio provision output
   ansible.builtin.debug:

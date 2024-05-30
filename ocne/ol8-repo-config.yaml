@@ -17,7 +17,7 @@
   changed_when: dnf_result.rc == 0
 
 - name: Disable ol8 old ocne repos
-  ansible.builtin.command: 
+  ansible.builtin.command:
     cmd: dnf config-manager --disable {{ ol8_disable_repo }} ol8_developer
   register: dnf_result
   changed_when: dnf_result.rc == 0

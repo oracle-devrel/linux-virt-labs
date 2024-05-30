@@ -50,9 +50,11 @@
     --oci-lb-subnet1 {{ my_subnet_id }}
   args:
     chdir: ~/
+  become: true
   become_user: "{{ username }}"
   register: provision_ccm
   when: ocne_provision.stat.exists
+  changed_when: provision_ccm.rc == 0
 
 - name: Print oci-ccm provision output
   ansible.builtin.debug:
@@ -64,9 +66,11 @@
     olcnectl module install --environment-name myenvironment --name myoci
   args:
     chdir: ~/
+  become: true
   become_user: "{{ username }}"
   register: provision_ccm
   when: ocne_provision.stat.exists
+  changed_when: provision_ccm.rc == 0
 
 - name: Print oci-ccm provision output
   ansible.builtin.debug:

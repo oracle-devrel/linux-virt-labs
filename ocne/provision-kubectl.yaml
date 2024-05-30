@@ -9,6 +9,7 @@
     path: ~/.kube
     state: directory
     mode: '0755'
+  become: true
   become_user: "{{ username }}"
   delegate_to: "{{ item }}"
   loop: "{{ groups['controlplane'] }}"
@@ -28,6 +29,7 @@
   ansible.builtin.lineinfile:
     path: ~/.bashrc
     line: 'export KUBECONFIG=$HOME/.kube/config'
+  become: true
   become_user: "{{ username }}"
   delegate_to: "{{ item }}"
   loop: "{{ groups['controlplane'] }}"
@@ -43,6 +45,8 @@
       ansible.builtin.template:
         src: fss-pv.j2
         dest: ~/fss-pv.yaml
+        mode: "0644"
+      become: true
       become_user: "{{ username }}"
       delegate_to: "{{ item }}"
       loop: "{{ groups['controlplane'] }}"
@@ -51,6 +55,8 @@
       ansible.builtin.template:
         src: fss-pvc.j2
         dest: ~/fss-pvc.yaml
+        mode: "0644"
+      become: true
       become_user: "{{ username }}"
       delegate_to: "{{ item }}"
       loop: "{{ groups['controlplane'] }}"
@@ -59,6 +65,8 @@
       ansible.builtin.template:
         src: fss-pod.j2
         dest: ~/fss-pod.yaml
+        mode: "0644"
+      become: true
       become_user: "{{ username }}"
       delegate_to: "{{ item }}"
       loop: "{{ groups['controlplane'] }}"
