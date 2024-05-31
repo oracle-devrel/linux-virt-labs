@@ -394,10 +394,18 @@
 
     # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
 
-    - name: Install Oracle Cloud Native Environment
-      vars:
-        install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
-      ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
+    - name: Do not install ocne
+      ansible.builtin.import_playbook: "deploy-ocne-none.yaml"
+      when: ocne_type == "none"
+        
+    - name: Install ocne "quick"
+      ansible.builtin.import_playbook: "deploy-ocne-quick.yaml"
+      when: ocne_type == "quick"
+        
+    # - name: Install Oracle Cloud Native Environment
+    #   vars:
+    #     install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
+    #   ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
 
 - name: Print instances
   hosts: all
