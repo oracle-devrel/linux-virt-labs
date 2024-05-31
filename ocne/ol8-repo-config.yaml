@@ -7,8 +7,7 @@
 - name: Add olcne ol8 repository
   ansible.builtin.dnf:
     name: oracle-olcne-release-el8
-    state: latest
-    update_only: true
+    state: present
 
 - name: Enable ol8 current ocne repo
   ansible.builtin.command:
