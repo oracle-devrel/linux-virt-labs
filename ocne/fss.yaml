@@ -83,11 +83,11 @@
 
 - name: Set file_system vars file
   vars:
-    content: |
+    fss_vars_content: |
       file_system_id: "{{ file_system_id }}"
       mount_target_ip_address: "{{ mount_target_ip_address }}"
       export_path: "{{ export_path }}"
   ansible.builtin.copy:
-    content: "{{ content | to_yaml }}"
+    content: "{{ fss_vars_content | to_nice_yaml }}"
     dest: fss_vars.yaml
     mode: "0664"

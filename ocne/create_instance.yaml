@@ -237,13 +237,13 @@
 
     - name: Set oci vars file
       vars:
-        content: |
+        oci_content: |
           my_compartment_id: "{{ my_compartment_id }}"
           my_vcn_id: "{{ my_vcn_id }}"
           my_subnet_id: "{{ my_subnet_id }}"
           my_subnet_domain_name: "{{ my_subnet_domain_name }}"
       ansible.builtin.copy:
-        content: "{{ content | to_yaml }}"
+        content: "{{ oci_content | to_nice_yaml }}"
         dest: oci_vars.yaml
         mode: "0664"
 
@@ -324,11 +324,11 @@
 
     - name: Set user with passwordless sudo access
       vars:
-        content: "{{ username }} ALL=(ALL:ALL) NOPASSWD: ALL"
+        sudo_content: "{{ username }} ALL=(ALL:ALL) NOPASSWD: ALL"
       ansible.builtin.lineinfile:
         path: "/etc/sudoers.d/{{ username }}"
         regexp: "{{ username }} ALL="
-        line: "{{ content }}"
+        line: "{{ sudo_content }}"
         state: present
         create: true
         mode: "0644"
