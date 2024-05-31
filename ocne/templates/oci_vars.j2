@@ -4,16 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: fss-pvc
-spec:
-  accessModes:
-    - ReadWriteMany
-  storageClassName: ""
-  resources:
-    requests:
-      storage: 50Gi
-  volumeName: fss-pv
-
+my_compartment_id: {{ my_compartment_id }}
+my_vcn_id: {{ my_vcn_id }}
+my_subnet_id: {{ my_subnet_id }}
+my_subnet_domain_name: {{ my_subnet_domain_name }}

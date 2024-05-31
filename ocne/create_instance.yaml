@@ -236,14 +236,8 @@
         my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
 
     - name: Set oci vars file
-      vars:
-        oci_content: |
-          my_compartment_id: "{{ my_compartment_id }}"
-          my_vcn_id: "{{ my_vcn_id }}"
-          my_subnet_id: "{{ my_subnet_id }}"
-          my_subnet_domain_name: "{{ my_subnet_domain_name }}"
-      ansible.builtin.copy:
-        content: "{{ oci_content | to_nice_yaml }}"
+      ansible.builtin.template:
+        src: oci_vars.j2
         dest: oci_vars.yaml
         mode: "0664"
 
