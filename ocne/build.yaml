@@ -122,7 +122,7 @@
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
-    ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
