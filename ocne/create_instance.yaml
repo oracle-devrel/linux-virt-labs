@@ -297,7 +297,7 @@
 
     - name: Print all variables/facts known for a host
       ansible.builtin.debug:
-        var: hostvars['{{ item }}']
+        msg: "{{ hostvars[item] }}"
       loop: "{{ groups['all'] | flatten(levels=1) }}"
       when: debug_enabled
 
