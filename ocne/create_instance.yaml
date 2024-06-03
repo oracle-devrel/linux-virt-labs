@@ -267,17 +267,6 @@
       ansible.builtin.include_tasks: "build.yaml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
-    - name: Print in-memory inventory
-      ansible.builtin.debug:
-        msg: "{{ groups['all'] }}"
-      when: debug_enabled
-
-    - name: Print all variables/facts known for a host
-      ansible.builtin.debug:
-        var: hostvars[{{ item }}]
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-      when: debug_enabled
-
     - name: Set file system storage
       ansible.builtin.include_tasks: "fss.yaml"
       when: use_fss
@@ -300,6 +289,17 @@
     debug_enabled: false
 
   tasks:
+
+    - name: Print in-memory inventory
+      ansible.builtin.debug:
+        msg: "{{ groups['all'] }}"
+      when: debug_enabled
+
+    - name: Print all variables/facts known for a host
+      ansible.builtin.debug:
+        var: hostvars['{{ item }}']
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+      when: debug_enabled
 
     - name: Wait for system to become reachable
       ansible.builtin.wait_for_connection:
