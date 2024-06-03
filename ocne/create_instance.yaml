@@ -301,6 +301,13 @@
       loop: "{{ groups['all'] | flatten(levels=1) }}"
       when: debug_enabled
 
+    - name: Waiting for the port tcp/22 to be open
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[inventory_hostname].ansible_host }}"
+        port: 22
+        state: "started"
+        timeout: 180
+
     - name: Wait for system to become reachable
       ansible.builtin.wait_for_connection:
 
