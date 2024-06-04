@@ -443,6 +443,7 @@
         msg:
           - "OCI repository name: {{ ocir_name }}"
           - "  namespace: {{ ocir_namespace }}"
+      when: use_ocir
 
     - name: Pause play to interact with the servers
       ansible.builtin.pause:
