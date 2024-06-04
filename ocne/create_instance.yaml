@@ -32,7 +32,7 @@
     instance_ocpus: 2
     instance_memory: 32
     private_key: "id_rsa"
-    ansible_python_interpreter: "{{ localhost_python_interpreter }}"
+    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
     debug_enabled: false
 
   tasks:
@@ -389,8 +389,8 @@
         instance_hostname: "{{ hostvars[item].ansible_hostname }}"
         instance_ip_address: "{{ hostvars[item].ansible_default_ipv4.address }}"
         instance_fqdn: "{{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }}"
-      ansible.builtin.command:
-        cmd: "ssh-keyscan -t ecdsa-sha2-nistp256 {{ instance_hostname }},{{ instance_ip_address }},{{ instance_fqdn }} >> ~/.ssh/known_hosts"
+      ansible.builtin.shell: |
+        ssh-keyscan -t ecdsa-sha2-nistp256 {{ instance_hostname }},{{ instance_ip_address }},{{ instance_fqdn }} >> ~/.ssh/known_hosts
       with_items:
         - "{{ groups['all'] }}"
       become: true
@@ -437,7 +437,7 @@
   vars_files:
     - default_vars.yaml
   vars:
-    ansible_python_interpreter: "{{ localhost_python_interpreter }}"
+    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
 
   tasks:
 
