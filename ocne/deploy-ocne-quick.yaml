@@ -176,8 +176,17 @@
         - ocne_type != 'none'
         - use_istio
 
+    - name: Create ceph deployment descriptors
+      ansible.builtin.include_tasks: "ceph.yaml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - use_ceph
+
     - name: Provision kubectl
       ansible.builtin.include_tasks: "provision-kubectl.yaml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
+
+

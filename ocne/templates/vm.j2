@@ -1,0 +1,55 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: ol9-nocloud
+spec:
+  running: true
+  template:
+    spec:
+      terminationGracePeriodSeconds: 30
+      networks:
+      - name: foo
+        pod: {}
+      domain:
+        cpu:
+          cores: 2
+          sockets: 1
+          threads: 1
+        resources:
+          requests:
+            memory: 2048M
+        devices:
+          interfaces:
+          - name: foo
+            masquerade: {}
+            ports:
+            - port: 80
+            - port: 22
+          disks:
+          - name: containerdisk
+            disk:
+              bus: virtio
+          - name: mypvcdisk
+            disk:
+              bus: virtio
+          - name: cloudinitdisk
+            disk:
+              bus: virtio
+      volumes:
+      - name: containerdisk
+        containerDisk:
+          image: fra.ocir.io/OCIR_NAMESPACE/demo/oraclelinux-cloud:9.2-terminal
+          imagePullSecret: ocirsecret
+      - name: mypvcdisk
+        persistentVolumeClaim:
+          claimName: cephfs-pvc
+      - name: cloudinitdisk
+        cloudInitNoCloud:
+          secretRef:
+            name: vmi-userdata-secret
