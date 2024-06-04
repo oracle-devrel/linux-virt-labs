@@ -43,6 +43,7 @@
     - name: Disable swap
       ansible.builtin.shell: |
         swapoff -a
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Disable swap in fstab
       ansible.builtin.replace:
@@ -85,6 +86,7 @@
     - name: Ensure br_netfilter module loads on boot
       ansible.builtin.shell: |
         echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Install olcne packages
       ansible.builtin.dnf:
@@ -122,22 +124,35 @@
     - name: Generate X.509 Certificate Authority
       ansible.builtin.command: |
         olcnectl certificates generate --nodes {{ control_plane_nodes }} --cert-dir /tmp/certificates --one-cert
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Create X.509 Certificates and Copy to Nodes
       ansible.builtin.command: |
-        olcnectl certificates distribute --byo-ca-cert /tmp/certificates/ca/ca.cert --byo-ca-key /tmp/certificates/ca/ca.key --cert-dir /tmp/certificates --nodes {{ control_plane_nodes }}
+        olcnectl certificates distribute \
+         --byo-ca-cert /tmp/certificates/ca/ca.cert \
+         --byo-ca-key /tmp/certificates/ca/ca.key \
+         --cert-dir /tmp/certificates \
+         --nodes {{ control_plane_nodes }}
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Create X.509 Certificates for restricted external IPs webhook
+      vars:
+        extip_node1: "externalip-validation-webhook-service.externalip-validation-system.svc"
+        extip_node2: "externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local"
       ansible.builtin.shell: |
         olcnectl certificates generate \
-          --nodes externalip-validation-webhook-service.externalip-validation-system.svc,externalip-validation-webhook-service.externalip-validation-system.svc.cluster.local \
+          --nodes "{{ extip_node1 }},{{ extip_node2 }}" \
           --cert-dir /tmp/certificates/restrict_external_ip \
           --byo-ca-cert /tmp/certificates/ca/ca.cert \
           --byo-ca-key /tmp/certificates/ca/ca.key \
           --one-cert
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Start OLCNE API Server with Certificate
       ansible.builtin.shell:
@@ -149,6 +164,7 @@
           --olcne-node-key-path /etc/olcne/certificates/node.key \
           --vault-cert-sans 127.0.0.1 \
           --olcne-component api-server
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Start OLCNE Agent with the Certificates
       ansible.builtin.shell:
@@ -159,3 +175,4 @@
           --olcne-ca-path /etc/olcne/certificates/ca.cert \
           --olcne-node-key-path /etc/olcne/certificates/node.key \
           --olcne-component agent
+      changed_when: provision_kubernetes.rc == 0

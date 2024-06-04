@@ -12,7 +12,9 @@
         olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Create Kubernetes Module
       ansible.builtin.shell: |
@@ -26,22 +28,28 @@
         --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Validate Kubernetes Module
       ansible.builtin.shell: |
         olcnectl module validate --environment-name myenvironment --name mycluster
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Install Kubernetes Module
       ansible.builtin.shell: |
         olcnectl module install --environment-name myenvironment --name mycluster
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
       register: provision_kubernetes
+      changed_when: provision_kubernetes.rc == 0
 
 - name: Create environment with lb using manual install method
   when:
@@ -57,7 +65,9 @@
         olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Create Kubernetes Module
       ansible.builtin.shell: |
@@ -72,22 +82,28 @@
         --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Validate Kubernetes Module
       ansible.builtin.shell: |
         olcnectl module validate --environment-name myenvironment --name mycluster
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
 
     - name: Install Kubernetes Module
       ansible.builtin.shell: |
         olcnectl module install --environment-name myenvironment --name mycluster
       args:
         chdir: ~/
+      become: true
       become_user: "{{ username }}"
       register: provision_kubernetes
+      changed_when: provision_kubernetes.rc == 0
 
 # - name: Create file myenvironment.yaml
 #   ansible.builtin.template:
@@ -127,6 +143,8 @@
   ansible.builtin.file:
     path: ~/.ocne-provisioned
     state: touch
+    mode: "0644"
+  become: true
   become_user: "{{ username }}"
   when: provision_kubernetes.rc == 0
 
@@ -135,8 +153,10 @@
     olcnectl module instances --api-server "{{ operator_nodes }}":8091 --environment-name myenvironment --update-config
   args:
     chdir: ~/
+  become: true
   become_user: "{{ username }}"
   when: provision_kubernetes.rc == 0
+  changed_when: provision_kubernetes.rc == 0
 
 # - name: Save out ocne config
 #   ansible.builtin.shell: |
