@@ -5,6 +5,6 @@
 # See LICENSE.TXT for details.
 
 - name: Delete Private Load Balancer
-  oracle.oci.oci_loadbalancer_load_balancer:
-    load_balancer_id: "{{ private_load_balancer_id }}"
+  oracle.oci.oci_artifacts_container_repository:
+    repository_id: "{{ ocir_id }}"
     state: 'absent'

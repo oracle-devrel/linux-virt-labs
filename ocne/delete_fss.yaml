@@ -5,16 +5,16 @@
 # See LICENSE.TXT for details.
 
 - name: Delete Export
-  oci_file_storage_export:
+  oracle.oci.oci_file_storage_export:
     id: "{{ export_id }}"
     state: 'absent'
 
 - name: Delete Mount Target
-  oci_file_storage_mount_target:
+  oracle.oci.oci_file_storage_mount_target:
     id: "{{ mount_target_id }}"
     state: 'absent'
 
 - name: Delete File System
-  oci_file_storage_file_system:
+  oracle.oci.oci_file_storage_file_system:
     id: "{{ file_system_id }}"
     state: 'absent'

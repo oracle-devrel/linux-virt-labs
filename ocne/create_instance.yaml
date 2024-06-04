@@ -275,6 +275,10 @@
       ansible.builtin.include_tasks: "lb.yaml"
       when: use_lb
 
+    - name: Set oci repository
+      ansible.builtin.include_tasks: "ocir.yaml"
+      when: use_ocir
+
 - name: Configure new instances
   hosts: all
   become: true
@@ -429,6 +433,12 @@
           - "  public ip: {{ hostvars[inventory_hostname]['ansible_host'] }}"
           - "  private ip: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
 
+    - name: Print oci repository details
+      ansible.builtin.debug:
+        msg:
+          - "OCI repository name: {{ ocir_name }}"
+          - "  namespace: {{ ocir_namespace }}"
+
     - name: Pause play to interact with the servers
       ansible.builtin.pause:
         prompt: |
@@ -451,6 +461,10 @@
     - name: Delete control plane load balancer
       ansible.builtin.include_tasks: "delete_lb.yaml"
       when: use_lb
+
+    - name: Delete oci repository
+      ansible.builtin.include_tasks: "delete_ocir.yaml"
+      when: use_ocir
 
     - name: Terminate the instances
       oracle.oci.oci_compute_instance:
