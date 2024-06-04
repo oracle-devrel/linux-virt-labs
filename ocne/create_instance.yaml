@@ -268,15 +268,15 @@
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
     - name: Set file system storage
-      ansible.builtin.include_tasks: "fss.yaml"
+      ansible.builtin.include_tasks: "create-fss.yaml"
       when: use_fss
 
     - name: Set load balancer
-      ansible.builtin.include_tasks: "lb.yaml"
+      ansible.builtin.include_tasks: "create-lb.yaml"
       when: use_lb
 
     - name: Set oci repository
-      ansible.builtin.include_tasks: "ocir.yaml"
+      ansible.builtin.include_tasks: "create-ocir.yaml"
       when: use_ocir
 
 - name: Configure new instances
@@ -472,15 +472,15 @@
   tasks:
 
     - name: Delete file system storage
-      ansible.builtin.include_tasks: "delete_fss.yaml"
+      ansible.builtin.include_tasks: "delete-fss.yaml"
       when: use_fss
 
     - name: Delete control plane load balancer
-      ansible.builtin.include_tasks: "delete_lb.yaml"
+      ansible.builtin.include_tasks: "delete-lb.yaml"
       when: use_lb
 
     - name: Delete oci repository
-      ansible.builtin.include_tasks: "delete_ocir.yaml"
+      ansible.builtin.include_tasks: "delete-ocir.yaml"
       when: use_ocir
 
     - name: Terminate the instances

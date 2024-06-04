@@ -4,8 +4,6 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-# Write out configuration files for Rook/Ceph
-
 - name: Add cluster configuration file
   ansible.builtin.template:
     src: cluster.j2

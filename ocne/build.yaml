@@ -78,7 +78,7 @@
 - name: Add block volume to worker nodes for ceph storage
   when:
     - item.value.type == "worker"
-    - use_ceph
+    - add_ceph_block_storage
   block:
     - name: Create block volume for ceph storage
       oracle.oci.oci_blockstorage_volume:

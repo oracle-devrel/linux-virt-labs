@@ -177,11 +177,18 @@
         - use_istio
 
     - name: Create ceph deployment descriptors
-      ansible.builtin.include_tasks: "ceph.yaml"
+      ansible.builtin.include_tasks: "ceph-deployments.yaml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
-        - use_ceph
+        - add_ceph_block_storage
+
+    - name: Create fss deployment descriptors
+      ansible.builtin.include_tasks: "fss-deployments.yaml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - use_fss
 
     - name: Provision kubectl
       ansible.builtin.include_tasks: "provision-kubectl.yaml"
