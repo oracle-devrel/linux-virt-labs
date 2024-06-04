@@ -286,6 +286,7 @@
   vars_files:
     - default_vars.yaml
     - oci_vars.yaml
+    - ocir_vars.yaml
   vars:
     username: "oracle"
     user_default_password: "oracle"

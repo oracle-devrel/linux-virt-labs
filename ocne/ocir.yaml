@@ -33,3 +33,9 @@
       - "{{ ocir_name }}"
       - "{{ ocir_namespace }}"
   when: debug_enabled
+
+- name: Set ocir vars file
+  ansible.builtin.template:
+    src: ocir_vars.j2
+    dest: ocir_vars.yaml
+    mode: "0664"
