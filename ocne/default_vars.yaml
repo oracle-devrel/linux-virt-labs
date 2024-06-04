@@ -28,6 +28,7 @@ use_oci_ccm: false
 use_istio: false
 use_fss: false
 add_ceph_block_storage: false
+add_ceph_deployments: false
 use_ocir: false
 ceph_volume_size_in_gbs: 50
 ol8_enable_repo: "ol8_olcne18"

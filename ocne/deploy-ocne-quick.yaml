@@ -181,7 +181,7 @@
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
-        - add_ceph_block_storage
+        - add_ceph_deployments
 
     - name: Create fss deployment descriptors
       ansible.builtin.include_tasks: "fss-deployments.yaml"
