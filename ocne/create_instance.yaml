@@ -298,12 +298,16 @@
       ansible.builtin.debug:
         msg: "{{ groups['all'] }}"
       when: debug_enabled
+      delegate_to: localhost
+      run_once: true
 
     - name: Print all variables/facts known for a host
       ansible.builtin.debug:
         msg: "{{ hostvars[item] }}"
       loop: "{{ groups['all'] | flatten(levels=1) }}"
       when: debug_enabled
+      delegate_to: localhost
+      run_once: true
 
     - name: Waiting for the port tcp/22 to be open
       ansible.builtin.wait_for:

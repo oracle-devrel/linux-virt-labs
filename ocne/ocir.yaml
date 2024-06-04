@@ -18,9 +18,18 @@
 - name: Print oci repository details
   ansible.builtin.debug:
     msg: "OCI repository details: {{ result.container_repository }}"
+  when: debug_enabled
 
 - name: Set oci repository facts
   ansible.builtin.set_fact:
     ocir_id: "{{ result.container_repository.id }}"
     ocir_name: "{{ result.container_repository.display_name }}"
     ocir_namespace: "{{ result.container_repository.namespace }}"
+
+- name: Print oci repository facts
+  ansible.builtin.debug:
+    msg:
+      - "{{ ocir_id }}"
+      - "{{ ocir_name }}"
+      - "{{ ocir_namespace }}"
+  when: debug_enabled
