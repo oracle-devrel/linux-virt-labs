@@ -33,4 +33,3 @@
   become_user: "{{ username }}"
   delegate_to: "{{ item }}"
   loop: "{{ groups['controlplane'] }}"
-
