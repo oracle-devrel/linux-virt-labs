@@ -6,7 +6,7 @@
 
 - name: Create custome istio configuration file
   ansible.builtin.template:
-    src: istio-lb.j2
+    src: istio_lb.j2
     dest: ~/istio-lb.yaml
     mode: "0644"
   become: true

@@ -10,7 +10,7 @@
 
 - name: Create file fss-pv.yaml
   ansible.builtin.template:
-    src: fss-pv.j2
+    src: fss_pv.j2
     dest: ~/fss-pv.yaml
     mode: "0644"
   become: true
@@ -20,7 +20,7 @@
 
 - name: Create file fss-pvc.yaml
   ansible.builtin.template:
-    src: fss-pvc.j2
+    src: fss_pvc.j2
     dest: ~/fss-pvc.yaml
     mode: "0644"
   become: true
@@ -30,7 +30,7 @@
 
 - name: Create file fss-pod.yaml
   ansible.builtin.template:
-    src: fss-pod.j2
+    src: fss_pod.j2
     dest: ~/fss-pod.yaml
     mode: "0644"
   become: true

@@ -27,11 +27,11 @@
       changed_when: provision_kubernetes.rc == 0
 
     - name: Setup olcne ol8 repos
-      ansible.builtin.include_tasks: ol8-repo-config.yaml
+      ansible.builtin.include_tasks: ol8_repo_config.yml
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Setup olcne ol9 repos
-      ansible.builtin.include_tasks: ol9-repo-config.yaml
+      ansible.builtin.include_tasks: ol9_repo_config.yml
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install chrony
@@ -339,7 +339,7 @@
       when: not ocne_provision.stat.exists
 
     - name: Include steps to fully install ocne
-      ansible.builtin.include_tasks: provision-ocne-full.yaml
+      ansible.builtin.include_tasks: provision_ocne.yml
       when:
         - not ocne_provision.stat.exists
         - use_ocne_full
@@ -352,39 +352,39 @@
       register: ocne_provision
 
     - name: Include oci-ccm bash env vars
-      ansible.builtin.include_tasks: preconfig-oci-ccm.yaml
+      ansible.builtin.include_tasks: preconfig_oci_ccm.yml
       when: oci_ccm_bash
 
     - name: Provision oci-ccm
-      ansible.builtin.include_tasks: "provision-oci-ccm.yaml"
+      ansible.builtin.include_tasks: "provision_oci_ccm.yml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
         - use_oci_ccm
 
     - name: Provision istio
-      ansible.builtin.include_tasks: "provision-istio.yaml"
+      ansible.builtin.include_tasks: "provision_istio.yml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
         - use_istio
 
     - name: Create ceph deployment descriptors
-      ansible.builtin.include_tasks: "ceph-deployments.yaml"
+      ansible.builtin.include_tasks: "ceph_deployments.yml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
         - add_ceph_deployments
 
     - name: Create fss deployment descriptors
-      ansible.builtin.include_tasks: "fss-deployments.yaml"
+      ansible.builtin.include_tasks: "fss_deployments.yml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'
         - use_fss
 
     - name: Provision kubectl
-      ansible.builtin.include_tasks: "provision-kubectl.yaml"
+      ansible.builtin.include_tasks: "provision_kubectl.yml"
       when:
         - ocne_provision.stat.exists
         - ocne_type != 'none'

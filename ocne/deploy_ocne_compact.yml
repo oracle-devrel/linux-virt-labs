@@ -22,11 +22,11 @@
       when: debug_enabled
 
     - name: Setup olcne ol8 repos
-      ansible.builtin.include_tasks: ol8-repo-config.yaml
+      ansible.builtin.include_tasks: ol8_repo_config.yml
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Setup olcne ol9 repos
-      ansible.builtin.include_tasks: ol9-repo-config.yaml
+      ansible.builtin.include_tasks: ol9_repo_config.yml
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install chrony

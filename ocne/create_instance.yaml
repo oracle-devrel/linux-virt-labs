@@ -264,19 +264,19 @@
         ol_image_id: "{{ result.images[0].id }}"
 
     - name: Build an instance
-      ansible.builtin.include_tasks: "build.yaml"
+      ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
     - name: Set file system storage
-      ansible.builtin.include_tasks: "create-fss.yaml"
+      ansible.builtin.include_tasks: "create_fss.yml"
       when: use_fss
 
     - name: Set load balancer
-      ansible.builtin.include_tasks: "create-lb.yaml"
+      ansible.builtin.include_tasks: "create_lb.yml"
       when: use_lb
 
     - name: Set oci repository
-      ansible.builtin.include_tasks: "create-ocir.yaml"
+      ansible.builtin.include_tasks: "create_ocir.yml"
       when: use_ocir
 
 - name: Configure new instances
@@ -426,7 +426,7 @@
 - name: Install Oracle Cloud Native Environment
   vars:
     install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
-  ansible.builtin.import_playbook: "deploy-ocne-{{ install_type }}.yaml"
+  ansible.builtin.import_playbook: "deploy_ocne_{{ install_type }}.yml"
 
 - name: Print instances
   hosts: all
@@ -472,15 +472,15 @@
   tasks:
 
     - name: Delete file system storage
-      ansible.builtin.include_tasks: "delete-fss.yaml"
+      ansible.builtin.include_tasks: "delete_fss.yml"
       when: use_fss
 
     - name: Delete control plane load balancer
-      ansible.builtin.include_tasks: "delete-lb.yaml"
+      ansible.builtin.include_tasks: "delete_lb.yml"
       when: use_lb
 
     - name: Delete oci repository
-      ansible.builtin.include_tasks: "delete-ocir.yaml"
+      ansible.builtin.include_tasks: "delete_ocir.yml"
       when: use_ocir
 
     - name: Terminate the instances
