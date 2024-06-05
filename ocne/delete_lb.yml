@@ -4,17 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Delete Export
-  oci_file_storage_export:
-    id: "{{ export_id }}"
-    state: 'absent'
-
-- name: Delete Mount Target
-  oci_file_storage_mount_target:
-    id: "{{ mount_target_id }}"
-    state: 'absent'
-
-- name: Delete File System
-  oci_file_storage_file_system:
-    id: "{{ file_system_id }}"
+- name: Delete Private Load Balancer
+  oracle.oci.oci_loadbalancer_load_balancer:
+    load_balancer_id: "{{ private_load_balancer_id }}"
     state: 'absent'

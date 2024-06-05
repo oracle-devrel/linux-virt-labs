@@ -1,0 +1,167 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create environment using manual install method
+  when: groups['controlplane'] | length < 2
+  block:
+    - name: Create environment
+      ansible.builtin.shell: |
+        olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Create Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+        --container-registry {{ ocne_registry_location }} \
+        --control-plane-nodes {{ control_nodes }} \
+        --worker-nodes {{ worker_nodes }} \
+        --selinux enforcing \
+        --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+        --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+        --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Validate Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module validate --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Install Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module install --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      register: provision_kubernetes
+      changed_when: provision_kubernetes.rc == 0
+
+- name: Create environment with lb using manual install method
+  when:
+    - groups['controlplane'] | length > 1
+    - use_lb
+  block:
+    - name: Include lb vars
+      ansible.builtin.include_vars:
+        file: lb_vars.yml
+
+    - name: Create environment
+      ansible.builtin.shell: |
+        olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Create Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+        --container-registry {{ ocne_registry_location }} \
+        --load-balancer "{{ private_load_balancer_ip_addresses }}":6443 \
+        --control-plane-nodes {{ control_nodes }} \
+        --worker-nodes {{ worker_nodes }} \
+        --selinux enforcing \
+        --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+        --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+        --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Validate Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module validate --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      changed_when: provision_kubernetes.rc == 0
+
+    - name: Install Kubernetes Module
+      ansible.builtin.shell: |
+        olcnectl module install --environment-name myenvironment --name mycluster
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      register: provision_kubernetes
+      changed_when: provision_kubernetes.rc == 0
+
+# - name: Create file myenvironment.yaml
+#   ansible.builtin.template:
+#     src: myenvironment.j2
+#     dest: ~/myenvironment.yaml
+#   become_user: "{{ username }}"
+
+# - name: Create environment
+#   ansible.builtin.shell: |
+#     olcnectl environment create --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+
+# - name: Create/Validate Kubernetes Module
+#   ansible.builtin.shell: |
+#     olcnectl module create --config-file myenvironment.yaml
+#     olcnectl module validate --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+
+# - name: Install Kubernetes Module
+#   ansible.builtin.shell: |
+#     olcnectl module install --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+#   register: provision_kubernetes
+
+- name: Print kubernetes provision output
+  ansible.builtin.debug:
+    var: provision_kubernetes
+  when: debug_enabled
+
+- name: Tag OCNE as provisioned
+  ansible.builtin.file:
+    path: ~/.ocne-provisioned
+    state: touch
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  when: provision_kubernetes.rc == 0
+
+- name: Save out ocne config
+  ansible.builtin.shell: |
+    olcnectl module instances --api-server "{{ operator_nodes }}":8091 --environment-name myenvironment --update-config
+  args:
+    chdir: ~/
+  become: true
+  become_user: "{{ username }}"
+  when: provision_kubernetes.rc == 0
+  changed_when: provision_kubernetes.rc == 0
+
+# - name: Save out ocne config
+#   ansible.builtin.shell: |
+#     olcnectl module instances --config-file myenvironment.yaml --update-config
+#   args:
+#     chdir: ~/
+#   become_user: "{{ username }}"
+#   when: ocne_provision.stat.exists

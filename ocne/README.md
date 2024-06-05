@@ -9,7 +9,7 @@ This sample includes a series of playbooks that:
    - (Optional) File System Storage
    - (Optional) Load Balancer
 
- - provision a 4-node (default) Oracle Cloud Native Environment using the included `defaults_vars.yaml` file.
+ - provision a 4-node (default) Oracle Cloud Native Environment using the included `defaults_vars.yml` file.
  
 # Instructions
 
@@ -26,7 +26,7 @@ To run the sample, after ensuring that you have the prerequisites for OCI Ansibl
  > Sample:
  > 
  > ```shell
- > cat << EOF | tee sample.yaml > /dev/null 
+ > cat << EOF | tee sample.yml > /dev/null 
  > ad_placement: 2 
  > compartment_id: "ocid1.compartment.oc1..aaa..............zzz" 
  > private_key: "my_sshkey" 
@@ -36,13 +36,13 @@ To run the sample, after ensuring that you have the prerequisites for OCI Ansibl
 Install the required collections:
 
  ```shell
- ansible-galaxy collection install -r requirements.yaml
+ ansible-galaxy collection install -r requirements.yml
  ```
 
 Deploy the lab environment by running the following:
 
  ```shell
- ansible-playbook create_instance.yaml -e "@<name_of_new_YAML_vars_file>.yaml"
+ ansible-playbook create_instance.yml -e "@<name_of_new_YAML_vars_file>.yml"
  ```
 
 You can pass extra variables or variable files on the `ansible-playbook` command line using `-e` or `--extra-vars`. Ansible treats these variables as having the highest precedence and reads them from the command line from left to right.
@@ -50,7 +50,7 @@ You can pass extra variables or variable files on the `ansible-playbook` command
  > Sample:
  > 
  > ```shell
- > ansible-playbook create_instance.yaml -e "@sample.yaml" -e debug_enabled=true
+ > ansible-playbook create_instance.yml -e "@sample.yml" -e debug_enabled=true
  > ```
 
 # More Learning Resources

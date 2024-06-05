@@ -65,10 +65,10 @@
     export_set_id: "{{ export_set_id }}"
     file_system_id: "{{ file_system_id }}"
     export_options:
-          - source: "0.0.0.0/0"
-            require_privileged_source_port: False
-            access: "READ_WRITE"
-            identity_squash: "NONE"
+      - source: "0.0.0.0/0"
+        require_privileged_source_port: false
+        access: "READ_WRITE"
+        identity_squash: "NONE"
     path: "/fss-ocne"
     state: present
   register: result
@@ -82,9 +82,7 @@
     export_path: "{{ result.export.path }}"
 
 - name: Set file_system vars file
-  ansible.builtin.copy:
-    content:
-      file_system_id: "{{ file_system_id }}"
-      mount_target_ip_address: "{{ mount_target_ip_address }}"
-      export_path: "{{ export_path }}"
-    dest: fss_vars.yaml
+  ansible.builtin.template:
+    src: fss_vars.j2
+    dest: fss_vars.yml
+    mode: "0664"

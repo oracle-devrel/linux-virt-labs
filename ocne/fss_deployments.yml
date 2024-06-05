@@ -1,0 +1,39 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Include file_system vars
+  ansible.builtin.include_vars:
+    file: fss_vars.yaml
+
+- name: Create file fss-pv.yaml
+  ansible.builtin.template:
+    src: fss_pv.j2
+    dest: ~/fss-pv.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Create file fss-pvc.yaml
+  ansible.builtin.template:
+    src: fss_pvc.j2
+    dest: ~/fss-pvc.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Create file fss-pod.yaml
+  ansible.builtin.template:
+    src: fss_pod.j2
+    dest: ~/fss-pod.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"

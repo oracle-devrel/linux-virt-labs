@@ -1,0 +1,65 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Add cluster configuration file
+  ansible.builtin.template:
+    src: cluster.j2
+    dest: ~/cluster.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add toolbox configuration file
+  ansible.builtin.template:
+    src: toolbox.j2
+    dest: ~/toolbox.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add filesystem configuration file
+  ansible.builtin.template:
+    src: filesystem.j2
+    dest: ~/filesystem.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add storageclass configuration file
+  ansible.builtin.template:
+    src: storageclass.j2
+    dest: ~/storageclass.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add persistentstroageclaim configuration file
+  ansible.builtin.template:
+    src: pvc.j2
+    dest: ~/pvc.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"
+
+- name: Add virtualmachine configuration file
+  ansible.builtin.template:
+    src: vm.j2
+    dest: ~/vm.yaml
+    mode: "0644"
+  become: true
+  become_user: "{{ username }}"
+  delegate_to: "{{ item }}"
+  loop: "{{ groups['controlplane'] }}"

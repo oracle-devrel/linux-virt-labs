@@ -1,0 +1,41 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create private oci repository
+  oracle.oci.oci_artifacts_container_repository:
+    compartment_id: "{{ my_compartment_id }}"
+    display_name: "demo/oraclelinux-cloud"
+    # is_immutable: true
+    is_public: false
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Print oci repository details
+  ansible.builtin.debug:
+    msg: "OCI repository details: {{ result.container_repository }}"
+  when: debug_enabled
+
+- name: Set oci repository facts
+  ansible.builtin.set_fact:
+    ocir_id: "{{ result.container_repository.id }}"
+    ocir_name: "{{ result.container_repository.display_name }}"
+    ocir_namespace: "{{ result.container_repository.namespace }}"
+
+- name: Print oci repository facts
+  ansible.builtin.debug:
+    msg:
+      - "{{ ocir_id }}"
+      - "{{ ocir_name }}"
+      - "{{ ocir_namespace }}"
+  when: debug_enabled
+
+- name: Set ocir vars file
+  ansible.builtin.template:
+    src: ocir_vars.j2
+    dest: ocir_vars.yml
+    mode: "0664"
