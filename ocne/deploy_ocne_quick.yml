@@ -8,7 +8,7 @@
   hosts: operator
   become: true
   vars_files:
-    - default_vars.yaml
+    - default_vars.yml
   vars:
     ocne_registry_location: 'container-registry.oracle.com/olcne'
     operator_node: "{{ groups['operator'] | join(',') }}"
@@ -96,7 +96,7 @@
       block:
         - name: Include lb vars
           ansible.builtin.include_vars:
-            file: lb_vars.yaml
+            file: lb_vars.yml
 
         - name: Create environment with lb using quick install method
           ansible.builtin.shell: |

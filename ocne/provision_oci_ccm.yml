@@ -24,7 +24,7 @@
 
 - name: Include oci vars
   ansible.builtin.include_vars:
-    file: oci_vars.yaml
+    file: oci_vars.yml
 
 - name: Print compartment ocid
   ansible.builtin.debug:

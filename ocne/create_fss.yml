@@ -84,5 +84,5 @@
 - name: Set file_system vars file
   ansible.builtin.template:
     src: fss_vars.j2
-    dest: fss_vars.yaml
+    dest: fss_vars.yml
     mode: "0664"

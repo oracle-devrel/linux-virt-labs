@@ -90,7 +90,7 @@
 - name: Set load balancer vars file
   ansible.builtin.template:
     src: lb_vars.j2
-    dest: lb_vars.yaml
+    dest: lb_vars.yml
     mode: "0644"
 
 - name: Print load balancer ip address

@@ -6,7 +6,7 @@
 
 - name: Include oci vars
   ansible.builtin.include_vars:
-    file: oci_vars.yaml
+    file: oci_vars.yml
 
 - name: Add oci-ccm module environment variables to .bashrc file
   ansible.builtin.lineinfile:

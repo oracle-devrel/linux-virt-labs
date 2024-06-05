@@ -8,7 +8,7 @@
   hosts: operator
   become: true
   vars_files:
-    - default_vars.yaml
+    - default_vars.yml
   vars:
     ocne_registry_location: 'container-registry.oracle.com/olcne'
     control_plane_nodes: "{{ groups['operator'] | join(',') }}"

@@ -58,7 +58,7 @@
   block:
     - name: Include lb vars
       ansible.builtin.include_vars:
-        file: lb_vars.yaml
+        file: lb_vars.yml
 
     - name: Create environment
       ansible.builtin.shell: |

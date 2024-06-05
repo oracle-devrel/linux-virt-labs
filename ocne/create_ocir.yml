@@ -37,5 +37,5 @@
 - name: Set ocir vars file
   ansible.builtin.template:
     src: ocir_vars.j2
-    dest: ocir_vars.yaml
+    dest: ocir_vars.yml
     mode: "0664"

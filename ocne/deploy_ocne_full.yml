@@ -8,8 +8,8 @@
   hosts: operator,controlplane,worker
   become: true
   vars_files:
-    - default_vars.yaml
-    - oci_vars.yaml
+    - default_vars.yml
+    - oci_vars.yml
 
   tasks:
 
@@ -60,8 +60,8 @@
   hosts: operator
   become: true
   vars_files:
-    - default_vars.yaml
-    - oci_vars.yaml
+    - default_vars.yml
+    - oci_vars.yml
 
   vars:
     operator_nodes: "{{ range(groups['operator']|length|int) | map('extract',groups['operator'])|list | map('regex_replace', '^(.*)$', '\\1' ) | join(',') }}"

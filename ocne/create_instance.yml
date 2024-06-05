@@ -7,7 +7,7 @@
 - name: Gather facts and create instances
   hosts: localhost
   vars_files:
-    - default_vars.yaml
+    - default_vars.yml
   vars:
     oci_config_section: DEFAULT
     ad_placement: 1
@@ -238,7 +238,7 @@
     - name: Set oci vars file
       ansible.builtin.template:
         src: oci_vars.j2
-        dest: oci_vars.yaml
+        dest: oci_vars.yml
         mode: "0664"
 
     - name: Get image
@@ -284,8 +284,8 @@
   become: true
   gather_facts: false
   vars_files:
-    - default_vars.yaml
-    - oci_vars.yaml
+    - default_vars.yml
+    - oci_vars.yml
   vars:
     username: "oracle"
     user_default_password: "oracle"
@@ -425,7 +425,7 @@
 
 - name: Install Oracle Cloud Native Environment
   vars:
-    install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yaml') | from_yaml).ocne_type | default('none') }}"
+    install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yml') | from_yaml).ocne_type | default('none') }}"
   ansible.builtin.import_playbook: "deploy_ocne_{{ install_type }}.yml"
 
 - name: Print instances
@@ -433,7 +433,7 @@
   become: true
   gather_facts: false
   vars_files:
-    - ocir_vars.yaml
+    - ocir_vars.yml
 
   tasks:
 
@@ -465,7 +465,7 @@
 - name: Terminate instances and delete OCI resources
   hosts: localhost
   vars_files:
-    - default_vars.yaml
+    - default_vars.yml
   vars:
     ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
 
@@ -556,6 +556,6 @@
         state: absent
         path: "{{ item }}"
       loop:
-        - fss_vars.yaml
-        - lb_vars.yaml
-        - oci_vars.yaml
+        - fss_vars.yml
+        - lb_vars.yml
+        - oci_vars.yml
