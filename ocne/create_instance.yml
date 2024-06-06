@@ -503,6 +503,7 @@
       oracle.oci.oci_loadbalancer_load_balancer_facts:
         compartment_id: "{{ my_compartment_id }}"
       register: result
+      when: use_oci_ccm
       retries: 10
       delay: 30
       until: result is not failed
@@ -510,10 +511,13 @@
     - name: Print oci-ccm load balancers
       ansible.builtin.debug:
         var: result
-      when: debug_enabled
+      when: 
+        - debug_enabled
+        - use_oci_ccm
 
     - name: Delete oci-ccm load balancers
       when:
+        - use_oci_ccm
         - result.load_balancers is defined
         - result.load_balancers is not string
         - result.load_balancers is not mapping
