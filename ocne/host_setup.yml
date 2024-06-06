@@ -13,15 +13,23 @@
       ansible.builtin.set_fact:
         retry_count: "{{ 0 if retry_count is undefined else retry_count | int + 1 }}"
 
-    - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
-      ansible.builtin.wait_for:
-        host: "{{ hostvars[inventory_hostname].ansible_host }}"
-        port: 22
-        search_regex: OpenSSH
-        delay: 10
+    # - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
+    #   ansible.builtin.wait_for:
+    #     host: "{{ hostvars[inventory_hostname].ansible_host }}"
+    #     port: 22
+    #     search_regex: OpenSSH
+    #     delay: 10
 
-    - name: Wait for system to become reachable
-      ansible.builtin.wait_for_connection:
+    # - name: Wait for system to become reachable
+    #   ansible.builtin.wait_for_connection:
+
+    - name: Run ansible adhoc ping module
+      ansible.builtin.command: ansible all -i '{{ hostvars[inventory_hostname].ansible_host }},' -m ping
+      ignore_errors: false
+      register: result
+      until: result.rc == 0
+      retries: 10
+      delay: 15
 
     - name: Run facts module to get latest information
       ansible.builtin.setup:
