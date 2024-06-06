@@ -19,12 +19,14 @@
     - name: Write cil selinux policy file
       ansible.builtin.shell: |
         echo '(allow iptables_t cgroup_t (dir (ioctl)))' > /home/{{ username }}/local_iptables.cil
-      changed_when: provision_kubernetes.rc == 0
+      register: result
+      changed_when: result.rc == 0
 
     - name: Add selinux module
       ansible.builtin.shell: |
         semodule -i /home/{{ username }}/local_iptables.cil
-      changed_when: provision_kubernetes.rc == 0
+      register: result
+      changed_when: result.rc == 0
 
     - name: Setup olcne ol8 repos
       ansible.builtin.include_tasks: ol8_repo_config.yml
@@ -48,7 +50,8 @@
     - name: Disable swap
       ansible.builtin.shell: |
         swapoff -a
-      changed_when: provision_kubernetes.rc == 0
+      register: disable_swap
+      changed_when: disable_swap.rc == 0
 
     - name: Disable swap in fstab
       ansible.builtin.replace:
@@ -194,7 +197,8 @@
         echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
       delegate_to: "{{ item }}"
       loop: "{{ (groups['controlplane'] + groups['worker']) }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: load_netfilter
+      changed_when: load_netfilter.rc == 0
 
     - name: Disable docker and containerd services
       ansible.builtin.systemd_service:
@@ -267,7 +271,8 @@
       become: true
       become_user: "{{ username }}"
       when: not ocne_provision.stat.exists
-      changed_when: provision_kubernetes.rc == 0
+      register: create_certs
+      changed_when: create_certs.rc == 0
 
     - name: Create Certificates for the Platform CLI
       ansible.builtin.shell: |
@@ -279,7 +284,8 @@
       become: true
       become_user: "{{ username }}"
       when: not ocne_provision.stat.exists
-      changed_when: provision_kubernetes.rc == 0
+      register: create_certs
+      changed_when: create_certs.rc == 0
 
     - name: Copy CA Certificate for the Platform CLI
       ansible.builtin.copy:
@@ -304,7 +310,8 @@
       ansible.builtin.shell: |
         /etc/olcne/bootstrap-olcne.sh --secret-manager-type file --olcne-component api-server
       when: not ocne_provision.stat.exists
-      changed_when: provision_kubernetes.rc == 0
+      register: start_api_server
+      changed_when: start_api_server.rc == 0
 
     - name: Start OLCNE Agent with the Certificates
       become: true
@@ -313,7 +320,8 @@
       delegate_to: "{{ item }}"
       loop: "{{ (groups['controlplane'] + groups['worker']) }}"
       when: not ocne_provision.stat.exists
-      changed_when: provision_kubernetes.rc == 0
+      register: start_agent
+      changed_when: start_agent.rc == 0
 
     - name: Create Certificates for ExternalIPs service
       ansible.builtin.shell: |
@@ -326,7 +334,8 @@
       become: true
       become_user: "{{ username }}"
       when: not ocne_provision.stat.exists
-      changed_when: provision_kubernetes.rc == 0
+      register: create_ext_certs
+      changed_when: create_ext_certs.rc == 0
 
     - name: Copy CA Certificate for the ExternalIP service
       ansible.builtin.copy:

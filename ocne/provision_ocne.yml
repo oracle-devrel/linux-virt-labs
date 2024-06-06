@@ -14,7 +14,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_env
+      changed_when: create_env.rc == 0
 
     - name: Create Kubernetes Module
       ansible.builtin.shell: |
@@ -30,7 +31,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_kubernetes
+      changed_when: create_kubernetes.rc == 0
 
     - name: Validate Kubernetes Module
       ansible.builtin.shell: |
@@ -39,7 +41,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: validate_kubernetes
+      changed_when: validate_kubernetes.rc == 0
 
     - name: Install Kubernetes Module
       ansible.builtin.shell: |
@@ -48,8 +51,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      register: provision_kubernetes
-      changed_when: provision_kubernetes.rc == 0
+      register: install_kubernetes
+      changed_when: install_kubernetes.rc == 0
 
 - name: Create environment with lb using manual install method
   when:
@@ -67,7 +70,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_env
+      changed_when: create_env.rc == 0
 
     - name: Create Kubernetes Module
       ansible.builtin.shell: |
@@ -84,7 +88,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_kubernetes
+      changed_when: create_kubernetes.rc == 0
 
     - name: Validate Kubernetes Module
       ansible.builtin.shell: |
@@ -93,7 +98,8 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: validate_kubernetes
+      changed_when: validate_kubernetes.rc == 0
 
     - name: Install Kubernetes Module
       ansible.builtin.shell: |
@@ -102,41 +108,61 @@
         chdir: ~/
       become: true
       become_user: "{{ username }}"
-      register: provision_kubernetes
-      changed_when: provision_kubernetes.rc == 0
+      register: install_kubernetes
+      changed_when: install_kubernetes.rc == 0
 
 # - name: Create file myenvironment.yaml
 #   ansible.builtin.template:
 #     src: myenvironment.j2
 #     dest: ~/myenvironment.yaml
+#   become: true
 #   become_user: "{{ username }}"
+#   register: create_env_file
+#   changed_when: create_env_file.rc == 0
 
 # - name: Create environment
 #   ansible.builtin.shell: |
 #     olcnectl environment create --config-file myenvironment.yaml
 #   args:
 #     chdir: ~/
+#   become: true
 #   become_user: "{{ username }}"
+#   register: create_env
+#   changed_when: create_env.rc == 0
 
-# - name: Create/Validate Kubernetes Module
+# - name: Create Kubernetes Module
 #   ansible.builtin.shell: |
 #     olcnectl module create --config-file myenvironment.yaml
+#   args:
+#     chdir: ~/
+#   become: true
+#   become_user: "{{ username }}"
+#   register: create_kubernetes
+#   changed_when: create_kubernetes.rc == 0
+
+# - name: Validate Kubernetes Module
+#   ansible.builtin.shell: |
 #     olcnectl module validate --config-file myenvironment.yaml
 #   args:
 #     chdir: ~/
+#   become: true
 #   become_user: "{{ username }}"
+#   register: validate_kubernetes
+#   changed_when: validate_kubernetes.rc == 0
 
 # - name: Install Kubernetes Module
 #   ansible.builtin.shell: |
 #     olcnectl module install --config-file myenvironment.yaml
 #   args:
 #     chdir: ~/
+#   become: true
 #   become_user: "{{ username }}"
-#   register: provision_kubernetes
+#   register: install_kubernetes
+#   changed_when: install_kubernetes.rc == 0
 
 - name: Print kubernetes provision output
   ansible.builtin.debug:
-    var: provision_kubernetes
+    var: install_kubernetes
   when: debug_enabled
 
 - name: Tag OCNE as provisioned
@@ -146,7 +172,8 @@
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  when: provision_kubernetes.rc == 0
+  register: ocne_installed
+  when: install_kubernetes.rc == 0
 
 - name: Save out ocne config
   ansible.builtin.shell: |
@@ -155,8 +182,9 @@
     chdir: ~/
   become: true
   become_user: "{{ username }}"
-  when: provision_kubernetes.rc == 0
-  changed_when: provision_kubernetes.rc == 0
+  when: ocne_installed.rc == 0
+  register: save_ocne_config
+  changed_when: save_ocne_config.rc == 0
 
 # - name: Save out ocne config
 #   ansible.builtin.shell: |

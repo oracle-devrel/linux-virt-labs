@@ -43,7 +43,8 @@
     - name: Disable swap
       ansible.builtin.shell: |
         swapoff -a
-      changed_when: provision_kubernetes.rc == 0
+      register: disable_swap
+      changed_when: disable_swap.rc == 0
 
     - name: Disable swap in fstab
       ansible.builtin.replace:
@@ -86,7 +87,8 @@
     - name: Ensure br_netfilter module loads on boot
       ansible.builtin.shell: |
         echo "br_netfilter" > /etc/modules-load.d/br_netfilter.conf
-      changed_when: provision_kubernetes.rc == 0
+      register: load_netfilter
+      changed_when: load_netfilter.rc == 0
 
     - name: Install olcne packages
       ansible.builtin.dnf:
@@ -126,7 +128,8 @@
         olcnectl certificates generate --nodes {{ control_plane_nodes }} --cert-dir /tmp/certificates --one-cert
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_certs
+      changed_when: create_certs.rc == 0
 
     - name: Create X.509 Certificates and Copy to Nodes
       ansible.builtin.command: |
@@ -137,7 +140,8 @@
          --nodes {{ control_plane_nodes }}
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_certs
+      changed_when: create_certs.rc == 0
 
     - name: Create X.509 Certificates for restricted external IPs webhook
       vars:
@@ -152,7 +156,8 @@
           --one-cert
       become: true
       become_user: "{{ username }}"
-      changed_when: provision_kubernetes.rc == 0
+      register: create_ext_certs
+      changed_when: create_ext_certs.rc == 0
 
     - name: Start OLCNE API Server with Certificate
       ansible.builtin.shell:
@@ -164,7 +169,8 @@
           --olcne-node-key-path /etc/olcne/certificates/node.key \
           --vault-cert-sans 127.0.0.1 \
           --olcne-component api-server
-      changed_when: provision_kubernetes.rc == 0
+      register: start_api_server
+      changed_when: start_api_server.rc == 0
 
     - name: Start OLCNE Agent with the Certificates
       ansible.builtin.shell:
@@ -175,4 +181,5 @@
           --olcne-ca-path /etc/olcne/certificates/ca.cert \
           --olcne-node-key-path /etc/olcne/certificates/node.key \
           --olcne-component agent
-      changed_when: provision_kubernetes.rc == 0
+      register: start_agent
+      changed_when: start_agent.rc == 0
