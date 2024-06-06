@@ -134,4 +134,4 @@
       delegate_to: localhost
       become: false
 
-    - asible.builtin.include_tasks: host_setup.yml
+    - ansible.builtin.include_tasks: host_setup.yml
