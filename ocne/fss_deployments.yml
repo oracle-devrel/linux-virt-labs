@@ -6,7 +6,7 @@
 
 - name: Include file_system vars
   ansible.builtin.include_vars:
-    file: fss_vars.yaml
+    file: fss_vars.yml
 
 - name: Create file fss-pv.yaml
   ansible.builtin.template:
