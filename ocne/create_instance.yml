@@ -311,12 +311,20 @@
         - debug_enabled
         - inventory_hostname == ansible_play_hosts_all[0]
 
-    - name: Waiting for the port tcp/22 to be open
+    - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
       ansible.builtin.wait_for:
-        host: "{{ hostvars[inventory_hostname].ansible_host }}"
+        host: "{{ hostvars[item].ansible_host }}"
         port: 22
-        state: "started"
-        timeout: 180
+        # state: "started"
+        search_regex: OpenSSH
+        delay: 10
+        # timeout: 180
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+      delegate_to: localhost
+      register: ssh_connection
+      retries: 10
+      delay: 15
+      until: ssh_connection is not failed
 
     - name: Wait for system to become reachable
       ansible.builtin.wait_for_connection:
