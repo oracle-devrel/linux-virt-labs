@@ -314,7 +314,7 @@
     - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
       ansible.builtin.wait_for:
         #host: "{{ hostvars[item].ansible_host }}"
-        host: "{{ hostvars[inventory_host].ansible_host }}"
+        host: "{{ hostvars[inventory_hostname].ansible_host }}"
         port: 22
         # state: "started"
         search_regex: OpenSSH
