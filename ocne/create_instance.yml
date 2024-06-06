@@ -333,7 +333,7 @@
         append: true
         update_password: on_create
 
-    - name: Set authorized key for user using local pubilc key file
+    - name: Set authorized key for user using local public key file
       ansible.posix.authorized_key:
         user: "{{ username }}"
         state: present

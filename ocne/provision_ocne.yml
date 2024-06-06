@@ -172,8 +172,14 @@
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  register: ocne_installed
   when: install_kubernetes.rc == 0
+
+- name: Check if OCNE provisioned
+  ansible.builtin.stat:
+    path: ~/.ocne-provisioned
+  become: true
+  become_user: "{{ username }}"
+  register: ocne_provision
 
 - name: Save out ocne config
   ansible.builtin.shell: |
@@ -182,7 +188,7 @@
     chdir: ~/
   become: true
   become_user: "{{ username }}"
-  when: ocne_installed.rc == 0
+  when: ocne_provision
   register: save_ocne_config
   changed_when: save_ocne_config.rc == 0
 
