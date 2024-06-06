@@ -453,6 +453,7 @@
           - "  namespace: {{ ocir_namespace }}"
       delegate_to: localhost
       when:
+        - use_ocir is defined
         - use_ocir
         - inventory_hostname == ansible_play_hosts_all[0]
 
