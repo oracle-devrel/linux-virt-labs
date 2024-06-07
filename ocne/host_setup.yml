@@ -158,4 +158,5 @@
       delegate_to: localhost
       become: false
 
-    - ansible.builtin.include_tasks: host_setup.yml
+    - name: Retry host setup if there is a failure
+      ansible.builtin.include_tasks: host_setup.yml

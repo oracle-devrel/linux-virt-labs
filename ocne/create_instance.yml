@@ -281,7 +281,6 @@
 
 - name: Configure new instances
   hosts: all
-  become: true
   gather_facts: false
   vars_files:
     - default_vars.yml
