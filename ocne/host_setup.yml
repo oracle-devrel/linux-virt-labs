@@ -20,16 +20,19 @@
     #     search_regex: OpenSSH
     #     delay: 10
 
-    # - name: Wait for system to become reachable
-    #   ansible.builtin.wait_for_connection:
+    - name: Wait for system to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
 
-    - name: Run ansible adhoc ping module
-      ansible.builtin.command: ansible all -i '{{ hostvars[inventory_hostname].ansible_host }},' -m ping
-      ignore_errors: false
-      register: result
-      until: result.rc == 0
-      retries: 10
-      delay: 15
+    # - name: Run ansible adhoc ping module
+    #   ansible.builtin.command: ansible all -i '{{ hostvars[inventory_hostname].ansible_host }},' -m ping
+    #   ignore_errors: false
+    #   register: result
+    #   until: result.rc == 0
+    #   retries: 10
+    #   delay: 15
 
     - name: Run facts module to get latest information
       ansible.builtin.setup:
@@ -42,12 +45,14 @@
         groups: wheel
         append: true
         update_password: on_create
+      become: true
 
     - name: Set authorized key for user using local public key file
       ansible.posix.authorized_key:
         user: "{{ username }}"
         state: present
         key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+      become: true
 
     - name: Set user with passwordless sudo access
       vars:
@@ -59,6 +64,15 @@
         state: present
         create: true
         mode: "0644"
+      become: true
+
+    - name: Create the ansible tmp directory if it does not exist
+      ansible.builtin.file:
+        path: ~/.ansible/tmp
+        state: directory
+        mode: '0700'
+      become: true
+      become_user: "{{ username }}"
 
     - name: Add locale settings to .bashrc
       ansible.builtin.lineinfile:
@@ -92,6 +106,7 @@
         state: present
         key: "{{ lookup('file', 'buffer/{{ item }}-id_rsa.pub') }}"
       loop: "{{ groups['all'] | flatten(levels=1) }}"
+      become: true
 
     - name: Print hostvars for groups
       ansible.builtin.debug:
@@ -123,6 +138,7 @@
       when: debug_enabled
       register: firewall_result
       changed_when: firewall_result.rc == 0
+      become: true
 
     # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
 
