@@ -387,7 +387,8 @@
       when: use_oci_ccm
       retries: 10
       delay: 30
-      until: result is not failed
+      until: result is not failed or result.error_code == "NotAuthorizedOrNotFound"
+      ignore_errors: true
 
     - name: Print oci-ccm load balancers
       ansible.builtin.debug:
