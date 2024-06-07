@@ -5,14 +5,18 @@
 # See LICENSE.TXT for details.
 
 - name: Add olcne ol9 repository
-  dnf:
+  ansible.builtin.dnf:
     name: oracle-olcne-release-el9
-    state: latest
+    state: present
 
 - name: Enable ol9 current ocne repo
-  shell:
+  ansible.builtin.command:
     cmd: dnf config-manager --enable {{ ol9_enable_repo }} ol9_addons ol9_baseos_latest ol9_appstream ol9_UEKR7
+  register: dnf_result
+  changed_when: dnf_result.rc == 0
 
 - name: Disable ol9 old repos
-  shell:
+  ansible.builtin.command:
     cmd: dnf config-manager --disable {{ ol9_disable_repo }} ol9_developer
+  register: dnf_result
+  changed_when: dnf_result.rc == 0

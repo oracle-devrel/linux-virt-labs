@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Set file_system mount target
-  oci_file_storage_mount_target:
+  oracle.oci.oci_file_storage_mount_target:
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     subnet_id: "{{ my_subnet_id }}"
@@ -29,7 +29,7 @@
     mount_target_private_ip_id: "{{ result.mount_target.private_ip_ids[0] }}"
 
 - name: Get file_system mount target private ip facts
-  oci_network_private_ip_facts:
+  oracle.oci.oci_network_private_ip_facts:
     id: "{{ mount_target_private_ip_id }}"
   register: result
   retries: 10
@@ -46,7 +46,7 @@
   when: debug_enabled
 
 - name: Set file_system
-  oci_file_storage_file_system:
+  oracle.oci.oci_file_storage_file_system:
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     display_name: "fss-ocne"
@@ -61,14 +61,14 @@
     file_system_id: "{{ result.file_system.id }}"
 
 - name: Set file_system export
-  oci_file_storage_export:
+  oracle.oci.oci_file_storage_export:
     export_set_id: "{{ export_set_id }}"
     file_system_id: "{{ file_system_id }}"
     export_options:
-          - source: "0.0.0.0/0"
-            require_privileged_source_port: False
-            access: "READ_WRITE"
-            identity_squash: "NONE"
+      - source: "0.0.0.0/0"
+        require_privileged_source_port: false
+        access: "READ_WRITE"
+        identity_squash: "NONE"
     path: "/fss-ocne"
     state: present
   register: result
@@ -82,9 +82,7 @@
     export_path: "{{ result.export.path }}"
 
 - name: Set file_system vars file
-  ansible.builtin.copy:
-    content:
-      file_system_id: "{{ file_system_id }}"
-      mount_target_ip_address: "{{ mount_target_ip_address }}"
-      export_path: "{{ export_path }}"
-    dest: fss_vars.yaml
+  ansible.builtin.template:
+    src: fss_vars.j2
+    dest: fss_vars.yml
+    mode: "0664"

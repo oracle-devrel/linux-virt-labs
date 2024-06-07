@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Launch an instance
-  oci_compute_instance:
+  oracle.oci.oci_compute_instance:
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -19,25 +19,25 @@
       hostname_label: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
       subnet_id: "{{ my_subnet_id }}"
     metadata:
-      ssh_authorized_keys: "{{ lookup('file', lookup('env','HOME') + '/.ssh/' + private_key + '.pub' ) }}"
+      ssh_authorized_keys: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
     agent_config:
       is_monitoring_disabled: false
       is_management_disabled: false
       are_all_plugins_disabled: false
       plugins_config:
-      -
-        name: "OS Management Service Agent"
-        desired_state: DISABLED
+        -
+          name: "OS Management Service Agent"
+          desired_state: DISABLED
   register: result
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
   retries: 10
   delay: 30
   until: result is not failed
-    
+
 - name: Print instance details
   ansible.builtin.debug:
-    msg: 
+    msg:
       - "Launched a new instance:"
       - "{{ result }}"
   when: debug_enabled
@@ -51,7 +51,7 @@
     instance_display_name: "{{ result.instance.display_name }}"
 
 - name: Get the vnic attachment details of instance
-  oci_compute_vnic_attachment_facts:
+  oracle.oci.oci_compute_vnic_attachment_facts:
     compartment_id: "{{ my_compartment_id }}"
     instance_id: "{{ instance_id }}"
   register: result
@@ -60,13 +60,13 @@
   until: result is not failed
 
 - name: Get vnic details
-  oci_network_vnic_facts:
+  oracle.oci.oci_network_vnic_facts:
     id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
   retries: 10
   delay: 30
   until: result is not failed
-  
+
 - name: Set the instance private ip address
   ansible.builtin.set_fact:
     instance_private_ip: "{{ result.vnic.private_ip }}"
@@ -75,20 +75,54 @@
   ansible.builtin.set_fact:
     instance_public_ip: "{{ result.vnic.public_ip }}"
 
+- name: Add block volume to worker nodes for ceph storage
+  when:
+    - item.value.type == "worker"
+    - add_ceph_block_storage
+  block:
+    - name: Create block volume for ceph storage
+      oracle.oci.oci_blockstorage_volume:
+        compartment_id: "{{ my_compartment_id }}"
+        availability_domain: "{{ my_availability_domain }}"
+        display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
+        size_in_gbs: "{{ ceph_volume_size_in_gbs }}"
+      register: result
+      vars:
+        timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set the ceph storage block volume id
+      ansible.builtin.set_fact:
+        volume_id: "{{ result.volume.id }}"
+
+    - name: Attach ceph storage block volume
+      oracle.oci.oci_compute_volume_attachment:
+        instance_id: "{{ instance_id }}"
+        type: paravirtualized
+        volume_id: "{{ volume_id }}"
+        compartment_id: "{{ my_compartment_id }}"
+        is_read_only: false
+        is_shareable: false
+      retries: 10
+      delay: 30
+      until: result is not failed
+
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
-    msg: 
+    msg:
       - "Instance name: {{ instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
-  
+
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
-    ansible_ssh_private_key_file: "{{ lookup('env','HOME') + '/.ssh/' + private_key }}"
+    ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22

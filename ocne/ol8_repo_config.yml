@@ -5,14 +5,18 @@
 # See LICENSE.TXT for details.
 
 - name: Add olcne ol8 repository
-  dnf:
+  ansible.builtin.dnf:
     name: oracle-olcne-release-el8
-    state: latest
+    state: present
 
 - name: Enable ol8 current ocne repo
-  shell:
+  ansible.builtin.command:
     cmd: dnf config-manager --enable {{ ol8_enable_repo }} ol8_addons ol8_baseos_latest ol8_appstream ol8_kvm_appstream ol8_UEKR7
+  register: dnf_result
+  changed_when: dnf_result.rc == 0
 
 - name: Disable ol8 old ocne repos
-  shell:
+  ansible.builtin.command:
     cmd: dnf config-manager --disable {{ ol8_disable_repo }} ol8_developer
+  register: dnf_result
+  changed_when: dnf_result.rc == 0

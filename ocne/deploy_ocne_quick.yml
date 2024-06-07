@@ -1,0 +1,197 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Run ocne quick install
+  hosts: operator
+  become: true
+  vars_files:
+    - default_vars.yml
+  vars:
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
+    operator_node: "{{ groups['operator'] | join(',') }}"
+    control_plane_nodes: "{{ groups['controlplane'] | join(',') }}"
+    worker_nodes: "{{ groups['worker'] | join(',') }}"
+    debug_enabled: false
+
+  tasks:
+
+    - name: Print operator node
+      ansible.builtin.debug:
+        var: operator_node
+      when: debug_enabled
+
+    - name: Print control_plane nodes
+      ansible.builtin.debug:
+        var: control_plane_nodes
+      when: debug_enabled
+
+    - name: Print worker nodes
+      ansible.builtin.debug:
+        var: worker_nodes
+      when: debug_enabled
+
+    - name: Setup olcne ol8 repos
+      ansible.builtin.include_tasks: ol8_repo_config.yml
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Setup olcne ol9 repos
+      ansible.builtin.include_tasks: ol9_repo_config.yml
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Install olcne package
+      ansible.builtin.dnf:
+        name: olcnectl
+        state: present
+
+    - name: Check if OCNE provisioned
+      ansible.builtin.stat:
+        path: ~/.ocne-provisioned
+      become: true
+      become_user: "{{ username }}"
+      register: ocne_provision
+
+    - name: Create environment using quick install method
+      when:
+        - not ocne_provision.stat.exists
+        - groups['controlplane'] | length < 2
+      block:
+        - name: Create environment using quick install method
+          ansible.builtin.shell: |
+            olcnectl provision --api-server "{{ operator_node }}" \
+            --control-plane-nodes "{{ control_plane_nodes }}" \
+            --worker-nodes "{{ worker_nodes }}" \
+            --environment-name myenvironment \
+            --name mycluster \
+            --yes \
+            --selinux enforcing
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: provision_kubernetes
+          changed_when: provision_kubernetes.rc == 0
+
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: provision_kubernetes
+          when: debug_enabled
+
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: provision_kubernetes.rc == 0
+
+    - name: Create environment with lb using quick install method
+      when:
+        - not ocne_provision.stat.exists
+        - groups['controlplane'] | length > 1
+        - use_lb
+      block:
+        - name: Include lb vars
+          ansible.builtin.include_vars:
+            file: lb_vars.yml
+
+        - name: Create environment with lb using quick install method
+          ansible.builtin.shell: |
+            olcnectl provision --api-server "{{ operator_node }}" \
+            --control-plane-nodes "{{ control_plane_nodes }}" \
+            --worker-nodes "{{ worker_nodes }}" \
+            --load-balancer "{{ private_load_balancer_ip_addresses }}":6443 \
+            --environment-name myenvironment \
+            --name mycluster \
+            --yes \
+            --selinux enforcing
+            touch ~/.ocne-provisioned
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: provision_kubernetes
+          changed_when: provision_kubernetes.rc == 0
+
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: provision_kubernetes
+          when: debug_enabled
+
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: provision_kubernetes.rc == 0
+
+    - name: Check if OCNE provisioned
+      ansible.builtin.stat:
+        path: ~/.ocne-provisioned
+      become: true
+      become_user: "{{ username }}"
+      register: ocne_provision
+
+    - name: Add user to olcne group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: olcne
+        append: true
+      when: ocne_provision.stat.exists
+
+    - name: Reset ssh connection to allow user changes to affect 'current login user'
+      ansible.builtin.meta: reset_connection
+
+    - name: Save out ocne config
+      ansible.builtin.shell: |
+        olcnectl module instances --api-server "{{ operator_node }}":8091 --environment-name myenvironment --update-config
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      when: ocne_provision.stat.exists
+      register: save_ocne_config
+      changed_when: save_ocne_config.rc == 0
+
+    - name: Include oci-ccm bash env vars
+      ansible.builtin.include_tasks: preconfig_oci_ccm.yml
+      when: oci_ccm_bash
+
+    - name: Provision oci-ccm
+      ansible.builtin.include_tasks: "provision_oci_ccm.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - use_oci_ccm
+
+    - name: Provision istio
+      ansible.builtin.include_tasks: "provision_istio.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - use_istio
+
+    - name: Create ceph deployment descriptors
+      ansible.builtin.include_tasks: "ceph_deployments.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - add_ceph_deployments
+
+    - name: Create fss deployment descriptors
+      ansible.builtin.include_tasks: "fss_deployments.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
+        - use_fss
+
+    - name: Provision kubectl
+      ansible.builtin.include_tasks: "provision_kubectl.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
