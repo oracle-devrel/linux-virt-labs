@@ -28,9 +28,10 @@ use_oci_ccm: false
 use_istio: false
 use_fss: false
 add_ceph_block_storage: false
+ceph_volume_size_in_gbs: 50
 add_ceph_deployments: false
 use_ocir: false
-ceph_volume_size_in_gbs: 50
+use_ingress-lb: false
 ol8_enable_repo: "ol8_olcne18"
 ol8_disable_repo: "ol8_olcne12 ol8_olcne13 ol8_olcne14 ol8_olcne15 ol8_olcne16 ol8_olcne17"
 ol9_enable_repo: "ol9_olcne18"
