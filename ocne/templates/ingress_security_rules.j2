@@ -12,6 +12,20 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 22
         min: 22
+{% if use_ingress_lb %}
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 80
+        min: 80
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 443
+        min: 443
+{% endif %}
   - source: "0.0.0.0/0"
     protocol: 1
     icmp_options:
