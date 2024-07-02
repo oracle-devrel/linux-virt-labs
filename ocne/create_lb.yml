@@ -67,12 +67,13 @@
   ansible.builtin.setup:
   delegate_to: "{{ item }}"
   delegate_facts: true
-  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  #loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
 
 - name: Print loop var
   ansible.builtin.debug:
     msg: "{{ hostvars[item] }}"
-  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
   when: debug_enabled
 
 - name: Create Backends
@@ -82,7 +83,7 @@
     ip_address: "{{ hostvars[item]['ansible_default_ipv4']['address'] }}"
     port: '6443'
     state: 'present'
-  loop: "{{ groups['controlplane'] | flatten(levels=1) }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
   retries: 10
   delay: 30
   until: result is not failed
