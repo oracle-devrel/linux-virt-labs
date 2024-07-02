@@ -216,7 +216,7 @@
       oracle.oci.oci_network_subnet:
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
-        cidr_block: "10.0.0.48/28"
+        cidr_block: "{{ subnet_cidr_block }}"
         display_name: "Linuxvirt Subnet"
         prohibit_public_ip_on_vnic: false
         route_table_id: "{{ my_rt_id }}"
