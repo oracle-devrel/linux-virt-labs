@@ -12,7 +12,7 @@
   become: true
   become_user: "{{ username }}"
   delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
 
 - name: Copy .kube/config
   ansible.builtin.copy:
@@ -23,7 +23,7 @@
     mode: '0600'
     remote_src: true
   delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
 
 - name: Add .kube/config to .bashrc file
   ansible.builtin.lineinfile:
@@ -32,4 +32,4 @@
   become: true
   become_user: "{{ username }}"
   delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
+  loop: "{{ range(groups['controlplane'] | length - empty_cp_nodes | int) | map('extract', groups['controlplane']) | list }}"
