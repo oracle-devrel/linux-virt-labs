@@ -1,0 +1,366 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Gather facts and create instances
+  hosts: localhost
+  vars_files:
+    - default_vars.yml
+  vars:
+    oci_config_section: DEFAULT
+    ad_placement: 1
+    compartment_name:
+    compartment_id:
+    compute_instances:
+      1:
+        instance_name: "ol-node-01"
+        type: "client"
+      2:
+        instance_name: "ol-node-02"
+        type: "server"
+    os: "Oracle Linux"
+    os_version: "8"
+    instance_shape: "VM.Standard.E4.Flex"
+    instance_ocpus: 2
+    instance_memory: 32
+    private_key: "id_rsa"
+    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
+    debug_enabled: false
+
+  tasks:
+
+    # - name: Check if state file exists
+    #   ansible.builtin.stat:
+    #     path: /tmp/ansible.state
+    #   register: state_exists
+
+    # - name: Fail if state file already exists
+    #   ansible.builtin.fail:
+    #     msg: "Exit instance creation as a state file already exists."
+    #   when: hosts_exists.stat.exists
+
+    - name: Get location of oci_config
+      ansible.builtin.set_fact:
+        oci_config_file: "{{ lookup('env', 'HOME') + '/.oci/config' }}"
+
+    - name: Get tenancy ocid
+      ansible.builtin.set_fact:
+        my_tenancy_id: "{{ lookup('ini', 'tenancy section={{ oci_config_section }} file={{ oci_config_file }}') }}"
+
+    - name: Get region id
+      ansible.builtin.set_fact:
+        my_region_id: "{{ lookup('ini', 'region section={{ oci_config_section }} file={{ oci_config_file }}') }}"
+
+    - name: Print regions selected
+      ansible.builtin.debug:
+        msg: "{{ my_region_id }}"
+      when: debug_enabled
+
+    - name: Get list availbility domains
+      oracle.oci.oci_identity_availability_domain_facts:
+        compartment_id: "{{ my_tenancy_id }}"
+        region: "{{ my_region_id }}"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Print availability domains
+      ansible.builtin.debug:
+        msg: "{{ result }}"
+      when: debug_enabled
+
+    - name: Set list of availability domains
+      ansible.builtin.set_fact:
+        availability_domains: "{{ result.availability_domains }}"
+
+    - name: Set to availability domain from list
+      ansible.builtin.set_fact:
+        my_availability_domain: "{{ availability_domains[(lookup('ansible.builtin.vars', 'ad_placement') | int) - 1].name }}"
+
+    - name: Print availability domain ad_placement
+      ansible.builtin.debug:
+        msg: "{{ my_availability_domain }}"
+      when: debug_enabled
+
+    - name: Get compartment id from .oci/config or env OCI_COMPARTMENT_OCID
+      vars:
+        env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID') }}"
+        ini_lookup: "{{ lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}') }}"
+      ansible.builtin.set_fact:
+        my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
+
+    - name: Print compartment id
+      ansible.builtin.debug:
+        msg: "{{ my_compartment_id }}"
+      when: debug_enabled
+
+    - name: Fail when compartment_id is not defined
+      ansible.builtin.fail:
+        msg: "Variable for compartment_id is not defined."
+      when: my_compartment_id is not defined
+
+    - name: Generate random hex string
+      vars:
+        hex_chars: '0123456789abcdef'
+      ansible.builtin.set_fact:
+        vcn_code: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
+
+    - name: Create a virtual cloud network
+      oracle.oci.oci_network_vcn:
+        compartment_id: "{{ my_compartment_id }}"
+        display_name: "Linuxvirt Virtual Cloud Network"
+        cidr_blocks: "10.0.0.0/16"
+        dns_label: "vcn"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set vcn id
+      ansible.builtin.set_fact:
+        my_vcn_id: "{{ result.vcn.id }}"
+
+    - name: Create internet_gateway
+      oracle.oci.oci_network_internet_gateway:
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        is_enabled: true
+        display_name: "Linuxvirt Internet Gateway"
+        state: 'present'
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set internet gateway id
+      ansible.builtin.set_fact:
+        my_internet_gateway_id: "{{ result.internet_gateway.id }}"
+
+    - name: Create route_table
+      oracle.oci.oci_network_route_table:
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        display_name: "Linuxvirt Route Table"
+        route_rules:
+          - network_entity_id: "{{ my_internet_gateway_id }}"
+            cidr_block: "0.0.0.0/0"
+            destination_type: CIDR_BLOCK
+        state: 'present'
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set route table id
+      ansible.builtin.set_fact:
+        my_rt_id: "{{ result.route_table.id }}"
+
+    - name: Create ingress rules yaml list
+      ansible.builtin.template:
+        src: ingress_security_rules.j2
+        dest: /tmp/instance_ingress_security_rules.yaml
+        mode: "0664"
+
+    - name: Create egress rules yaml list
+      ansible.builtin.template:
+        src: egress_security_rules.j2
+        dest: /tmp/instance_egress_security_rules.yaml
+        mode: "0664"
+
+    - name: Load the variables defined in the ingress rules yaml list
+      ansible.builtin.include_vars:
+        file: /tmp/instance_ingress_security_rules.yaml
+        name: loaded_ingress
+
+    - name: Print loaded_ingress
+      ansible.builtin.debug:
+        msg: "loaded ingress is {{ loaded_ingress }}"
+      when: debug_enabled
+
+    - name: Load the variables defined in the egress rules yaml list
+      ansible.builtin.include_vars:
+        file: /tmp/instance_egress_security_rules.yaml
+        name: loaded_egress
+
+    - name: Print loaded_egress
+      ansible.builtin.debug:
+        msg: "loaded egress is {{ loaded_egress }}"
+      when: debug_enabled
+
+    - name: Create security_list
+      oracle.oci.oci_network_security_list:
+        display_name: "Linuxvirt Security List"
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        ingress_security_rules: "{{ loaded_ingress.instance_ingress_security_rules }}"
+        egress_security_rules: "{{ loaded_egress.instance_egress_security_rules }}"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set security list id
+      ansible.builtin.set_fact:
+        my_security_list_id: "{{ result.security_list.id }}"
+
+    - name: Create subnet
+      oracle.oci.oci_network_subnet:
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        cidr_block: "{{ subnet_cidr_block }}"
+        display_name: "Linuxvirt Subnet"
+        prohibit_public_ip_on_vnic: false
+        route_table_id: "{{ my_rt_id }}"
+        security_list_ids: "{{ my_security_list_id }}"
+        dns_label: "lv"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set subnet id
+      ansible.builtin.set_fact:
+        my_subnet_id: "{{ result.subnet.id }}"
+
+    - name: Set subnet domain_name
+      ansible.builtin.set_fact:
+        my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
+
+    - name: Set oci vars file
+      ansible.builtin.template:
+        src: oci_vars.j2
+        dest: oci_vars.yml
+        mode: "0664"
+
+    - name: Get image
+      oracle.oci.oci_compute_image_facts:
+        compartment_id: "{{ my_compartment_id }}"
+        operating_system: "{{ os }}"
+        operating_system_version: "{{ os_version }}"
+        shape: "{{ instance_shape }}"
+        sort_by: TIMECREATED
+        sort_order: DESC
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Print image list
+      ansible.builtin.debug:
+        var: result
+      when: debug_enabled
+
+    - name: Set compute image id
+      ansible.builtin.set_fact:
+        ol_image_id: "{{ result.images[0].id }}"
+
+    - name: Build an instance
+      ansible.builtin.include_tasks: "build.yml"
+      loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
+
+- name: Configure new instances
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  vars:
+    username: "oracle"
+    user_default_password: "oracle"
+    private_key: "id_rsa"
+    debug_enabled: false
+
+  tasks:
+
+    - name: Print in-memory inventory
+      ansible.builtin.debug:
+        msg: "{{ groups['all'] }}"
+      delegate_to: localhost
+      when:
+        - debug_enabled
+        - inventory_hostname == ansible_play_hosts_all[0]
+
+    - name: Print all variables/facts known for a host
+      ansible.builtin.debug:
+        msg: "{{ hostvars[item] }}"
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+      delegate_to: localhost
+      when:
+        - debug_enabled
+        - inventory_hostname == ansible_play_hosts_all[0]
+
+    - name: Configure instance
+      ansible.builtin.include_tasks: "host_setup.yml"
+
+- name: Print instances
+  hosts: all
+  become: true
+  gather_facts: false
+  vars_files:
+    - ocir_vars.yml
+
+  tasks:
+
+    - name: Print instance details
+      ansible.builtin.debug:
+        msg:
+          - "Instance details:"
+          - "  name: {{ hostvars[inventory_hostname]['ansible_hostname'] }}"
+          - "  public ip: {{ hostvars[inventory_hostname]['ansible_host'] }}"
+          - "  private ip: {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+    - name: Pause play to interact with the servers
+      ansible.builtin.pause:
+        prompt: |
+          Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort.
+          Aborting at this stage requires manual removal of all cloud resources this playbook creates.
+
+- name: Terminate instances and delete OCI resources
+  hosts: localhost
+  vars_files:
+    - default_vars.yml
+  vars:
+    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
+
+  tasks:
+
+    - name: Terminate the instances
+      oracle.oci.oci_compute_instance:
+        id: "{{ hostvars[item]['instance_ocid'] }}"
+        state: absent
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+
+    - name: Delete the subnet
+      oracle.oci.oci_network_subnet:
+        id: "{{ my_subnet_id }}"
+        state: absent
+
+    - name: Delete the security list
+      oracle.oci.oci_network_security_list:
+        id: "{{ my_security_list_id }}"
+        state: absent
+
+    - name: Delete the route table
+      oracle.oci.oci_network_route_table:
+        id: "{{ my_rt_id }}"
+        state: absent
+
+    - name: Delete the Internet Gateway
+      oracle.oci.oci_network_internet_gateway:
+        id: "{{ my_internet_gateway_id }}"
+        state: absent
+
+    - name: Delete the VCN
+      oracle.oci.oci_network_vcn:
+        vcn_id: "{{ my_vcn_id }}"
+        state: absent
+
+    - name: Remove artifacts
+      ansible.builtin.file:
+        state: absent
+        path: "{{ item }}"
+      loop:
+        - oci_vars.yml
