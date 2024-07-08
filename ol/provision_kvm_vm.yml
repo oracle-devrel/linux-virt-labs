@@ -26,7 +26,7 @@
         url: "{{ base_image_url }}"
         dest: "/tmp/{{ base_image_name }}"
         checksum: "sha256:{{ base_image_sha }}"
-      mode: "0664"
+        mode: "0664"
 
     - name: Copy base image to libvirt directory
       ansible.builtin.copy:
