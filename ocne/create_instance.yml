@@ -275,6 +275,10 @@
       ansible.builtin.include_tasks: "create_lb.yml"
       when: use_lb
 
+    - name: Set vlan
+      ansible.builtin.include_tasks: "create_vlan.yml"
+      when: use_vlan
+
     - name: Set oci repository
       ansible.builtin.include_tasks: "create_ocir.yml"
       when: use_ocir
