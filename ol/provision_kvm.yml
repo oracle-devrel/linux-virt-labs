@@ -6,6 +6,8 @@
 
 - name: Install a KVM server
   hosts: server
+  vars_files:
+    - default_vars.yml
   become: true
 
   tasks:
