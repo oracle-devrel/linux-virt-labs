@@ -104,10 +104,10 @@
         path: "/tmp/{{ vm_name }}.iso"
         state: absent
 
-    - name: Define the vm
+    - name: Define the vm using xml
       community.libvirt.virt:
         command: define
-        xml: "{{ lookup('template', 'vm-template.xml.j2') }}"
+        xml: "{{ lookup('template', 'vm_template.j2') }}"
 
 - name: Start the vm
   community.libvirt.virt:
