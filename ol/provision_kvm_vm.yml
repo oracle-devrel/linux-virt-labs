@@ -8,7 +8,7 @@
   community.libvirt.virt:
     command: list_vms
   register: existing_vms
-  changed_when: no
+  changed_when: false
 
 - name: Print list of existing VMs
   ansible.builtin.debug:
@@ -16,90 +16,98 @@
   when: debug_enabled
 
 - name: Create VM if it doesn't already existing
-  block:
-
-  - name: Download base image
-    ansible.builtin.get_url:
-      url: "{{ base_image_url }}"
-      dest: "/tmp/{{ base_image_name }}"
-      checksum: "sha256:{{ base_image_sha }}"
-
-  - name: Copy base image to libvirt directory
-    ansible.builtin.copy:
-      dest: "{{ libvirt_pool_dir }}/{{ vm_name }}.qcow"
-      src: "/tmp/{{ base_image_name }}"
-      force: no
-      remote_src: yes 
-      owner: qemu
-      group: qemu
-      mode: 0660
-    register: copy_results
-
-  - name: Generate a vm ssh keypair
-    community.crypto.openssh_keypair:
-      path: ~/.ssh/id_rsa
-      size: 2048
-      comment: vm ssh keypair
-    register: vm_ssh_keypair
-    become_user: "{{ username }}"
-
-  - name: Create vm meta-data
-    ansible.builtin.copy:
-      dest: "~/meta-data"
-      content: |
-        instance-id: iid-local01
-        local-hostname: {{ vm_name }}
-    become_user: "{{ username }}"
-
-  - name: Read the vm ssh private key
-    ansible.builtin.slurp:
-      src: "~/.ssh/id_rsa.pub"
-    register: vm_ssh_private_key
-    become_user: "{{ username }}"
-
-  - name: Create vm user-data
-    ansible.builtin.copy:
-      dest: "~/user-data"
-      content: |
-        #cloud-config
-
-        system_info:
-          default_user:
-            name: opc
-        
-        ssh_authorized_keys:
-          - {{ vm_ssh_private_key.content | b64decode }}
-    become_user: "{{ username }}"
-
-  - name: Generate iso containing cloud-init configuration
-    ansible.builtin.shell: |
-      genisoimage -output /tmp/{{ vm_name }}.iso -volid cidata -joliet -rock ~/user-data ~/meta-data
-    become_user: "{{ username }}"
-
-  - name: Copy vm iso image to libvirt directory
-    ansible.builtin.copy:
-      dest: "{{ libvirt_pool_dir }}/{{ vm_name }}.iso"
-      src: "/tmp/{{ vm_name }}.iso"
-      force: no
-      remote_src: yes 
-      owner: qemu
-      group: qemu
-      mode: 0660
-
-  - name: Remove vm iso image from tmp
-    ansible.builtin.file:
-      path: "/tmp/{{ vm_name }}.iso"
-      state: absent
-
-  - name: Define the vm
-    community.libvirt.virt:
-      command: define
-      xml: "{{ lookup('template', 'vm-template.xml.j2') }}"
-
   when: ( vm_name not in existing_vms.list_vms )
   # when: ( existing_vms.list_vms | length > 0 )
   # when: ( existing_vms.list_vms.0 is defined )
+  block:
 
+    - name: Download base image
+      ansible.builtin.get_url:
+        url: "{{ base_image_url }}"
+        dest: "/tmp/{{ base_image_name }}"
+        checksum: "sha256:{{ base_image_sha }}"
+      mode: "0664"
+
+    - name: Copy base image to libvirt directory
+      ansible.builtin.copy:
+        dest: "{{ libvirt_pool_dir }}/{{ vm_name }}.qcow"
+        src: "/tmp/{{ base_image_name }}"
+        force: false
+        remote_src: true
+        owner: qemu
+        group: qemu
+        mode: "0660"
+      register: copy_results
+
+    - name: Generate a vm ssh keypair
+      community.crypto.openssh_keypair:
+        path: ~/.ssh/id_rsa
+        size: 2048
+        comment: vm ssh keypair
+      register: vm_ssh_keypair
+      become: true
+      become_user: "{{ username }}"
+
+    - name: Create vm meta-data
+      ansible.builtin.copy:
+        dest: "~/meta-data"
+        content: |
+          instance-id: iid-local01
+          local-hostname: {{ vm_name }}
+      become: true
+      become_user: "{{ username }}"
+      mode: "0664"
+
+    - name: Read the vm ssh private key
+      ansible.builtin.slurp:
+        src: "~/.ssh/id_rsa.pub"
+      register: vm_ssh_private_key
+      become: true
+      become_user: "{{ username }}"
+
+    - name: Create vm user-data
+      ansible.builtin.copy:
+        dest: "~/user-data"
+        content: |
+          #cloud-config
+
+          system_info:
+            default_user:
+              name: opc
+
+          ssh_authorized_keys:
+            - {{ vm_ssh_private_key.content | b64decode }}
+      become: true
+      become_user: "{{ username }}"
+      mode: "0664"
+
+    - name: Generate iso containing cloud-init configuration
+      ansible.builtin.shell: |
+        genisoimage -output /tmp/{{ vm_name }}.iso -volid cidata -joliet -rock ~/user-data ~/meta-data
+      become: true
+      become_user: "{{ username }}"
+      register: generate_iso
+      changed_when: generate_iso.rc == 0
+
+    - name: Copy vm iso image to libvirt directory
+      ansible.builtin.copy:
+        dest: "{{ libvirt_pool_dir }}/{{ vm_name }}.iso"
+        src: "/tmp/{{ vm_name }}.iso"
+        force: false
+        remote_src: true
+        owner: qemu
+        group: qemu
+        mode: "0660"
+
+    - name: Remove vm iso image from tmp
+      ansible.builtin.file:
+        path: "/tmp/{{ vm_name }}.iso"
+        state: absent
+
+    - name: Define the vm
+      community.libvirt.virt:
+        command: define
+        xml: "{{ lookup('template', 'vm-template.xml.j2') }}"
 
 - name: Start the vm
   community.libvirt.virt:
@@ -115,5 +123,3 @@
     path: "/tmp/{{ base_image_name }}"
     state: absent
   when: cleanup_tmp | bool
-
-

@@ -6,10 +6,10 @@
 
 - name: Install a KVM server
   hosts: server
-  become: yes
+  become: true
 
   tasks:
-  
+
     - name: Install Oracle Linux 8 virtualization packages
       ansible.builtin.dnf:
         name:
@@ -25,9 +25,9 @@
     - name: Install Oracle Linux 9 virtualization packages
       ansible.builtin.dnf:
         name:
-          - qemu-kvm 
-          - libvirt 
-          - virt-install 
+          - qemu-kvm
+          - libvirt
+          - virt-install
           - virt-viewer
           - containers-common
           - cockpit
@@ -40,7 +40,7 @@
         state: started
         name: libvirtd.service
         enabled: true
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8' 
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Start and enable Oracle Linux 9 modular 'ro' virtualization services
       ansible.builtin.systemd:
@@ -48,9 +48,9 @@
         name: "virt{{ item }}d-ro.socket"
         enabled: true
       loop:
-        - qemu 
-        - network 
-        - nodedev 
+        - qemu
+        - network
+        - nodedev
         - nwfilter
         - secret
         - storage
@@ -64,9 +64,9 @@
         name: "virt{{ item }}d-admin.socket"
         enabled: true
       loop:
-        - qemu 
-        - network 
-        - nodedev 
+        - qemu
+        - network
+        - nodedev
         - nwfilter
         - secret
         - storage
@@ -84,18 +84,18 @@
       ansible.posix.firewalld:
         zone: public
         service: "{{ item }}"
-        permanent: yes
+        permanent: true
         state: enabled
-        immediate: yes
+        immediate: true
       loop:
         - libvirt
         - libvirt-tls
 
     - name: Add user to libvirt and qemu group
-      ansible.builtin.user:                                              
-        name: "{{ username }}"                                                                
-        groups: libvirt,qemu                    
-        append: true 
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: libvirt,qemu
+        append: true
 
     - name: Reset ssh connection to allow user changes to affect 'current login user'
       ansible.builtin.meta: reset_connection
@@ -106,7 +106,7 @@
         base_image_url: "{{ ol8_base_image_url }}"
         base_image_sha: "{{ ol8_base_image_sha }}"
         vm_name: ol8-dev
-      ansible.builtin.import_tasks: provision_kvm_vm.yaml
+      ansible.builtin.import_tasks: provision_kvm_vm.yml
       when: create_vm
 
     - name: Deploy VM2
@@ -115,5 +115,5 @@
         base_image_url: "{{ ol9_base_image_url }}"
         base_image_sha: "{{ ol9_base_image_sha }}"
         vm_name: ol9-dev
-      ansible.builtin.import_tasks: provision_kvm_vm.yaml
-      when: create_vm  
+      ansible.builtin.import_tasks: provision_kvm_vm.yml
+      when: create_vm
