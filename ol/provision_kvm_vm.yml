@@ -54,9 +54,9 @@
         content: |
           instance-id: iid-local01
           local-hostname: {{ vm_name }}
+        mode: "0664"
       become: true
       become_user: "{{ username }}"
-      mode: "0664"
 
     - name: Read the vm ssh private key
       ansible.builtin.slurp:
@@ -77,9 +77,9 @@
 
           ssh_authorized_keys:
             - {{ vm_ssh_private_key.content | b64decode }}
+        mode: "0664"
       become: true
       become_user: "{{ username }}"
-      mode: "0664"
 
     - name: Generate iso containing cloud-init configuration
       ansible.builtin.shell: |
