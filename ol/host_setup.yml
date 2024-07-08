@@ -1,0 +1,162 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Group of setup tasks for each instance
+  vars:
+    max_retries: "{{ 5 if max_retries is undefined else max_retries | int }}"
+    retry_delay: "{{ 10 if retry_delay is undefined else retry_delay | int }}"
+  block:
+    - name: Increment the retry count
+      ansible.builtin.set_fact:
+        retry_count: "{{ 0 if retry_count is undefined else retry_count | int + 1 }}"
+
+    # - name: Wait 300 seconds for port 22 to become open and contain "OpenSSH"
+    #   ansible.builtin.wait_for:
+    #     host: "{{ hostvars[inventory_hostname].ansible_host }}"
+    #     port: 22
+    #     search_regex: OpenSSH
+    #     delay: 10
+
+    - name: Wait for system to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
+    # - name: Run ansible adhoc ping module
+    #   ansible.builtin.command: ansible all -i '{{ hostvars[inventory_hostname].ansible_host }},' -m ping
+    #   ignore_errors: false
+    #   register: result
+    #   until: result.rc == 0
+    #   retries: 10
+    #   delay: 15
+
+    - name: Run facts module to get latest information
+      ansible.builtin.setup:
+
+    - name: Add user account with access to sudo
+      ansible.builtin.user:
+        name: "{{ username }}"
+        password: "{{ user_default_password | password_hash('sha512') }}"
+        comment: Ansible created user
+        groups: wheel
+        append: true
+        update_password: on_create
+      become: true
+
+    - name: Set authorized key for user using local public key file
+      ansible.posix.authorized_key:
+        user: "{{ username }}"
+        state: present
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+      become: true
+
+    - name: Set user with passwordless sudo access
+      vars:
+        sudo_content: "{{ username }} ALL=(ALL:ALL) NOPASSWD: ALL"
+      ansible.builtin.lineinfile:
+        path: "/etc/sudoers.d/{{ username }}"
+        regexp: "{{ username }} ALL="
+        line: "{{ sudo_content }}"
+        state: present
+        create: true
+        mode: "0644"
+      become: true
+
+    - name: Create the ansible tmp directory if it does not exist
+      ansible.builtin.file:
+        path: ~/.ansible/tmp
+        state: directory
+        mode: '0700'
+      become: true
+      become_user: "{{ username }}"
+
+    - name: Add locale settings to .bashrc
+      ansible.builtin.lineinfile:
+        dest: ~/.bashrc
+        line: "{{ item }}"
+      with_items:
+        - 'export LC_ALL="en_US.UTF-8"'
+        - 'export LC_CTYPE="en_US.UTF-8"'
+      become: true
+      become_user: "{{ username }}"
+
+    # - name: Generate ssh keypair for user
+    #   community.crypto.openssh_keypair:
+    #     path: ~/.ssh/id_rsa
+    #     size: 2048
+    #     comment: ocne ssh keypair
+    #   become: true
+    #   become_user: "{{ username }}"
+
+    # - name: Fetch public key file from server
+    #   ansible.builtin.fetch:
+    #     src: "~/.ssh/id_rsa.pub"
+    #     dest: "buffer/{{ inventory_hostname }}-id_rsa.pub"
+    #     flat: true
+    #   become: true
+    #   become_user: "{{ username }}"
+
+    # - name: Copy public key to each destination
+    #   ansible.posix.authorized_key:
+    #     user: "{{ username }}"
+    #     state: present
+    #     key: "{{ lookup('file', 'buffer/{{ item }}-id_rsa.pub') }}"
+    #   loop: "{{ groups['all'] | flatten(levels=1) }}"
+    #   become: true
+
+    # - name: Print hostvars for groups
+    #   ansible.builtin.debug:
+    #     msg: "{{ hostvars[item] }}"
+    #   loop: "{{ groups['all'] | flatten(levels=1) }}"
+    #   when: debug_enabled
+
+    # - name: Print vnc subnet_domain_name
+    #   ansible.builtin.debug:
+    #     var: my_subnet_domain_name
+    #   when: debug_enabled
+
+    # - name: Accept new ssh fingerprints
+    #   ansible.builtin.shell: |
+    #     ssh-keyscan -t ecdsa-sha2-nistp256 \
+    #     {{ hostvars[item].ansible_hostname }},\
+    #     {{ hostvars[item].ansible_default_ipv4.address }},\
+    #     {{ hostvars[item].ansible_hostname + '.' + my_subnet_domain_name }} >> ~/.ssh/known_hosts
+    #   with_items:
+    #     - "{{ groups['all'] }}"
+    #   become: true
+    #   become_user: "{{ username }}"
+    #   register: result
+    #   changed_when: result.rc == 0
+
+    - name: Configure firewall to log denied packets
+      ansible.builtin.command:
+        cmd: firewall-cmd --set-log-denied=all
+      when: debug_enabled
+      register: firewall_result
+      changed_when: firewall_result.rc == 0
+      become: true
+
+    # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
+
+  rescue:
+    - name: Fail message for rescue
+      ansible.builtin.fail:
+        msg: Maximum retries of host setup tasks reached
+      when: retry_count | int == max_retries | int
+
+    - name: Print retry message
+      ansible.builtin.debug:
+        msg: "Host setup task group failed, try again..."
+
+    - name: Sleep between retries
+      ansible.builtin.wait_for:
+        timeout: "{{ retry_delay }}" # seconds
+      delegate_to: localhost
+      become: false
+
+    - name: Retry host setup if there is a failure
+      ansible.builtin.include_tasks: host_setup.yml
