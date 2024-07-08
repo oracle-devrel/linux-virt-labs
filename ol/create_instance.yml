@@ -295,6 +295,10 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+- name: Provision KVM server
+  ansible.builtin.import_playbook: provision_kvm.yml
+  when: use_kvm
+
 - name: Print instances
   hosts: all
   become: true

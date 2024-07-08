@@ -10,7 +10,28 @@ instance_memory: 32
 subnet_cidr_block: "10.0.0.48/28"
 
 username: "oracle"
+usergroup: "{{ username }}" 
 user_default_password: "oracle"
 debug_enabled: false
 #ceph_volume_size_in_gbs: 50
 #add_ceph_deployments: false
+
+vnc_port: "1"
+vnc_default_password: "oracle"
+vnc_geometry: "1920x1080"
+
+use_kvm: false
+create_vm: true
+ol8_base_image_name: OL8U10_x86_64-kvm-b237.qcow2
+ol8_base_image_url: https://yum.oracle.com/templates/OracleLinux/OL8/u10/x86_64/{{ ol8_base_image_name }}
+ol8_base_image_sha: 53a5eee27c59f335ba1bdb0afc2c3273895f128dd238b51a78f46ad515cbc662
+ol9_base_image_name: OL9U4_x86_64-kvm-b234.qcow2
+ol9_base_image_url: https://yum.oracle.com/templates/OracleLinux/OL9/u4/x86_64/{{ ol9_base_image_name }}
+ol9_base_image_sha: 7f1cf4e1fafda55bb4d837d0eeb9592d60e896fa56565081fc4d8519c0a3fd1a
+libvirt_pool_dir: "/var/lib/libvirt/images"
+vm_name: ol9-dev
+vm_vcpus: 2
+vm_ram_mb: 2048
+vm_net: default
+vm_root_pass: 
+cleanup_tmp: no
