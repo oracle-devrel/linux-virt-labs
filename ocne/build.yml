@@ -137,7 +137,6 @@
       - "Instance name: {{ instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
-      - "{% if use_vlan == true %}  vlan ip: '{{ vlan_private_ip }}'{% endif %}"
   when: debug_enabled
 
 - name: Add host to in-memory host file

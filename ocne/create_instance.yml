@@ -317,6 +317,10 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+    - name: Assign vlan ip addresses
+      ansible.builtin.include_tasks: "host_assign_vlan_ip.yml"
+      when: use_vlan
+
 - name: Install Oracle Cloud Native Environment
   vars:
     install_type: "{{ ocne_type if ocne_type is defined else (lookup('file', 'default_vars.yml') | from_yaml).ocne_type | default('none') }}"
