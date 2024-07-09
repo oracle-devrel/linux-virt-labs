@@ -87,17 +87,10 @@
   delay: 30
   until: result is not failed
 
-- name: Get vlan vnic details
-  oracle.oci.oci_network_vnic_facts:
-    id: "{{ result.vnic_attachment.id }}"
-  register: result
-  retries: 10
-  delay: 30
-  until: result is not failed
-
-- name: Set the instance vlan private ip address
-  ansible.builtin.set_fact:
-    vlan_private_ip: "{{ result.vnic.private_ip }}"
+- name: Print vnic_attachment for VLAN
+  ansible.builtin.debug:
+    var: result
+  when: debug_enabled
 
 - name: Add block volume to worker nodes for ceph storage
   when:
