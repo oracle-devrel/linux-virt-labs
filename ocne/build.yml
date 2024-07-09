@@ -44,7 +44,7 @@
 
 - name: Set the compute instance id
   ansible.builtin.set_fact:
-    instance_id: "{{ result.instance.id }}"
+    my_instance_id: "{{ result.instance.id }}"
 
 - name: Set the compute instance display_name
   ansible.builtin.set_fact:
@@ -53,7 +53,7 @@
 - name: Get the primary vnic attachment details of instance
   oracle.oci.oci_compute_vnic_attachment_facts:
     compartment_id: "{{ my_compartment_id }}"
-    instance_id: "{{ instance_id }}"
+    instance_id: "{{ my_instance_id }}"
   register: result
   retries: 10
   delay: 30
@@ -75,16 +75,18 @@
   ansible.builtin.set_fact:
     instance_public_ip: "{{ result.vnic.public_ip }}"
 
-- name: Add vnic to instance for vlan
+- name: Add vlan vnic to instance
   when: use_vlan
   block:
-    - name: Create vnic_attachment for vlan
+    - name: Create vlan vnic_attachment
       oracle.oci.oci_compute_vnic_attachment:
         compartment_id: "{{ my_compartment_id }}"
-        instance_id: "{{ instance_id }}"
         create_vnic_details:
           assign_public_ip: false
+          display_name: "vlan-vnic-{{ item.value.instance_name }}"
           vlan_id: "{{ my_vlan_id }}"
+        display_name: "vlan-attach-{{ item.value.instance_name }}"
+        instance_id: "{{ my_instance_id }}"
       register: result
       retries: 10
       delay: 30
@@ -119,7 +121,7 @@
 
     - name: Attach ceph storage block volume
       oracle.oci.oci_compute_volume_attachment:
-        instance_id: "{{ instance_id }}"
+        instance_id: "{{ my_instance_id }}"
         type: paravirtualized
         volume_id: "{{ volume_id }}"
         compartment_id: "{{ my_compartment_id }}"
@@ -147,4 +149,4 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
-    instance_ocid: "{{ instance_id }}"
+    instance_ocid: "{{ my_instance_id }}"
