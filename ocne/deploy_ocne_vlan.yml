@@ -305,7 +305,7 @@
     - name: Copy CA Certificate for the Platform CLI
       ansible.builtin.copy:
         src: ~/certificates/ca/ca.cert
-        dest: ~/.olcne/certificates/ocne-operator:8091/ca.cert
+        dest: ~/.olcne/certificates/{{ operator_nodes }}:8091/ca.cert
         remote_src: true
         mode: "0644"
       become: true
