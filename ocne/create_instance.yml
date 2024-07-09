@@ -426,6 +426,11 @@
             state: 'absent'
           loop: "{{ oci_ccm_lb_ids }}"
 
+    - name: Delete the vlan
+      oracle.oci.oci_network_vlan:
+        vlan_id: "{{ vlan_id }}"
+        state: absent
+
     - name: Delete the subnet
       oracle.oci.oci_network_subnet:
         id: "{{ my_subnet_id }}"
