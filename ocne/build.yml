@@ -61,7 +61,7 @@
 
 - name: Get primary vnic details
   oracle.oci.oci_network_vnic_facts:
-    id: "{{ result.vnic_attachments[0].vnic_id }}"
+    vnic_id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
   retries: 10
   delay: 30
@@ -75,22 +75,25 @@
   ansible.builtin.set_fact:
     instance_public_ip: "{{ result.vnic.public_ip }}"
 
-- name: Create vnic_attachment for VLAN
-  oracle.oci.oci_compute_vnic_attachment:
-    compartment_id: "{{ my_compartment_id }}"
-    instance_id: "{{ instance_id }}"
-    create_vnic_details:
-      assign_public_ip: false
-      vlan_id: "{{ my_vlan_id }}"
-  register: result
-  retries: 10
-  delay: 30
-  until: result is not failed
+- name: Add vnic to instance for vlan
+  when: use_vlan
+  block:
+    - name: Create vnic_attachment for vlan
+      oracle.oci.oci_compute_vnic_attachment:
+        compartment_id: "{{ my_compartment_id }}"
+        instance_id: "{{ instance_id }}"
+        create_vnic_details:
+          assign_public_ip: false
+          vlan_id: "{{ my_vlan_id }}"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
 
-- name: Print vnic_attachment for VLAN
-  ansible.builtin.debug:
-    var: result
-  when: debug_enabled
+    - name: Print vnic_attachment for vlan
+      ansible.builtin.debug:
+        var: result
+      when: debug_enabled
 
 - name: Add block volume to worker nodes for ceph storage
   when:
