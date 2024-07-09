@@ -1,0 +1,69 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Assign a VLAN ip address to each node
+  hosts: oci
+  become: yes
+
+  tasks:
+
+  - name: Assign vlan ip4 address to operator
+    community.general.nmcli:
+      conn_name: oci_vlan
+      ifname: ens5
+      ip4: 10.0.12.100/24
+      gw4: 10.0.12.1
+      state: present
+      autoconnect: yes
+      type: ethernet
+    when: 
+      - ansible_ens5 is defined
+      - "'operator' in group_names"
+
+  - name: Assign vlan ip4 address to control-plane
+    community.general.nmcli:
+      conn_name: oci_vlan
+      ifname: ens5
+      ip4: 10.0.12.1{{ groups['controlplane'].index(inventory_hostname) }}/24
+      gw4: 10.0.12.1
+      state: present
+      autoconnect: yes
+      type: ethernet
+    when: 
+      - ansible_ens5 is defined
+      - "'controlplane' in group_names"
+
+  - name: Assign vlan ip4 address to worker
+    community.general.nmcli:
+      conn_name: oci_vlan
+      ifname: ens5
+      ip4: 10.0.12.2{{ groups['worker'].index(inventory_hostname) }}/24
+      gw4: 10.0.12.1
+      state: present
+      autoconnect: yes
+      type: ethernet
+    when: 
+      - ansible_ens5 is defined
+      - "'worker' in group_names"
+
+- name: Get new ssh fingerprints for vlan addresses
+  hosts: oci
+  become: yes
+
+  tasks:
+   
+  - name: Print hostvars details
+    ansible.builtin.debug:
+      msg: "{{ hostvars[inventory_hostname] }}"
+    when: debug_enabled
+
+  - name: Accept new ssh fingerprints
+    ansible.builtin.shell: |
+      ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item]['ansible_ens5']['ipv4']['address'] }} >> ~/.ssh/known_hosts
+    with_items:
+      - "{{ groups['oci'] }}"
+    become_user: "{{ username }}"
+    when: groups['oci'] | length | int >= 2

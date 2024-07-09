@@ -426,14 +426,14 @@
             state: 'absent'
           loop: "{{ oci_ccm_lb_ids }}"
 
-    - name: Delete network_security_group
-      oracle.oci.oci_network_security_group:
-        network_security_group_id: "{{ my_nsg_id }}"
-        state: absent
-
     - name: Delete the vlan
       oracle.oci.oci_network_vlan:
         vlan_id: "{{ my_vlan_id }}"
+        state: absent
+
+    - name: Delete network_security_group
+      oracle.oci.oci_network_security_group:
+        network_security_group_id: "{{ my_nsg_id }}"
         state: absent
 
     - name: Delete the subnet
