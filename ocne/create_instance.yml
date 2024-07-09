@@ -428,7 +428,7 @@
 
     - name: Delete the vlan
       oracle.oci.oci_network_vlan:
-        vlan_id: "{{ vlan_id }}"
+        vlan_id: "{{ my_vlan_id }}"
         state: absent
 
     - name: Delete the subnet

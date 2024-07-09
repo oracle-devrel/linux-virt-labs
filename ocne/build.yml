@@ -77,9 +77,11 @@
 
 - name: Create vnic_attachment for VLAN
   oracle.oci.oci_compute_vnic_attachment:
-    create_vnic_details:
-      vlan_id: "{{ my_vlan_id }}"
+    compartment_id: "{{ my_compartment_id }}"
     instance_id: "{{ instance_id }}"
+    create_vnic_details:
+      assign_public_ip: false
+      vlan_id: "{{ my_vlan_id }}"
   register: result
   retries: 10
   delay: 30
