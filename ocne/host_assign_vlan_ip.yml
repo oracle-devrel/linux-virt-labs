@@ -46,6 +46,9 @@
     - "'worker' in group_names"
   become: true
 
+- name: Run facts module to get latest information
+  ansible.builtin.setup:
+
 - name: Print hostvars details
   ansible.builtin.debug:
     msg: "{{ hostvars[inventory_hostname] }}"
@@ -54,8 +57,7 @@
 - name: Accept new ssh fingerprints
   ansible.builtin.shell: |
     ssh-keyscan -t ecdsa-sha2-nistp256 {{ hostvars[item]['ansible_ens5']['ipv4']['address'] }} >> ~/.ssh/known_hosts
-  with_items:
-    - "{{ groups['all'] }}"
+  loop: "{{ groups['all'] | flatten(levels=1) }}"
   when: groups['all'] | length | int >= 2
   become: true
   become_user: "{{ username }}"
