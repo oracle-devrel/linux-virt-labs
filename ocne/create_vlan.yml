@@ -8,7 +8,7 @@
   oracle.oci.oci_network_security_group:
     compartment_id: "{{ my_compartment_id }}"
     vcn_id: "{{ my_vcn_id }}"
-    display_name: "Linuxvirt Virtual NSG"
+    display_name: "Linuxvirt VLAN NSG"
   register: result
   retries: 10
   delay: 30
@@ -23,16 +23,16 @@
     network_security_group_id: "{{ my_nsg_id }}"
     action: add
     security_rules:
-    -
-      direction: "EGRESS"
-      protocol: "all"
-      destination_type: "CIDR_BLOCK"
-      destination: "0.0.0.0/0"
-    -
-      direction: "INGRESS"
-      protocol: "all"
-      source_type: "CIDR_BLOCK"
-      source: "10.0.0.0/16"
+      -
+        direction: "EGRESS"
+        protocol: "all"
+        destination_type: "CIDR_BLOCK"
+        destination: "0.0.0.0/0"
+      -
+        direction: "INGRESS"
+        protocol: "all"
+        source_type: "CIDR_BLOCK"
+        source: "10.0.0.0/16"
   register: result
   retries: 10
   delay: 30
@@ -43,7 +43,7 @@
     availability_domain: "{{ my_availability_domain }}"
     cidr_block: "{{ vlan_cidr_block }}"
     compartment_id: "{{ my_compartment_id }}"
-    display_name: "setup-common-vcn-vlan"
+    display_name: "Linuxvirt VLAN"
     # route_table_id: "{{ rt_id }}"
     # vlan_tag: "10"
     nsg_ids:

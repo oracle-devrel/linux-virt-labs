@@ -235,6 +235,10 @@
       ansible.builtin.set_fact:
         my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
 
+    - name: Set vlan
+      ansible.builtin.include_tasks: "create_vlan.yml"
+      when: use_vlan
+
     - name: Set oci vars file
       ansible.builtin.template:
         src: oci_vars.j2
@@ -274,10 +278,6 @@
     - name: Set load balancer
       ansible.builtin.include_tasks: "create_lb.yml"
       when: use_lb
-
-    - name: Set vlan
-      ansible.builtin.include_tasks: "create_vlan.yml"
-      when: use_vlan
 
     - name: Set oci repository
       ansible.builtin.include_tasks: "create_ocir.yml"

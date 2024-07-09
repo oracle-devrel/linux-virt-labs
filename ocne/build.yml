@@ -50,7 +50,7 @@
   ansible.builtin.set_fact:
     instance_display_name: "{{ result.instance.display_name }}"
 
-- name: Get the vnic attachment details of instance
+- name: Get the primary vnic attachment details of instance
   oracle.oci.oci_compute_vnic_attachment_facts:
     compartment_id: "{{ my_compartment_id }}"
     instance_id: "{{ instance_id }}"
@@ -59,7 +59,7 @@
   delay: 30
   until: result is not failed
 
-- name: Get vnic details
+- name: Get primary vnic details
   oracle.oci.oci_network_vnic_facts:
     id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
@@ -67,13 +67,35 @@
   delay: 30
   until: result is not failed
 
-- name: Set the instance private ip address
+- name: Set the instance primary private ip address
   ansible.builtin.set_fact:
     instance_private_ip: "{{ result.vnic.private_ip }}"
 
-- name: Set the instance public ip address
+- name: Set the instance primary public ip address
   ansible.builtin.set_fact:
     instance_public_ip: "{{ result.vnic.public_ip }}"
+
+- name: Create vnic_attachment for VLAN
+  oracle.oci.oci_compute_vnic_attachment:
+    create_vnic_details:
+      vlan_id: "{{ my_vlan_id }}"
+    instance_id: "{{ instance_id }}"
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Get vlan vnic details
+  oracle.oci.oci_network_vnic_facts:
+    id: "{{ result.vnic_attachment.id }}"
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Set the instance vlan private ip address
+  ansible.builtin.set_fact:
+    vlan_private_ip: "{{ result.vnic.private_ip }}"
 
 - name: Add block volume to worker nodes for ceph storage
   when:
@@ -115,6 +137,7 @@
       - "Instance name: {{ instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
+      - "{% if use_vlan == true %}  vlan ip: '{{ vlan_private_ip }}'{% endif %}"
   when: debug_enabled
 
 - name: Add host to in-memory host file
