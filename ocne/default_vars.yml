@@ -26,6 +26,7 @@ debug_enabled: false
 ocne_type: quick
 use_ocne_full: false
 use_lb: false
+use_int_lb: false
 oci_ccm_bash: false
 use_oci_ccm: false
 use_istio: false
