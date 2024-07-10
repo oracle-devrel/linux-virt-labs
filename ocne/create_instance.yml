@@ -235,6 +235,10 @@
       ansible.builtin.set_fact:
         my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
 
+    - name: Set vlan
+      ansible.builtin.include_tasks: "create_vlan.yml"
+      when: use_vlan
+
     - name: Set oci vars file
       ansible.builtin.template:
         src: oci_vars.j2
@@ -312,6 +316,10 @@
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
+
+    - name: Assign vlan ip addresses
+      ansible.builtin.include_tasks: "host_assign_vlan_ip.yml"
+      when: use_vlan
 
 - name: Install Oracle Cloud Native Environment
   vars:
@@ -421,6 +429,16 @@
             load_balancer_id: "{{ item }}"
             state: 'absent'
           loop: "{{ oci_ccm_lb_ids }}"
+
+    - name: Delete the vlan
+      oracle.oci.oci_network_vlan:
+        vlan_id: "{{ my_vlan_id }}"
+        state: absent
+
+    - name: Delete network_security_group
+      oracle.oci.oci_network_security_group:
+        network_security_group_id: "{{ my_nsg_id }}"
+        state: absent
 
     - name: Delete the subnet
       oracle.oci.oci_network_subnet:

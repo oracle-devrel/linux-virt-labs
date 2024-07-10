@@ -44,36 +44,58 @@
 
 - name: Set the compute instance id
   ansible.builtin.set_fact:
-    instance_id: "{{ result.instance.id }}"
+    my_instance_id: "{{ result.instance.id }}"
 
 - name: Set the compute instance display_name
   ansible.builtin.set_fact:
     instance_display_name: "{{ result.instance.display_name }}"
 
-- name: Get the vnic attachment details of instance
+- name: Get the primary vnic attachment details of instance
   oracle.oci.oci_compute_vnic_attachment_facts:
     compartment_id: "{{ my_compartment_id }}"
-    instance_id: "{{ instance_id }}"
+    instance_id: "{{ my_instance_id }}"
   register: result
   retries: 10
   delay: 30
   until: result is not failed
 
-- name: Get vnic details
+- name: Get primary vnic details
   oracle.oci.oci_network_vnic_facts:
-    id: "{{ result.vnic_attachments[0].vnic_id }}"
+    vnic_id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
   retries: 10
   delay: 30
   until: result is not failed
 
-- name: Set the instance private ip address
+- name: Set the instance primary private ip address
   ansible.builtin.set_fact:
     instance_private_ip: "{{ result.vnic.private_ip }}"
 
-- name: Set the instance public ip address
+- name: Set the instance primary public ip address
   ansible.builtin.set_fact:
     instance_public_ip: "{{ result.vnic.public_ip }}"
+
+- name: Add vlan vnic to instance
+  when: use_vlan
+  block:
+    - name: Create vlan vnic_attachment
+      oracle.oci.oci_compute_vnic_attachment:
+        compartment_id: "{{ my_compartment_id }}"
+        create_vnic_details:
+          assign_public_ip: false
+          display_name: "vlan-vnic-{{ item.value.instance_name }}"
+          vlan_id: "{{ my_vlan_id }}"
+        display_name: "vlan-attach-{{ item.value.instance_name }}"
+        instance_id: "{{ my_instance_id }}"
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Print vnic_attachment for vlan
+      ansible.builtin.debug:
+        var: result
+      when: debug_enabled
 
 - name: Add block volume to worker nodes for ceph storage
   when:
@@ -99,7 +121,7 @@
 
     - name: Attach ceph storage block volume
       oracle.oci.oci_compute_volume_attachment:
-        instance_id: "{{ instance_id }}"
+        instance_id: "{{ my_instance_id }}"
         type: paravirtualized
         volume_id: "{{ volume_id }}"
         compartment_id: "{{ my_compartment_id }}"
@@ -126,4 +148,4 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
-    instance_ocid: "{{ instance_id }}"
+    instance_ocid: "{{ my_instance_id }}"
