@@ -418,7 +418,7 @@
     - name: Create environment with lb using manual install method
       when:
         - use_vlan_full
-        - use_lb_int
+        - use_int_lb
         - groups['controlplane'] | length > 1
       block:
         - name: Create environment
