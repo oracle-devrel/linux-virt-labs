@@ -68,9 +68,11 @@
 
   vars:
     operator_nodes: "{{ groups['operator'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    control_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    worker_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    all_nodes: "{{ operator_nodes + ',' + control_nodes + ',' + worker_nodes }}"
+    cp_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
+    wrk_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
+    all_nodes: "{{ operator_nodes + ',' + cp_nodes + ',' + wrk_nodes }}"
+    control_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    worker_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
     ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:
