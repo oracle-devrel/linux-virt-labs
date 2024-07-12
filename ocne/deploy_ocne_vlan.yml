@@ -419,6 +419,20 @@
           register: install_kubernetes
           changed_when: install_kubernetes.rc == 0
 
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: install_kubernetes
+          when: debug_enabled
+
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: install_kubernetes.rc == 0
+
     - name: Create environment with lb using manual install method
       when:
         - use_vlan_full
@@ -473,19 +487,19 @@
           register: install_kubernetes
           changed_when: install_kubernetes.rc == 0
 
-    - name: Print kubernetes provision output
-      ansible.builtin.debug:
-        var: install_kubernetes
-      when: debug_enabled
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: install_kubernetes
+          when: debug_enabled
 
-    - name: Tag OCNE as provisioned
-      ansible.builtin.file:
-        path: ~/.ocne-provisioned
-        state: touch
-        mode: "0644"
-      become: true
-      become_user: "{{ username }}"
-      when: install_kubernetes.rc == 0
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: install_kubernetes.rc == 0
 
     - name: Check if OCNE provisioned
       ansible.builtin.stat:
