@@ -165,7 +165,7 @@
       delegate_to: "{{ item[0] }}"
       loop: "{{ groups['controlplane'] | product(['2379/tcp', '2380/tcp', '6443/tcp', '8090/tcp', '8472/udp', '10250/tcp', '10255/tcp', '10251/tcp', '10252/tcp']) | list }}"
 
-    - name: Add firewall rules for internal lb
+    - name: Add firewall rules for internal lb on control plane
       when: use_int_lb
       block:
         - name: Add internal lb firewall rule
@@ -174,13 +174,15 @@
             permanent: true
             state: enabled
             immediate: true
-          with_items:
-            - 6444/tcp
+          delegate_to: "{{ item[0] }}"
+          loop: "{{ groups['controlplane'] | product(['6444/tcp']) | list }}"
 
         - name: Add vrrp firewall rule
           ansible.builtin.shell: |
             firewall-cmd --add-protocol=vrrp --zone=public --permanent
             firewall-cmd --reload
+          delegate_to: "{{ item }}"
+          loop: "{{ groups['controlplane'] }}"            
           register: vrrp_firewall
           changed_when: vrrp_firewall.rc == 0
 
