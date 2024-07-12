@@ -170,19 +170,19 @@
       block:
         - name: Add internal lb firewall rule
           ansible.posix.firewalld:
-            port: "{{ item }}"
+            port: "6444/tcp"
             permanent: true
             state: enabled
             immediate: true
-          delegate_to: "{{ item[0] }}"
-          loop: "{{ groups['controlplane'] | product(['6444/tcp']) | list }}"
+          delegate_to: "{{ item }}"
+          loop: "{{ groups['controlplane'] }}"
 
         - name: Add vrrp firewall rule
           ansible.builtin.shell: |
             firewall-cmd --add-protocol=vrrp --zone=public --permanent
             firewall-cmd --reload
           delegate_to: "{{ item }}"
-          loop: "{{ groups['controlplane'] }}"            
+          loop: "{{ groups['controlplane'] }}"
           register: vrrp_firewall
           changed_when: vrrp_firewall.rc == 0
 
