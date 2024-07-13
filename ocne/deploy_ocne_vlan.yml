@@ -68,9 +68,12 @@
 
   vars:
     operator_nodes: "{{ groups['operator'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    control_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    worker_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
-    all_nodes: "{{ operator_nodes + ',' + control_nodes + ',' + worker_nodes }}"
+    cp_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
+    wrk_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | join(',') }}"
+    all_nodes: "{{ operator_nodes + ',' + cp_nodes + ',' + wrk_nodes }}"
+    control_nodes: "{{ groups['controlplane'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    worker_nodes: "{{ groups['worker'] | map('extract', hostvars, ['ansible_ens5', 'ipv4', 'address']) | map('regex_replace', '^(.*)$', '\\1' + ':8090' ) | join(',') }}"
+    ocne_registry_location: 'container-registry.oracle.com/olcne'
 
   tasks:
 
@@ -162,22 +165,24 @@
       delegate_to: "{{ item[0] }}"
       loop: "{{ groups['controlplane'] | product(['2379/tcp', '2380/tcp', '6443/tcp', '8090/tcp', '8472/udp', '10250/tcp', '10255/tcp', '10251/tcp', '10252/tcp']) | list }}"
 
-    - name: Add firewall rules for internal lb
+    - name: Add firewall rules for internal lb on control plane
       when: use_int_lb
       block:
         - name: Add internal lb firewall rule
           ansible.posix.firewalld:
-            port: "{{ item }}"
+            port: "6444/tcp"
             permanent: true
             state: enabled
             immediate: true
-          with_items:
-            - 6444/tcp
+          delegate_to: "{{ item }}"
+          loop: "{{ groups['controlplane'] }}"
 
         - name: Add vrrp firewall rule
           ansible.builtin.shell: |
             firewall-cmd --add-protocol=vrrp --zone=public --permanent
             firewall-cmd --reload
+          delegate_to: "{{ item }}"
+          loop: "{{ groups['controlplane'] }}"
           register: vrrp_firewall
           changed_when: vrrp_firewall.rc == 0
 
@@ -361,3 +366,161 @@
       become: true
       become_user: "{{ username }}"
       when: not ocne_provision.stat.exists
+
+    - name: Create environment using manual install method
+      when:
+        - use_vlan_full
+        - groups['controlplane'] | length < 2
+      block:
+        - name: Create environment
+          ansible.builtin.shell: |
+            olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: create_env
+          changed_when: create_env.rc == 0
+
+        - name: Create Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+            --container-registry {{ ocne_registry_location }} \
+            --control-plane-nodes {{ control_nodes }} \
+            --worker-nodes {{ worker_nodes }} \
+            --selinux enforcing \
+            --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+            --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+            --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: create_kubernetes
+          changed_when: create_kubernetes.rc == 0
+
+        - name: Validate Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module validate --environment-name myenvironment --name mycluster
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: validate_kubernetes
+          changed_when: validate_kubernetes.rc == 0
+
+        - name: Install Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module install --environment-name myenvironment --name mycluster
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: install_kubernetes
+          changed_when: install_kubernetes.rc == 0
+
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: install_kubernetes
+          when: debug_enabled
+
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: install_kubernetes.rc == 0
+
+    - name: Create environment with lb using manual install method
+      when:
+        - use_vlan_full
+        - use_int_lb
+        - groups['controlplane'] | length > 1
+      block:
+        - name: Create environment
+          ansible.builtin.shell: |
+            olcnectl environment create --api-server {{ operator_nodes }}:8091 --environment-name myenvironment --secret-manager-type file --update-config
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: create_env
+          changed_when: create_env.rc == 0
+
+        - name: Create Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module create --environment-name myenvironment --module kubernetes --name mycluster \
+            --container-registry {{ ocne_registry_location }} \
+            --virtual-ip 10.0.12.111 \
+            --control-plane-nodes {{ control_nodes }} \
+            --worker-nodes {{ worker_nodes }} \
+            --selinux enforcing \
+            --restrict-service-externalip-ca-cert ~/certificates/restrict_external_ip/ca.cert \
+            --restrict-service-externalip-tls-cert ~/certificates/restrict_external_ip/node.cert \
+            --restrict-service-externalip-tls-key ~/certificates/restrict_external_ip/node.key
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: create_kubernetes
+          changed_when: create_kubernetes.rc == 0
+
+        - name: Validate Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module validate --environment-name myenvironment --name mycluster
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: validate_kubernetes
+          changed_when: validate_kubernetes.rc == 0
+
+        - name: Install Kubernetes Module
+          ansible.builtin.shell: |
+            olcnectl module install --environment-name myenvironment --name mycluster
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: install_kubernetes
+          changed_when: install_kubernetes.rc == 0
+
+        - name: Print kubernetes provision output
+          ansible.builtin.debug:
+            var: install_kubernetes
+          when: debug_enabled
+
+        - name: Tag OCNE as provisioned
+          ansible.builtin.file:
+            path: ~/.ocne-provisioned
+            state: touch
+            mode: "0644"
+          become: true
+          become_user: "{{ username }}"
+          when: install_kubernetes.rc == 0
+
+    - name: Check if OCNE provisioned
+      ansible.builtin.stat:
+        path: ~/.ocne-provisioned
+      become: true
+      become_user: "{{ username }}"
+      register: ocne_provision
+
+    - name: Save out ocne config
+      ansible.builtin.shell: |
+        olcnectl module instances --api-server "{{ operator_nodes }}":8091 --environment-name myenvironment --update-config
+      args:
+        chdir: ~/
+      become: true
+      become_user: "{{ username }}"
+      when: ocne_provision
+      register: save_ocne_config
+      changed_when: save_ocne_config.rc == 0
+
+    - name: Provision kubectl
+      ansible.builtin.include_tasks: "provision_kubectl.yml"
+      when:
+        - ocne_provision.stat.exists
+        - ocne_type != 'none'
