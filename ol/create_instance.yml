@@ -299,6 +299,10 @@
   ansible.builtin.import_playbook: provision_kvm.yml
   when: use_kvm
 
+- name: Provision Podman and Container Tools
+  ansible.builtin.import_playbook: provision_podman.yml
+  when: use_podman
+
 - name: Print instances
   hosts: all
   become: true
