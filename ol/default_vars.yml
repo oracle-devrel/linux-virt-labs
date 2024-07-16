@@ -36,4 +36,5 @@ vm_net: default
 vm_root_pass: 
 cleanup_tmp: no
 
+update_all: false
 use_podman: false

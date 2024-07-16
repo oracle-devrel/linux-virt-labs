@@ -295,6 +295,10 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+- name: Update all rpm packages
+  ansible.builtin.import_playbook: update_all_rpms.yml
+  when: update_all
+
 - name: Provision KVM server
   ansible.builtin.import_playbook: provision_kvm.yml
   when: use_kvm
