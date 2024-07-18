@@ -16,6 +16,7 @@ debug_enabled: false
 #ceph_volume_size_in_gbs: 50
 #add_ceph_deployments: false
 
+use_vnc: false
 vnc_port: "1"
 vnc_default_password: "oracle"
 vnc_geometry: "1920x1080"
