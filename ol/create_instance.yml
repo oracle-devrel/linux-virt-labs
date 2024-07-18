@@ -307,6 +307,10 @@
   ansible.builtin.import_playbook: provision_podman.yml
   when: use_podman
 
+- name: Provision VNC Server
+  ansible.builtin.import_playbook: provision_vnc.yml
+  when: use_vnc
+
 - name: Print instances
   hosts: all
   become: true
