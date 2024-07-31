@@ -12,3 +12,11 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 22
         min: 22
+{% if use_haproxy %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+{% endif %}
