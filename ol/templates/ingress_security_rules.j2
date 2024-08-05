@@ -20,3 +20,23 @@ instance_ingress_security_rules:
         max: 8080
         min: 8080
 {% endif %}
+{% if use_nginx %}
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 80
+        min: 80
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 443
+        min: 443
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+{% endif %}
