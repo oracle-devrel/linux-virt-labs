@@ -1,0 +1,38 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Add block volumes to the instance
+  when:
+    - add_block_storage
+  block:
+    - name: Create block volume
+      oracle.oci.oci_blockstorage_volume:
+        compartment_id: "{{ my_compartment_id }}"
+        availability_domain: "{{ my_availability_domain }}"
+        display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
+        size_in_gbs: "{{ block_volume_size_in_gbs }}"
+      register: result
+      vars:
+        timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set the block volume id
+      ansible.builtin.set_fact:
+        volume_id: "{{ result.volume.id }}"
+
+    - name: Attach the block volume
+      oracle.oci.oci_compute_volume_attachment:
+        instance_id: "{{ instance_id }}"
+        type: paravirtualized
+        volume_id: "{{ volume_id }}"
+        compartment_id: "{{ my_compartment_id }}"
+        is_read_only: false
+        is_shareable: false
+      retries: 10
+      delay: 30
+      until: result is not failed
