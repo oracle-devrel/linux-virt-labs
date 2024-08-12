@@ -13,8 +13,9 @@ username: "oracle"
 usergroup: "{{ username }}" 
 user_default_password: "oracle"
 debug_enabled: false
-#ceph_volume_size_in_gbs: 50
-#add_ceph_deployments: false
+add_block_storage: false
+block_volume_size_in_gbs: 50
+block_count: 1
 
 use_vnc: false
 vnc_port: "1"
