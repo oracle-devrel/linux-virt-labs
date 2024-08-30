@@ -41,13 +41,13 @@ instance_ingress_security_rules:
         min: 8080
 {% endif %}
 {% if use_nfs %}
-  - source: "10.0.0.0/0"
+  - source: "10.0.0.0/24"
     protocol: 6
     tcp_options:
       destination_port_range:
         max: 2049
         min: 2049
-  - source: "10.0.0.0/0"
+  - source: "10.0.0.0/24"
     protocol: 17
     udp_options:
       destination_port_range:
