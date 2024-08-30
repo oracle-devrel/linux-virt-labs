@@ -43,3 +43,4 @@ passwordless_ssh: false
 use_podman: false
 use_haproxy: false
 use_nginx: false
+use_nfs: false
