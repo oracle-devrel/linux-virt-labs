@@ -44,3 +44,4 @@ use_podman: false
 use_haproxy: false
 use_nginx: false
 use_nfs: false
+use_quay_ha: false
