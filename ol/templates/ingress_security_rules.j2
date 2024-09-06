@@ -54,3 +54,35 @@ instance_ingress_security_rules:
         max: 2049
         min: 2049
 {% endif %}
+{% if use_quay_ha %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+- source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+- source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 5432
+        min: 5432
+- source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 6379
+        min: 6379    
+{% endif %}
