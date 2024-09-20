@@ -31,6 +31,7 @@
         type: paravirtualized
         volume_id: "{{ volume_id }}"
         compartment_id: "{{ my_compartment_id }}"
+        device: "{{ block_devices[ansible_loop.index] }}"
         is_read_only: false
         is_shareable: false
       retries: 10

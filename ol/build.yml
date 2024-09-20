@@ -78,6 +78,13 @@
 - name: Add block storage to an instance
   ansible.builtin.include_tasks: "block.yml"
   loop: "{{ query('sequence', 'start=1 end='+(block_count)|string) }}"
+  vars:
+    block_devices:
+      - sdb
+      - sdc
+      - sdd
+      - sde
+      - sdf
 
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
