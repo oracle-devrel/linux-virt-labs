@@ -1,6 +1,6 @@
 compute_instances:
   1:
-    instance_name: "ol-node-01"
+    instance_name: "ocne"
     type: "server"
 os: "Oracle Linux"
 os_version: "8"
