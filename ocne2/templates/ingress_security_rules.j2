@@ -1,0 +1,88 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+instance_ingress_security_rules:
+  # Allow incoming SSH connections
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 22
+        min: 22
+{% if use_haproxy %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+{% endif %}
+{% if use_nginx %}
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 80
+        min: 80
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 443
+        min: 443
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+{% endif %}
+{% if use_nfs %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+{% endif %}
+{% if use_quay_ha %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 2049
+        min: 2049
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8080
+        min: 8080
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 5432
+        min: 5432
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 6379
+        min: 6379    
+{% endif %}
