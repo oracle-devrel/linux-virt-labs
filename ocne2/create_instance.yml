@@ -295,10 +295,6 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
-    - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "passwordless_setup.yml"
-      when: passwordless_ssh
-
 - name: Update all rpm packages
   ansible.builtin.import_playbook: update_all_rpms.yml
   when: update_all
