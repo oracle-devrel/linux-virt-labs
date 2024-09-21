@@ -23,7 +23,7 @@ vnc_default_password: "oracle"
 vnc_geometry: "1920x1080"
 
 use_kvm: false
-create_vm: true
+create_vm: false
 ol8_base_image_name: OL8U10_x86_64-kvm-b237.qcow2
 ol8_base_image_url: https://yum.oracle.com/templates/OracleLinux/OL8/u10/x86_64/{{ ol8_base_image_name }}
 ol8_base_image_sha: 53a5eee27c59f335ba1bdb0afc2c3273895f128dd238b51a78f46ad515cbc662
