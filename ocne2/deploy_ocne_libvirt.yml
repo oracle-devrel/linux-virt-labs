@@ -139,5 +139,29 @@
               - kubectl
             state: present
 
+    - name: Create an ocne cluster
+      when:
+        - install_ocne_rpm
+        - create_ocne_cluster
+      block:
+        - name: Provision the cluster
+          ansible.builtin.shell: |
+            ocne cluster start {{ ocne_cluster_node_options }} -C {{ ocne_cluster_name | default('ocne') }}
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: provision_cluster
+          changed_when: provision_cluster.rc == 0
 
-# run ocne cluster start -- add string of flags
+        - name: Print cluster provision output
+          ansible.builtin.debug:
+            var: provision_cluster
+          when: debug_enabled
+
+        - name: Add kubeconfig to .bashrc file
+          ansible.builtin.lineinfile:
+            path: ~/.bashrc
+            line: "export KUBECONFIG=$HOME/.kube/kubeconfig.{{ ocne_cluster_name | default('ocne') }}.local"
+          become: true
+          become_user: "{{ username }}"
