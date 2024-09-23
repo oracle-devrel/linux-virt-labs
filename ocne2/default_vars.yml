@@ -19,4 +19,7 @@ block_count: 1
 
 ocne_type: libvirt
 install_ocne_rpm: false
+create_ocne_cluster: false
+ocne_cluster_node_options: ""
+ocne_cluster_name: "ocne"
 update_all: false

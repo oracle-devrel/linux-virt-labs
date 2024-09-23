@@ -101,3 +101,67 @@
 
     - name: Reset ssh connection to allow user changes to affect 'current login user'
       ansible.builtin.meta: reset_connection
+
+    - name: Install repository and packages
+      when:
+        - install_ocne_rpm
+      block:
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el8
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol8_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el9
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol9_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Install ocne package
+          ansible.builtin.dnf:
+            name:
+              - ocne
+              - kubectl
+            state: present
+
+    - name: Create an ocne cluster
+      when:
+        - install_ocne_rpm
+        - create_ocne_cluster
+      block:
+        - name: Provision the cluster
+          ansible.builtin.shell: |
+            ocne cluster start {{ ocne_cluster_node_options }} -C {{ ocne_cluster_name | default('ocne') }} -u false
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: provision_cluster
+          changed_when: provision_cluster.rc == 0
+
+        - name: Print cluster provision output
+          ansible.builtin.debug:
+            var: provision_cluster
+          when: debug_enabled
+
+        - name: Add kubeconfig to .bashrc file
+          ansible.builtin.lineinfile:
+            path: ~/.bashrc
+            line: "export KUBECONFIG=$HOME/.kube/kubeconfig.{{ ocne_cluster_name | default('ocne') }}.local"
+          become: true
+          become_user: "{{ username }}"
