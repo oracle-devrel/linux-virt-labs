@@ -146,7 +146,7 @@
       block:
         - name: Provision the cluster
           ansible.builtin.shell: |
-            ocne cluster start {{ ocne_cluster_node_options }} -C {{ ocne_cluster_name | default('ocne') }}
+            ocne cluster start {{ ocne_cluster_node_options }} -C {{ ocne_cluster_name | default('ocne') }} -u false
           args:
             chdir: ~/
           become: true
