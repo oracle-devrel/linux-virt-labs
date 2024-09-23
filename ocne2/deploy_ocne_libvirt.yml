@@ -101,3 +101,43 @@
 
     - name: Reset ssh connection to allow user changes to affect 'current login user'
       ansible.builtin.meta: reset_connection
+
+    - name: Install repository and packages
+      when:
+        - install_ocne_rpm
+      block:
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el8
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol8_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el9
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol9_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Install ocne package
+          ansible.builtin.dnf:
+            name:
+              - ocne
+              - kubectl
+            state: present
+
+
+# run ocne cluster start -- add string of flags
