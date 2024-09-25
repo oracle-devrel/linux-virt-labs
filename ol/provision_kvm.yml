@@ -76,7 +76,7 @@
         - proxy
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
-    - name: Start and enable cockkpit
+    - name: Start and enable cockpit
       ansible.builtin.systemd:
         state: started
         name: cockpit.socket
