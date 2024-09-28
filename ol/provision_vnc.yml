@@ -30,11 +30,12 @@
         dest: /etc/systemd/system/default.target
         state: link
 
-    # - name: Set vncserver systemd template
-    #   ansible.builtin.file:
-    #     src: /usr/lib/systemd/system/vncserver@.service
-    #     dest: /etc/systemd/system/vncserver@.service
-    #     state: link
+    - name: Set vncserver systemd template
+      ansible.builtin.copy:
+        src: "/usr/lib/systemd/system/vncserver@.service"
+        dest: "/etc/systemd/system/vncserver@:{{ vnc_port }}.service"
+        remote_src: true
+        mode: "0644"
 
     - name: Assign username to vnc port
       ansible.builtin.lineinfile:
