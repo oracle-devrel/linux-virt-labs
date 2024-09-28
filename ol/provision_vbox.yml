@@ -90,7 +90,7 @@
 
     - name: Download the Oracle Linux iso file
       ansible.builtin.get_url:
-        url: "{{ base_url }}/OL{{ ol_version }}/u{{ ol_update }}/x86_64/OracleLinux-R{{ ol_version }}-U{{ ol_update }}-x86_64-dvd.iso"
+        url: "{{ base_url }}/OL{{ ol_iso_version }}/u{{ ol_update }}/x86_64/OracleLinux-R{{ ol_iso_version }}-U{{ ol_update }}-x86_64-dvd.iso"
         dest: /home/{{ username }}
         force: true
         mode: "0644"
