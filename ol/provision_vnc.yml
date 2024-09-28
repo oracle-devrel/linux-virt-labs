@@ -4,8 +4,8 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Install Podman and Container Tools
-  hosts: server
+- name: Install VNC Server and GNOME Desktop
+  hosts: server,vbox
   vars_files:
     - default_vars.yml
   become: true
