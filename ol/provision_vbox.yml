@@ -19,7 +19,7 @@
           - gcc
           - make
           - perl
-          - libxcb
+          - xcb-util-cursor
         state: present
 
     - name: Add virtualbox repo keys
