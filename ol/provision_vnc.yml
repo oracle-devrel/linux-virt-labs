@@ -4,8 +4,8 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Install Podman and Container Tools
-  hosts: server
+- name: Install VNC Server and GNOME Desktop
+  hosts: server,vbox
   vars_files:
     - default_vars.yml
   become: true
@@ -31,10 +31,11 @@
         state: link
 
     - name: Set vncserver systemd template
-      ansible.builtin.file:
-        src: /usr/lib/systemd/system/vncserver@.service
-        dest: /etc/systemd/system/vncserver@.service
-        state: link
+      ansible.builtin.copy:
+        src: "/usr/lib/systemd/system/vncserver@.service"
+        dest: "/etc/systemd/system/vncserver@:{{ vnc_port }}.service"
+        remote_src: true
+        mode: "0644"
 
     - name: Assign username to vnc port
       ansible.builtin.lineinfile:
@@ -52,7 +53,7 @@
       ansible.builtin.file:
         path: /home/{{ username }}/.vnc
         state: directory
-        mode: '0700'
+        mode: "0700"
         owner: "{{ username }}"
         group: "{{ username }}"
 
@@ -70,11 +71,11 @@
         path: "/home/{{ username }}/.vnc/passwd"
         owner: "{{ username }}"
         group: "{{ usergroup }}"
-        mode: '0600'
+        mode: "0600"
 
     - name: Start and enable the vnc service
       ansible.builtin.systemd:
-        state: started
+        name: "vncserver@:{{ vnc_port }}.service"
         daemon_reload: true
-        name: vncserver@:{{ vnc_port }}.service
         enabled: true
+        state: started

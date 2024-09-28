@@ -1,0 +1,102 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Install VNC Server and GNOME Desktop
+  hosts: vbox
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Install ol8_developer_EPEL
+      ansible.builtin.dnf:
+        name: oracle-epel-release-el8
+        state: present
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Enable ol8_developer_EPEL repo
+      ansible.builtin.command:
+        cmd: dnf config-manager --enable ol8_developer_EPEL
+      register: dnf_result
+      changed_when: dnf_result.rc == 0
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install required packages for virtualbox
+      ansible.builtin.dnf:
+        name:
+          - "kernel-uek-devel-{{ ansible_kernel }}"
+          - gcc
+          - make
+          - perl
+          - xcb-util-cursor
+        state: present
+
+    - name: Add virtualbox repo keys
+      ansible.builtin.rpm_key:
+        state: present
+        key: https://www.virtualbox.org/download/oracle_vbox_2016.asc
+
+    - name: Add virtualbox repo
+      ansible.builtin.yum_repository:
+        name: virtualbox
+        description: Oracle VirtualBox
+        baseurl: http://download.virtualbox.org/virtualbox/rpm/el/$releasever/$basearch
+
+    - name: "Install virtualbox version {{ virtualbox_version }}"
+      ansible.builtin.dnf:
+        name: "VirtualBox-{{ virtualbox_version }}"
+        state: present
+
+    - name: Check if extension pack is already installed
+      ansible.builtin.shell: |
+        vboxmanage list extpacks
+      register: extpack_list
+      changed_when: extpack_list.rc != 0
+
+    - name: Output installed extpacks
+      ansible.builtin.debug:
+        var: extpack_list.stdout
+        verbosity: 1
+
+    - name: Download virtualbox extension pack
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/{{ virtualbox_extpack_version }}/Oracle_VirtualBox_Extension_Pack-{{ virtualbox_extpack_version }}.vbox-extpack"
+        dest: /tmp/
+        force: true
+        mode: "0644"
+      register: download_result
+      when: 'extpack_list.stdout == "Extension Packs: 0"'
+      vars:
+        base_url: "https://download.virtualbox.org/virtualbox"
+
+    - name: Output download virtualbox extension pack file name
+      ansible.builtin.debug:
+        var: download_result.dest
+        verbosity: 1
+
+    - name: Install virtualbox extension pack
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          echo 'y' |  vboxmanage extpack install --replace {{ download_result.dest }}
+        executable: /bin/bash
+      register: install_extpack
+      changed_when: install_extpack != 0
+      when: 'extpack_list.stdout == "Extension Packs: 0"'
+
+    - name: Download the Oracle Linux iso file
+      ansible.builtin.get_url:
+        url: "{{ base_url }}/OL{{ ol_iso_version }}/u{{ ol_update }}/x86_64/OracleLinux-R{{ ol_iso_version }}-U{{ ol_update }}-x86_64-dvd.iso"
+        dest: /home/{{ username }}
+        force: true
+        mode: "0644"
+      register: download_iso_result
+      until: "'OK' in download_iso_result.msg"
+      retries: 5
+      delay: 10
+      vars:
+        base_url: "https://yum.oracle.com/ISOS/OracleLinux"
