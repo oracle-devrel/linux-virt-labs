@@ -292,6 +292,11 @@
         - debug_enabled
         - inventory_hostname == ansible_play_hosts_all[0]
 
+    - name: Grow the root filesystem
+      ansible.builtin.shell: |
+        /usr/libexec/oci-growfs -y
+      when: (boot_volume_size_in_gbs is defined) and (boot_volume_size_in_gbs > 50)
+
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
