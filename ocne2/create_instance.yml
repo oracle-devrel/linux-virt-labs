@@ -292,12 +292,6 @@
         - debug_enabled
         - inventory_hostname == ansible_play_hosts_all[0]
 
-    - name: Grow the root filesystem
-      ansible.builtin.shell: |
-        /usr/libexec/oci-growfs -y
-      register: result
-      changed_when: result.rc == 0
-
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
