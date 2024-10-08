@@ -319,6 +319,10 @@
   ansible.builtin.import_playbook: provision_vbox.yml
   when: use_vbox
 
+- name: Download OL ISO
+  ansible.builtin.import_playbook: download_ol_iso.yml
+  when: dwnld_ol_iso
+
 - name: Print instances
   hosts: all
   become: true
