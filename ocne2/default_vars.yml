@@ -17,6 +17,7 @@ debug_enabled: false
 add_block_storage: false
 block_volume_size_in_gbs: 50
 block_count: 1
+use_ingress_lb: false
 
 ocne_type: libvirt
 install_ocne_rpm: false
