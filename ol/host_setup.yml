@@ -37,6 +37,13 @@
     - name: Run facts module to get latest information
       ansible.builtin.setup:
 
+    - name: Grow the root filesystem
+      ansible.builtin.shell: |
+        /usr/libexec/oci-growfs -y
+      become: true
+      register: result
+      changed_when: result.rc == 0
+      
     - name: Add user account with access to sudo
       ansible.builtin.user:
         name: "{{ username }}"

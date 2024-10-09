@@ -2,6 +2,7 @@ compute_instances:
   1:
     instance_name: "ol-node-01"
     type: "server"
+    boot_volume_size_in_gbs: 50
 os: "Oracle Linux"
 os_version: "8"
 instance_shape: "VM.Standard.E4.Flex"
