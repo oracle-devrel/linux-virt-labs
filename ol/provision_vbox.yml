@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Install VNC Server and GNOME Desktop
+- name: Install VirtualBox
   hosts: vbox
   vars_files:
     - default_vars.yml
@@ -87,16 +87,3 @@
       register: install_extpack
       changed_when: install_extpack != 0
       when: 'extpack_list.stdout == "Extension Packs: 0"'
-
-    - name: Download the Oracle Linux iso file
-      ansible.builtin.get_url:
-        url: "{{ base_url }}/OL{{ ol_iso_version }}/u{{ ol_update }}/x86_64/OracleLinux-R{{ ol_iso_version }}-U{{ ol_update }}-x86_64-dvd.iso"
-        dest: /home/{{ username }}
-        force: true
-        mode: "0644"
-      register: download_iso_result
-      until: "'OK' in download_iso_result.msg"
-      retries: 5
-      delay: 10
-      vars:
-        base_url: "https://yum.oracle.com/ISOS/OracleLinux"

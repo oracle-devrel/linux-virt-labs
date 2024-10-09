@@ -51,4 +51,4 @@ virtualbox_version: "7.1"
 virtualbox_extpack_version: "7.1.2"
 ol_iso_version: "9"
 ol_update: "4"
-
+dwnld_ol_iso: false
