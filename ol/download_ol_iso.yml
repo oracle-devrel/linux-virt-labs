@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Download Oracle Linux iso file
-  hosts: vbox
+  hosts: server,vbox
   vars_files:
     - default_vars.yml
   become: true
