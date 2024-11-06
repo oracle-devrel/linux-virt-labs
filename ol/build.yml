@@ -80,7 +80,7 @@
 
 - name: Add block storage to an instance
   ansible.builtin.include_tasks: "block.yml"
-  loop: "{{ query('sequence', 'start=1 end='+(block_count)|string) }}"
+  loop: "{{ query('sequence', 'start=1 end=' + (block_count) | string) }}"
   loop_control:
     extended: true
   vars:
