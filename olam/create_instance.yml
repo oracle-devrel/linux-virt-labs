@@ -303,26 +303,6 @@
   ansible.builtin.import_playbook: update_all_rpms.yml
   when: update_all
 
-- name: Provision KVM server
-  ansible.builtin.import_playbook: provision_kvm.yml
-  when: use_kvm
-
-- name: Provision Podman and Container Tools
-  ansible.builtin.import_playbook: provision_podman.yml
-  when: use_podman
-
-- name: Provision VNC Server
-  ansible.builtin.import_playbook: provision_vnc.yml
-  when: use_vnc
-
-- name: Provision VirtualBox
-  ansible.builtin.import_playbook: provision_vbox.yml
-  when: use_vbox
-
-- name: Download OL ISO
-  ansible.builtin.import_playbook: download_ol_iso.yml
-  when: dwnld_ol_iso
-
 - name: Print instances
   hosts: all
   become: true
