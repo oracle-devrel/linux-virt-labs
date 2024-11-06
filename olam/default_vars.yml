@@ -17,3 +17,6 @@ debug_enabled: false
 add_block_storage: false
 block_volume_size_in_gbs: 50
 block_count: 1
+
+update_all: false
+passwordless_ssh: false
