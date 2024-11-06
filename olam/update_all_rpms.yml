@@ -1,0 +1,37 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Install latest Oracle Linux packages
+  hosts: server,vbox
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Update all Oracle Linux packages
+      ansible.builtin.dnf:
+        name: "*"
+        state: latest
+        update_only: true
+      when: ansible_distribution == 'OracleLinux'
+
+    - name: Check if a reboot is required
+      ansible.builtin.command: /usr/bin/needs-restarting -r
+      register: reboot_required
+      ignore_errors: true
+      changed_when: false
+      failed_when: reboot_required.rc == 2
+      when: ansible_distribution == 'OracleLinux'
+
+    - name: Print reboot is required
+      ansible.builtin.debug:
+        var: reboot_required
+      when: debug_enabled
+
+    - name: Reboot (if needed) to apply latest kernel and updates
+      ansible.builtin.reboot:
+      when: ansible_distribution == 'OracleLinux' and reboot_required.rc == 1
