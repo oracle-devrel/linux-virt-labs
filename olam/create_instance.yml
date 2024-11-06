@@ -292,8 +292,22 @@
         - debug_enabled
         - inventory_hostname == ansible_play_hosts_all[0]
 
+    - name: Wait for systems to become reachable
+      ansible.builtin.wait_for_connection: 
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
+      when: inventory_hostname in groups['server']
+
+    - name: Set unique authorized key on host
+      ansible.posix.authorized_key:
+        user: opc
+        state: present
+        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}" 
+      when: inventory_hostname in groups['client']
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "passwordless_setup.yml"
