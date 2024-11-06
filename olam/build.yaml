@@ -9,7 +9,10 @@
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
-    image_id: "{{ ol_image_id }}"
+    source_details:
+      image_id: "{{ ol_image_id }}"
+      source_type: image
+      boot_volume_size_in_gbs: "{{ item.value.boot_volume_size_in_gbs | default(50) | int }}"
     shape: "{{ instance_shape }}"
     shape_config:
       ocpus: "{{ instance_ocpus }}"
