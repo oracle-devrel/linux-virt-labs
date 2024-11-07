@@ -263,7 +263,7 @@
 
 - name: Configure new instances
   hosts: all
-  gather_facts: false
+  gather_facts: true
   vars_files:
     - default_vars.yml
     - oci_vars.yml
