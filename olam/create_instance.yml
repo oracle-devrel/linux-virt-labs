@@ -16,10 +16,10 @@
     compute_instances:
       1:
         instance_name: "ol-node-01"
-        type: "client"
+        type: "control"
       2:
         instance_name: "ol-node-02"
-        type: "server"
+        type: "remote"
     os: "Oracle Linux"
     os_version: "8"
     instance_shape: "VM.Standard.E4.Flex"
@@ -300,7 +300,7 @@
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
-      when: inventory_hostname in groups['server']
+      when: inventory_hostname in groups['control']
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "olam_passwordless_setup.yml"

@@ -1,7 +1,7 @@
 compute_instances:
   1:
     instance_name: "olam"
-    type: "server"
+    type: "control"
     boot_volume_size_in_gbs: 50
 os: "Oracle Linux"
 os_version: "8"

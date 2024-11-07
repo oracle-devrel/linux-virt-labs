@@ -10,16 +10,16 @@
 
   tasks:
 
-  - name: Get minimum set of available facts
-    ansible.builtin.setup:
-      gather_subset:
-        - 'min'
-    register: min_facts
+   - name: Get minimum set of available facts
+     ansible.builtin.setup:
+       gather_subset:
+         - 'min'
+     register: min_facts
 
-  - name: Print minimum set of facts
-    ansible.builtin.debug:
-      msg: "{{ min_facts }}"
+   - name: Print minimum set of facts
+     ansible.builtin.debug:
+       msg: "{{ min_facts }}"
 
-  - name: Print system date
-    ansible.builtin.debug:
-      var: ansible_date_time.date
+   - name: Print system date
+     ansible.builtin.debug:
+       var: ansible_date_time.date
