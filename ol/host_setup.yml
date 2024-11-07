@@ -43,7 +43,7 @@
       become: true
       register: result
       changed_when: result.rc == 0
-      
+
     - name: Add user account with access to sudo
       ansible.builtin.user:
         name: "{{ username }}"

@@ -1,0 +1,22 @@
+compute_instances:
+  1:
+    instance_name: "olam"
+    type: "control"
+    boot_volume_size_in_gbs: 50
+os: "Oracle Linux"
+os_version: "8"
+instance_shape: "VM.Standard.E4.Flex"
+instance_ocpus: 2
+instance_memory: 32
+subnet_cidr_block: "10.0.0.48/28"
+
+username: "oracle"
+usergroup: "{{ username }}" 
+user_default_password: "oracle"
+debug_enabled: false
+add_block_storage: false
+block_volume_size_in_gbs: 50
+block_count: 1
+
+update_all: false
+passwordless_ssh: true
