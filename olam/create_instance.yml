@@ -263,7 +263,7 @@
 
 - name: Configure new instances
   hosts: all
-  gather_facts: true
+  gather_facts: false
   vars_files:
     - default_vars.yml
     - oci_vars.yml
@@ -274,6 +274,15 @@
     debug_enabled: false
 
   tasks:
+
+    - name: Wait for systems to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
+    - name: Get a set of all available facts
+      ansible.builtin.setup:
 
     - name: Print in-memory inventory
       ansible.builtin.debug:
@@ -291,12 +300,6 @@
       when:
         - debug_enabled
         - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Wait for systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
