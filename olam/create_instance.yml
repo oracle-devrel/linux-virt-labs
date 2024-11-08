@@ -263,6 +263,7 @@
 
 - name: Configure new instances
   hosts: all
+  become: true
   gather_facts: false
   vars_files:
     - default_vars.yml
@@ -310,7 +311,7 @@
       when: passwordless_ssh
 
     - name: Install Oracle Linux Automation Manager
-      ansible.builtin.include_tasks: deploy-olam-tasks.yaml
+      ansible.builtin.include_tasks: deploy-olam-tasks.yml
       vars:
         control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
       when: inventory_hostname == 'olam-node'
