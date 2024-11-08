@@ -1,6 +1,6 @@
 compute_instances:
   1:
-    instance_name: "olam"
+    instance_name: "olam-node"
     type: "control"
     boot_volume_size_in_gbs: 50
 os: "Oracle Linux"

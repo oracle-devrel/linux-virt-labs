@@ -46,7 +46,7 @@
       stream=13
       profiles=
       state=enabled
-  when: 
+  when:
     - ansible_distribution_major_version | int >= 8
 
 - name: Install the database
@@ -60,7 +60,7 @@
     owner: "postgres"
     group: "postgres"
     state: directory
-    mode: 0700
+    mode: "0700"
 
 # Handle the ol-automation-manager-DB-init.sh script
 
@@ -72,6 +72,7 @@
 - name: initialize postgresql database
   ansible.builtin.command: "postgresql-setup --initdb"
   when: not pgdata_dir_version.stat.exists
+  become: true
   become_user: postgres
 
 - name: Change database password storage encryption
@@ -79,18 +80,19 @@
     path: /var/lib/pgsql/data/postgresql.conf
     regexp: '^#password_encryption.*'
     replace: 'password_encryption = scram-sha-256'
-  
+
 - name: Enable and start postgresql.service
   ansible.builtin.systemd:
     name: postgresql
     state: started
-    enabled: yes
+    enabled: true
 
 - name: Create awx postgresql user
   community.postgresql.postgresql_user:
     name: awx
     password: password
     role_attr_flags: NOSUPERUSER
+  become: true
   become_user: postgres
 
 - name: Create awx postgresql db
@@ -128,7 +130,7 @@
     section: ol8_automation1
     option: enabled
     value: "0"
-    mode: 0644
+    mode: "0644"
 
 - name: Enable Oracle Linux Automation Manager 2.0 repository
   ansible.builtin.ini_file:
@@ -136,7 +138,7 @@
     section: ol8_automation2
     option: enabled
     value: "1"
-    mode: 0644
+    mode: "0644"
 
 - name: Install Oracle Linux Automation Manager
   ansible.builtin.dnf:
@@ -155,7 +157,7 @@
     path: /etc/redis.conf
     regexp: '^unixsocketperm '
     insertafter: '^unixsocket '
-    line: unixsocketperm 775    
+    line: unixsocketperm 775
 
 - name: Configure CLUSTER_HOST_ID setting
   ansible.builtin.copy:
@@ -188,6 +190,7 @@
 - name: Provision olam ansible container environment
   containers.podman.podman_image:
     name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
+  become: true
   become_user: awx
 
 - name: Check if awx provisioned
@@ -206,6 +209,7 @@
     touch /var/lib/awx/.awx-provisioned
   args:
     executable: /bin/bash
+  become: true
   become_user: awx
   register: awx_migrate
   when: not awx_provision.stat.exists
@@ -218,8 +222,9 @@
       'Password:': admin
       'Password \(again\):': admin
   register: awx_password
+  become: true
   become_user: awx
-  ignore_errors: yes
+  ignore_errors: true
   changed_when: awx_password.stdout is not search('is already taken')
 
 - name: Print the AWX admin password
@@ -250,7 +255,7 @@
     dest: /etc/nginx/nginx.conf
     owner: root
     group: root
-    mode: 0644
+    mode: "0644"
 
 - name: Remove default configuration in receptor
   ansible.builtin.template:
@@ -258,15 +263,15 @@
     dest: /etc/receptor/receptor.conf
     owner: root
     group: root
-    mode: '0644'
+    mode: "0644"
 
 - name: Set firewall service rules
   ansible.posix.firewalld:
     zone: public
     service: "{{ item }}"
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   loop:
     - http
     - https
@@ -275,9 +280,9 @@
   ansible.posix.firewalld:
     zone: public
     port: "{{ item }}"
-    permanent: yes
+    permanent: true
     state: enabled
-    immediate: yes
+    immediate: true
   loop:
     - 27199/tcp
 
@@ -285,7 +290,7 @@
   ansible.builtin.systemd:
     name: "{{ item }}"
     state: started
-    enabled: yes
+    enabled: true
   with_items:
     - ol-automation-manager
 
@@ -297,4 +302,3 @@
 - name: Enable lingering is needed
   ansible.builtin.command: "loginctl enable-linger awx"
   when: not user_lingering.stat.exists
-
