@@ -314,8 +314,8 @@
       ansible.builtin.include_tasks: deploy-olam-tasks.yml
       vars:
         control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-      when: 
-        - inventory_hostname == 'olam-node'
+      when:
+        - inventory_hostname in groups['control']
         - olam_single_host
 
 - name: Update all rpm packages
