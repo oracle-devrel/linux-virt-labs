@@ -29,7 +29,7 @@
       - python3-pyOpenSSL
       - python3-pip
     enablerepo: ol8_developer_EPEL
-    state: latest
+    state: present
 
 - name: Install pexpect using pip
   ansible.builtin.pip:
@@ -46,6 +46,7 @@
       stream=13
       profiles=
       state=enabled
+    mode: '0644'
   when:
     - ansible_distribution_major_version | int >= 8
 
@@ -60,7 +61,7 @@
     owner: "postgres"
     group: "postgres"
     state: directory
-    mode: "0700"
+    mode: '0700'
 
 # Handle the ol-automation-manager-DB-init.sh script
 
@@ -69,11 +70,13 @@
     path: "/var/lib/pgsql/data/PG_VERSION"
   register: pgdata_dir_version
 
-- name: initialize postgresql database
+- name: Initialize postgresql database
   ansible.builtin.command: "postgresql-setup --initdb"
   when: not pgdata_dir_version.stat.exists
   become: true
   become_user: postgres
+  register: dbsetup_result
+  changed_when: dbsetup_result.rc == 0
 
 - name: Change database password storage encryption
   ansible.builtin.replace:
@@ -99,6 +102,7 @@
   community.postgresql.postgresql_db:
     name: awx
     owner: awx
+  become: true
   become_user: postgres
 
 - name: Update host-based authentication
@@ -125,20 +129,20 @@
     state: present
 
 - name: Disable Oracle Linux Automation Manager 1.0 repository
-  ansible.builtin.ini_file:
+  community.general.ini_file:
     path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
     section: ol8_automation1
     option: enabled
     value: "0"
-    mode: "0644"
+    mode: '0644'
 
 - name: Enable Oracle Linux Automation Manager 2.0 repository
-  ansible.builtin.ini_file:
+  community.general.ini_file:
     path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
     section: ol8_automation2
     option: enabled
     value: "1"
-    mode: "0644"
+    mode: '0644'
 
 - name: Install Oracle Linux Automation Manager
   ansible.builtin.dnf:
@@ -251,19 +255,19 @@
 
 - name: Remove default server section in nginx configuration
   ansible.builtin.template:
-    src: ../templates/nginx.conf.j2
+    src: nginx.conf.j2
     dest: /etc/nginx/nginx.conf
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Remove default configuration in receptor
   ansible.builtin.template:
-    src: ../templates/receptor.conf.j2
+    src: receptor.conf.j2
     dest: /etc/receptor/receptor.conf
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Set firewall service rules
   ansible.posix.firewalld:
@@ -301,4 +305,6 @@
 
 - name: Enable lingering is needed
   ansible.builtin.command: "loginctl enable-linger awx"
+  register: linger_result
+  changed_when: linger_result.rc == 0
   when: not user_lingering.stat.exists
