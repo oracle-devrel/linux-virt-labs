@@ -20,3 +20,4 @@ block_count: 1
 
 update_all: false
 passwordless_ssh: true
+olam_single_host: false
