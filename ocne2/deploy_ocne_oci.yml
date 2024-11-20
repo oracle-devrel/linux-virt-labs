@@ -255,9 +255,9 @@
             dest: ~/myconfig.yaml
             content: |
               provider: oci
-              name: "{{ ocne_cluster_name }}"
-              controlPlaneNodes: "{{ num_cp_nodes }}"
-              workerNodes: "{{ num_wk_nodes }}"
+              name: {{ ocne_cluster_name }}
+              controlPlaneNodes: {{ num_cp_nodes }}
+              workerNodes: {{ num_wk_nodes }}
               providers:
                 oci:
                   imageBucket: ocne-images-{{ rnd_str.0 }}
