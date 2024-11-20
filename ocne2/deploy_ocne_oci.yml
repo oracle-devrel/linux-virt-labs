@@ -251,6 +251,7 @@
                 oci:
                   imageBucket: ocne-images-{{ rnd_str }}
                   compartment: {{ my_compartment_id }}
+            mode: "0644"
           become: true
           become_user: "{{ username }}"
 

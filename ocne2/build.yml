@@ -31,6 +31,7 @@
         -
           name: "OS Management Service Agent"
           desired_state: DISABLED
+    key_by: [compartment_id, availability_domain, display_name]
   register: result
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"

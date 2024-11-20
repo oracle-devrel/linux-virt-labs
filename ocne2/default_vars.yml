@@ -22,7 +22,7 @@ use_ingress_lb: false
 ocne_type: libvirt
 install_ocne_rpm: false
 create_ocne_cluster: false
-create_oci_cluster: false
+create_ocne_oci_cluster: false
 ocne_cluster_node_options: ""
 ocne_cluster_name: "ocne"
 num_cp_nodes: 3
