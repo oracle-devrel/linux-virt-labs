@@ -223,10 +223,15 @@
           become_user: "{{ username }}"
           register: obj_namespace
 
+        - name: Print oci namespace facts
+          ansible.builtin.debug:
+            msg: "{{ obj_namespace.namespace }}"
+          when: debug_enabled
+
         - name: Create oci os bucket
           oracle.oci.oci_object_storage_bucket:
             compartment_id: "{{ my_compartment_id }}"
-            namespace_name: "{{ obj_namespace }}"
+            namespace_name: "{{ obj_namespace.namespace }}"
             name: "ocne-images-{{ rnd_str }}"
           become: true
           become_user: "{{ username }}"
@@ -234,7 +239,7 @@
         - name: Get all the buckets in the namespace
           oracle.oci.oci_object_storage_bucket_facts:
             compartment_id: "{{ my_compartment_id }}"
-            namespace_name: "{{ obj_namespace }}"
+            namespace_name: "{{ obj_namespace.namespace }}"
           register: ocibuckets
           become: true
           become_user: "{{ username }}"
