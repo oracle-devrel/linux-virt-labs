@@ -214,7 +214,7 @@
 
         - name: Print random hex string
           ansible.builtin.debug:
-            msg: "{{ rnd_str }}"
+            msg: "{{ rnd_str.0 }}"
           when: debug_enabled
 
         - name: Get oci namespace name
@@ -232,7 +232,7 @@
           oracle.oci.oci_object_storage_bucket:
             compartment_id: "{{ my_compartment_id }}"
             namespace_name: "{{ obj_namespace.namespace }}"
-            name: "ocne-images-{{ rnd_str }}"
+            name: "ocne-images-{{ rnd_str.0 }}"
           become: true
           become_user: "{{ username }}"
 
@@ -260,7 +260,7 @@
               workerNodes: "{{ num_wk_nodes }}"
               providers:
                 oci:
-                  imageBucket: ocne-images-{{ rnd_str }}
+                  imageBucket: ocne-images-{{ rnd_str.0 }}
                   compartment: {{ my_compartment_id }}
             mode: "0644"
           become: true
