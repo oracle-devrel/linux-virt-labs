@@ -219,6 +219,8 @@
 
         - name: Get oci namespace name
           oracle.oci.oci_object_storage_namespace_facts:
+          become: true
+          become_user: "{{ username }}"
           register: obj_namespace
 
         - name: Create oci os bucket
@@ -226,12 +228,16 @@
             compartment_id: "{{ my_compartment_id }}"
             namespace_name: "{{ obj_namespace }}"
             name: "ocne-images-{{ rnd_str }}"
+          become: true
+          become_user: "{{ username }}"
 
         - name: Get all the buckets in the namespace
           oracle.oci.oci_object_storage_bucket_facts:
             compartment_id: "{{ my_compartment_id }}"
             namespace_name: "{{ obj_namespace }}"
           register: ocibuckets
+          become: true
+          become_user: "{{ username }}"
           when: debug_enabled
 
         - name: Print oci os bucket details
