@@ -1,0 +1,277 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Install a KVM server
+  hosts: server
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Install Oracle Linux 8 virtualization packages
+      ansible.builtin.dnf:
+        name:
+          - "@virt"
+          - virt-install
+          - virt-viewer
+          - containers-common
+          - cockpit
+          - cockpit-machines
+        state: present
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install Oracle Linux 9 virtualization packages
+      ansible.builtin.dnf:
+        name:
+          - qemu-kvm
+          - libvirt
+          - virt-install
+          - virt-viewer
+          - containers-common
+          - cockpit
+          - cockpit-machines
+        state: present
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Start and enable Oracle Linux 8 monolithic virtualization services
+      ansible.builtin.systemd:
+        state: started
+        name: libvirtd.service
+        enabled: true
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Start and enable Oracle Linux 9 modular 'ro' virtualization services
+      ansible.builtin.systemd:
+        state: started
+        name: "virt{{ item }}d-ro.socket"
+        enabled: true
+      loop:
+        - qemu
+        - network
+        - nodedev
+        - nwfilter
+        - secret
+        - storage
+        - interface
+        - proxy
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Start and enable Oracle Linux 9 modular 'admin' virtualization services
+      ansible.builtin.systemd:
+        state: started
+        name: "virt{{ item }}d-admin.socket"
+        enabled: true
+      loop:
+        - qemu
+        - network
+        - nodedev
+        - nwfilter
+        - secret
+        - storage
+        - interface
+        - proxy
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Start and enable cockpit
+      ansible.builtin.systemd:
+        state: started
+        name: cockpit.socket
+        enabled: true
+
+    - name: Open firewall for cockpit and virsh
+      ansible.posix.firewalld:
+        zone: public
+        service: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - libvirt
+        - libvirt-tls
+
+    - name: Add user to libvirt and qemu group
+      ansible.builtin.user:
+        name: "{{ username }}"
+        groups: libvirt,qemu
+        append: true
+
+    - name: Reset ssh connection to allow user changes to affect 'current login user'
+      ansible.builtin.meta: reset_connection
+
+    - name: Install repository and packages
+      when:
+        - install_ocne_rpm
+      block:
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el8
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol8_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Install ocne repository
+          ansible.builtin.dnf:
+            name: oracle-olcne-release-el9
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Enable ocne repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol9_ocne
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Install ocne package
+          ansible.builtin.dnf:
+            name:
+              - ocne
+              - kubectl
+            state: present
+
+    - name: Create an ocne cluster
+      when:
+        - install_ocne_rpm
+        - create_ocne_oci_cluster
+      block:
+        - name: Create oci config
+          ansible.builtin.copy:
+            src: "{{ lookup('env', 'HOME') + '/.oci/' }}"
+            dest: ~/.oci/
+            owner: "{{ username }}"
+            group: "{{ usergroup }}"
+            mode: "preserve"
+          become: true
+          become_user: "{{ username }}"
+
+        - name: Update oci_config
+          ansible.builtin.lineinfile:
+            path: ~/.oci/config
+            regexp: '^key_file='
+            line: "key_file=/home/{{ username }}/.oci/oci.key"
+            owner: "{{ username }}"
+            group: "{{ usergroup }}"
+            mode: "0600"
+          become: true
+          become_user: "{{ username }}"
+
+        - name: Install ol developer repository
+          ansible.builtin.dnf:
+            name: oraclelinux-developer-release-el8
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Enable ol developer repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol8_developer
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Install oci cli
+          ansible.builtin.dnf:
+            name:
+              - python36-oci-cli
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+        - name: Install ol developer repository
+          ansible.builtin.dnf:
+            name: oraclelinux-developer-release-el9
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Enable ol developer repository
+          ansible.builtin.command:
+            cmd: dnf config-manager --enable ol9_developer
+          register: dnf_result
+          changed_when: dnf_result.rc == 0
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Install oci cli
+          ansible.builtin.dnf:
+            name:
+              - python36-oci-cli
+            state: present
+          when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+        - name: Generate random hex string
+          vars:
+            hex_chars: '0123456789abcdef'
+          ansible.builtin.set_fact:
+            rnd_str: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
+
+        - name: Print random hex string
+          ansible.builtin.debug:
+            msg: "{{ rnd_str }}"
+          when: debug_enabled
+
+        - name: Get oci namespace name
+          oracle.oci.oci_object_storage_namespace_facts:
+          register: obj_namespace
+
+        - name: Create oci os bucket
+          oracle.oci.oci_object_storage_bucket:
+            compartment_id: "{{ my_compartment_id }}"
+            namespace_name: "{{ obj_namespace }}"
+            name: "ocne-images-{{ rnd_str }}"
+
+        - name: Get all the buckets in the namespace
+          oracle.oci.oci_object_storage_bucket_facts:
+            compartment_id: "{{ my_compartment_id }}"
+            namespace_name: "{{ obj_namespace }}"
+          register: ocibuckets
+          when: debug_enabled
+
+        - name: Print oci os bucket details
+          ansible.builtin.debug:
+            msg: "{{ ocibuckets }}"
+          when: debug_enabled
+
+        - name: Create cluster config file
+          ansible.builtin.copy:
+            dest: ~/myconfig.yaml
+            content: |
+              provider: oci
+              name: "{{ ocne_cluster_name }}"
+              controlPlaneNodes: "{{ num_cp_nodes }}"
+              workerNodes: "{{ num_wk_nodes }}"
+              providers:
+                oci:
+                  imageBucket: ocne-images-{{ rnd_str }}
+                  compartment: {{ my_compartment_id }}
+          become: true
+          become_user: "{{ username }}"
+
+        - name: Provision the cluster
+          ansible.builtin.shell: |
+            ocne cluster start -u false -c myconfig.yaml
+          args:
+            chdir: ~/
+          become: true
+          become_user: "{{ username }}"
+          register: provision_cluster
+          changed_when: provision_cluster.rc == 0
+
+        - name: Print cluster provision output
+          ansible.builtin.debug:
+            var: provision_cluster
+          when: debug_enabled
+
+        - name: Add kubeconfig to .bashrc file
+          ansible.builtin.lineinfile:
+            path: ~/.bashrc
+            line: "export KUBECONFIG=$HOME/.kube/kubeconfig.{{ ocne_cluster_name | default('ocne') }}.local"
+          become: true
+          become_user: "{{ username }}"
