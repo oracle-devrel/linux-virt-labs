@@ -315,7 +315,9 @@
         name:
           - ansible-core
         state: present
-      when: inventory_hostname in groups['control']
+      when: 
+        - inventory_hostname in groups['control']
+        - use_olae_only
 
     - name: Install Oracle Linux Automation Manager
       ansible.builtin.include_tasks: deploy-olam-tasks.yml
