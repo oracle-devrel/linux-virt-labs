@@ -315,7 +315,7 @@
         name:
           - ansible-core
         state: present
-      when: 
+      when:
         - inventory_hostname in groups['control']
         - use_olae_only
 
