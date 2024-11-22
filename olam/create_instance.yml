@@ -310,6 +310,15 @@
       ansible.builtin.include_tasks: "olam_passwordless_setup.yml"
       when: passwordless_ssh
 
+    - name: Install Oracle Linux Automation Engine
+      ansible.builtin.dnf:
+        name:
+          - ansible-core
+        state: present
+      when:
+        - inventory_hostname in groups['control']
+        - use_olae_only
+
     - name: Install Oracle Linux Automation Manager
       ansible.builtin.include_tasks: deploy-olam-tasks.yml
       vars:
