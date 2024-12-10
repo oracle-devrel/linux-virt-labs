@@ -33,4 +33,4 @@ collections:
 
   - name: https://github.com/freeipa/ansible-freeipa.git
     type: git
-    version: main
+    version: master
