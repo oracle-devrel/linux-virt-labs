@@ -9,6 +9,7 @@
   become: true
   vars:
     ssh_key_params: "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty "
+    private_key: "id_rsa"
 
   tasks:
 
