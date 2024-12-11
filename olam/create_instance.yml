@@ -338,6 +338,10 @@
   ansible.builtin.import_playbook: deploy_free_ipa.yml
   when: use_freeipa
 
+- name: Install git server
+  ansible.builtin.import_playbook: deploy_git_server.yml
+  when: use_git
+
 - name: Print instances
   hosts: all
   become: true
