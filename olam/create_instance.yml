@@ -306,8 +306,8 @@
       ansible.builtin.include_tasks: "host_setup.yml"
       when: >-
         inventory_hostname in
-          groups['control']
-          + groups['server']
+          groups['control']|default([])
+          + groups['server']|default([])
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "olam_passwordless_setup.yml"
@@ -319,7 +319,7 @@
           - ansible-core
         state: present
       when:
-        - inventory_hostname in groups['control']
+        - inventory_hostname in groups['control']|default([])
         - use_olae_only
 
     - name: Install Oracle Linux Automation Manager
@@ -327,7 +327,7 @@
       vars:
         control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
       when:
-        - inventory_hostname in groups['control']
+        - inventory_hostname in groups['control']|default([])
         - olam_single_host
 
 - name: Update all rpm packages

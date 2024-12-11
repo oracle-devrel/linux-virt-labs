@@ -21,7 +21,7 @@
       ansible.posix.authorized_key:
         user: git
         state: present
-        key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+        key: "{{ ssh_key_params ~ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
 
     - name: Install git
       ansible.builtin.dnf:
