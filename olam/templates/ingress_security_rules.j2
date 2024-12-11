@@ -12,23 +12,23 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 22
         min: 22
-  {% if use_freeipa %}
+{% if use_freeipa %}
   - source: "10.0.0.0/24"
     protocol: 6
       destination_port_range:
         max: 80
         min: 80
-- source: "10.0.0.0/24"
+  - source: "10.0.0.0/24"
     protocol: 6
       destination_port_range:
         max: 443
         min: 443
-- source: "10.0.0.0/24"
+  - source: "10.0.0.0/24"
     protocol: 6
       destination_port_range:
         max: 389
         min: 389
-- source: "10.0.0.0/24"
+  - source: "10.0.0.0/24"
     protocol: 6
       destination_port_range:
         max: 636
