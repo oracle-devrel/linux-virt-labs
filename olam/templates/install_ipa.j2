@@ -1,0 +1,2 @@
+#!/bin/bash
+/usr/sbin/ipa-server-install -r {{ ipaserver_realm | quote }} -p {{ ipadm_password | quote }} -a {{ ipaadmin_password | quote }} -U

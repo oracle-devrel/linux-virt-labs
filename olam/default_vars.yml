@@ -22,3 +22,5 @@ update_all: false
 passwordless_ssh: true
 olam_single_host: false
 use_olae_only: false
+use_freeipa: false
+use_git: false

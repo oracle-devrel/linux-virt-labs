@@ -1,0 +1,54 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Configure a git server
+  hosts: git-server
+  become: true
+  vars:
+    ssh_key_params: "no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty "
+    private_key: "id_rsa"
+
+  tasks:
+
+    - name: Add git user
+      ansible.builtin.user:
+        name: git
+        comment: standard git user
+
+    - name: Set authorized key for git access using local pubilc key file
+      ansible.posix.authorized_key:
+        user: git
+        state: present
+        key: "{{ ssh_key_params ~ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+
+    - name: Install git
+      ansible.builtin.dnf:
+        name: git
+        state: present
+
+    - name: Create new repo on the git server
+      ansible.builtin.file:
+        path: /git-server/repos/hello-world.git
+        owner: git
+        group: git
+        state: directory
+        mode: "0755"
+
+    - name: Set git default branch
+      community.general.git_config:
+        name: init.defaultBranch
+        scope: global
+        value: main
+
+    - name: Initialize a bare repo
+      ansible.builtin.shell: |
+        git init --bare
+      args:
+        chdir: /git-server/repos/hello-world.git/
+      become: true
+      become_user: git
+      register: git_results
+      changed_when: git_results.rc != 0

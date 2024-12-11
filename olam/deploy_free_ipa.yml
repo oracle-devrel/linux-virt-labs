@@ -1,0 +1,69 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Setup freeipa server using a role
+  hosts: ipa-server
+  become: true
+  vars:
+    ipaserver_domain: "{{ ansible_domain }}"
+    ipaserver_realm: "{{ ansible_domain|upper }}"
+    ipaserver_setup_dns: false
+    ipaadmin_password: ADMPassword1
+    ipadm_password: DMPassword1
+
+  roles:
+    - role: freeipa.ansible_freeipa.ipaserver
+      state: present
+
+# - name: Setup freeipa server manually on ol8
+#   hosts: ipa-server
+#   become: yes
+#   vars:
+#     ipaserver_domain: "{{ ansible_domain }}"
+#     ipaserver_realm: "{{ ansible_domain|upper }}"
+#     ipaserver_setup_dns: no
+#     ipaadmin_password: ADMPassword1
+#     ipadm_password: DMPassword1
+
+#   tasks:
+
+#   - name: Set firewall rules for freeipa
+#     ansible.posix.firewalld:
+#       zone: public
+#       service: "{{ item }}"
+#       permanent: yes
+#       state: enabled
+#       immediate: yes
+#     loop:
+#       - freeipa-4
+
+#   - name: Enable the idm DL1 module stream
+#     ansible.builtin.dnf:
+#       name: '@idm:DL1'
+#       state: present
+#     when:
+#       - ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+#   - name: Install freeipa packages and dependencies
+#     ansible.builtin.dnf:
+#       name:
+#         - ipa-server
+#       state: latest
+
+#   - name: Copy script
+#     ansible.builtin.template:
+#       src: templates/install.j2
+#       dest: /root/install.sh
+#       mode: '0755'
+
+#   - name: Install the freeipa server
+#     #ansible.builtin.shell: ipa-server-install -r {{ ipaserver_realm | quote }} -p {{ ipadm_password | quote }} -a {{ ipaadmin_password | quote }} -U
+#     shell: /root/install.sh
+#     register: freeipa_install
+
+#   - name: Output from freeipa install
+#     ansible.builtin.debug:
+#       msg: "{{ freeipa_install.stdout }}"
