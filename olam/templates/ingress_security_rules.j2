@@ -15,21 +15,25 @@ instance_ingress_security_rules:
 {% if use_freeipa %}
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         max: 80
         min: 80
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         max: 443
         min: 443
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         max: 389
         min: 389
   - source: "10.0.0.0/24"
     protocol: 6
+    tcp_options:
       destination_port_range:
         max: 636
         min: 636
