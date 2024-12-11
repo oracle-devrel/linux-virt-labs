@@ -7,30 +7,10 @@
 # roles:
 
 collections:
-  - name: https://github.com/ansible-collections/community.general.git
-    type: git
-    version: main
-
-  - name: https://github.com/ansible-collections/ansible.posix.git
-    type: git
-    version: main
-
-  - name: https://github.com/oracle/oci-ansible-collection.git
-    type: git
-    version: master
-
-  - name: https://github.com/ansible-collections/community.postgresql.git
-    type: git
-    version: main
-
-  - name: https://github.com/ansible-collections/community.crypto.git
-    type: git
-    version: main
-
-  - name: https://github.com/ansible-collections/community.libvirt.git
-    type: git
-    version: main
-
-  - name: https://github.com/freeipa/ansible-freeipa.git
-    type: git
-    version: master
+  - ansible.posix
+  - community.general
+  - community.postgresql
+  - community.crypto
+  - freeipa.ansible_freeipa
+  - community.libvirt
+  - oracle.oci
