@@ -304,7 +304,10 @@
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
-      when: inventory_hostname in groups['control']
+      when: >-
+        inventory_hostname in
+          groups['control']
+          + groups['server']
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "olam_passwordless_setup.yml"
