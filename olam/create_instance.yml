@@ -323,7 +323,7 @@
         - use_olae_only
 
     - name: Install Oracle Linux Automation Manager
-      ansible.builtin.include_tasks: deploy_olam_tasks.yml
+      ansible.builtin.include_tasks: deploy_olam_single.yml
       vars:
         control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
       when:
@@ -334,13 +334,17 @@
   ansible.builtin.import_playbook: update_all_rpms.yml
   when: update_all
 
-- name: Install free ipa server
-  ansible.builtin.import_playbook: deploy_free_ipa.yml
+- name: Provision free ipa server
+  ansible.builtin.import_playbook: provision_free_ipa.yml
   when: use_freeipa
 
-- name: Install git server
-  ansible.builtin.import_playbook: deploy_git_server.yml
+- name: Provision git server
+  ansible.builtin.import_playbook: provision_git_server.yml
   when: use_git
+
+- name: Provision kvm server
+  ansible.builtin.import_playbook: provision_kvm.yml
+  when: use_kvm
 
 - name: Print instances
   hosts: all

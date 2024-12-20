@@ -24,3 +24,19 @@ olam_single_host: false
 use_olae_only: false
 use_freeipa: false
 use_git: false
+
+use_kvm: false
+create_vm: false
+ol8_base_image_name: OL8U10_x86_64-kvm-b237.qcow2
+ol8_base_image_url: https://yum.oracle.com/templates/OracleLinux/OL8/u10/x86_64/{{ ol8_base_image_name }}
+ol8_base_image_sha: 53a5eee27c59f335ba1bdb0afc2c3273895f128dd238b51a78f46ad515cbc662
+ol9_base_image_name: OL9U5_x86_64-kvm-b253.qcow2
+ol9_base_image_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/{{ ol9_base_image_name }}
+ol9_base_image_sha: 3b00bbbefc8e78dd28d9f538834fb9e2a03d5ccdc2cadf2ffd0036c0a8f02021
+libvirt_pool_dir: "/var/lib/libvirt/images"
+vm_name: ol9-dev
+vm_vcpus: 2
+vm_ram_mb: 2048
+vm_net: default
+vm_root_pass: 
+cleanup_tmp: no
