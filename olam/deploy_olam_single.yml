@@ -8,14 +8,16 @@
   ansible.builtin.dnf:
     name: oracle-epel-release-el8
     state: present
-  when:
-    - ansible_facts['distribution_major_version'] == '8'
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+  # when:
+  #   - ansible_facts['distribution_major_version'] == '8'
 
 - name: Install version lock plugin
   ansible.builtin.dnf:
     name: python3-dnf-plugin-versionlock
     enablerepo: ol8_developer_EPEL
     state: present
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Version lock python3-click
   community.general.yum_versionlock:
@@ -30,6 +32,7 @@
       - python3-pip
     enablerepo: ol8_developer_EPEL
     state: present
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Install pexpect using pip
   ansible.builtin.pip:
@@ -47,8 +50,9 @@
       profiles=
       state=enabled
     mode: '0644'
-  when:
-    - ansible_distribution_major_version | int >= 8
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+  # when:
+  #   - ansible_distribution_major_version | int >= 8
 
 - name: Install the database
   ansible.builtin.dnf:
@@ -127,6 +131,7 @@
   ansible.builtin.dnf:
     name: oraclelinux-automation-manager-release-el8
     state: present
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Disable Oracle Linux Automation Manager 1.0 repository
   community.general.ini_file:
@@ -135,6 +140,7 @@
     option: enabled
     value: "0"
     mode: '0644'
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Disable Oracle Linux Automation Manager 2.0 repository
   community.general.ini_file:
@@ -143,6 +149,7 @@
     option: enabled
     value: "0"
     mode: '0644'
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Enable Oracle Linux Automation Manager 2.2 repository
   community.general.ini_file:
@@ -151,11 +158,13 @@
     option: enabled
     value: "1"
     mode: '0644'
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Install Oracle Linux Automation Manager
   ansible.builtin.dnf:
     name: ol-automation-manager
     state: present
+  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
 - name: Edit unixsocket in /etc/redis.conf
   ansible.builtin.lineinfile:
