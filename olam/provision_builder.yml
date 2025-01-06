@@ -48,7 +48,9 @@
 
     - name: Install Oracle Linux Automation Manager Builder Utility
       ansible.builtin.dnf:
-        name: python3.11-ansible-builder
+        name:
+          - python3.11-ansible-builder
+          - python3.11-pip
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
@@ -97,7 +99,7 @@
       become: true
       become_user: "{{ username }}"
 
-    - name: Create bomdep.txt
+    - name: Create bindep.txt
       ansible.builtin.template:
         src: templates/bindep.txt.j2
         dest: ~/my_custom_ee_project/bindep.txt
