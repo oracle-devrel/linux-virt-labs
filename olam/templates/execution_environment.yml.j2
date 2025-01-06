@@ -1,0 +1,27 @@
+---
+version: 2
+
+build_arg_defaults:
+ ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: "--ignore-certs"
+
+ansible_config: 'ansible.cfg'
+
+dependencies:
+ galaxy: requirements.yml
+ python: requirements.txt
+ system: bindep.txt
+
+images:
+ base_image:
+  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee:latest
+ builder_image:
+  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-builder:latest
+
+additional_build_steps:
+  prepend: |
+    RUN whoami
+    RUN cat /etc/os-release
+  append:
+    - RUN echo This is a post-install command!
+    - RUN ls -la /etc
+

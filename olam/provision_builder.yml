@@ -69,16 +69,16 @@
 
     - name: Create execution-environment.yml
       ansible.builtin.template:
-        src: templates/execution-environment.yml.j2
+        src: templates/execution_environment.yml.j2
         dest: ~/my_custom_ee_project/execution-environment.yml
         mode: '0644'
       become: true
       become_user: "{{ username }}"
 
     - name: Create ansible.cfg
-      ansible.builtin.template:
-        src: templates/ansible.cfg.j2
-        dest: ~/my_custom_ee_project/ansible.cfg
+      ansible.builtin.file:
+        path: ~/my_custom_ee_project/ansible.cfg
+        state: touch
         mode: '0644'
       become: true
       become_user: "{{ username }}"
@@ -100,9 +100,9 @@
       become_user: "{{ username }}"
 
     - name: Create bindep.txt
-      ansible.builtin.template:
-        src: templates/bindep.txt.j2
-        dest: ~/my_custom_ee_project/bindep.txt
+      ansible.builtin.file:
+        path: ~/my_custom_ee_project/bindep.txt
+        state: touch
         mode: '0644'
       become: true
       become_user: "{{ username }}"
