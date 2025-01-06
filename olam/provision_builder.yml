@@ -48,14 +48,14 @@
 
     - name: Install Oracle Linux Automation Manager Builder Utility
       ansible.builtin.dnf:
-        name: python39-ansible-builder
+        name: python3.11-ansible-builder
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install Ansible Runner using pip
       ansible.builtin.pip:
         name: ansible-runner
-        executable: pip3.9
+        executable: pip3.11
 
     - name: Create project directory
       ansible.builtin.file:
