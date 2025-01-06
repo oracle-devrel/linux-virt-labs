@@ -8,8 +8,8 @@
   hosts: devops-node
   become: true
 
-  vars:
-    debug_enabled: false
+  vars_files:
+    - default_vars.yml
 
   tasks:
 
