@@ -346,6 +346,14 @@
   ansible.builtin.import_playbook: provision_kvm.yml
   when: use_kvm
 
+- name: Provision Oracle Linux Automation Builder Utility
+  ansible.builtin.import_playbook: provision_builder.yml
+  when: use_olam_builder
+
+- name: Provision Oracle Linux Private Automation Hub
+  ansible.builtin.import_playbook: provision_pah.yml
+  when: use_olam_pah
+
 - name: Print instances
   hosts: all
   become: true
