@@ -8,6 +8,9 @@
   hosts: ol-pah
   become: true
 
+  vars_files:
+    - default_vars.yml
+
   tasks:
 
     - name: Install Oracle Linux Automation Manager repository
