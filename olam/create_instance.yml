@@ -310,7 +310,7 @@
           + groups['server']|default([])
 
     - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "olam_passwordless_setup.yml"
+      ansible.builtin.include_tasks: "passwordless_setup.yml"
       when: passwordless_ssh
 
     - name: Install Oracle Linux Automation Engine
@@ -345,6 +345,14 @@
 - name: Provision kvm server
   ansible.builtin.import_playbook: provision_kvm.yml
   when: use_kvm
+
+- name: Provision Oracle Linux Automation Builder Utility
+  ansible.builtin.import_playbook: provision_builder.yml
+  when: use_olam_builder
+
+- name: Provision Oracle Linux Private Automation Hub
+  ansible.builtin.import_playbook: provision_pah.yml
+  when: use_olam_pah
 
 - name: Print instances
   hosts: all

@@ -1,0 +1,76 @@
+---
+# Copyright (c) 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Configure Private Automation Hub
+  hosts: ol-pah
+  become: true
+
+  vars_files:
+    - default_vars.yml
+
+  tasks:
+
+    - name: Install Oracle Linux Automation Manager repository
+      ansible.builtin.dnf:
+        name: oraclelinux-automation-manager-release-el8
+        state: present
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Disable Oracle Linux Automation Manager 1.0 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation
+        option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Disable Oracle Linux Automation Manager 2.0 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2
+        option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Enable Oracle Linux Automation Manager 2.2 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.2
+        option: enabled
+        value: "1"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install Oracle Linux Private Automation Hub
+      ansible.builtin.dnf:
+        name: ol-private-automation-hub-installer
+        state: present
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Copy PAH playbook to home directory
+      ansible.builtin.copy:
+        src: /usr/share/ansible/collections/ansible_collections/oraclelinux/private_automation_hub/playbooks/single-node/
+        dest: ~/single_node
+        remote_src: true
+        mode: '0775'
+      become: true
+      become_user: "{{ username }}"
+
+    - name: Create playbook inventory file
+      ansible.builtin.template:
+        src: templates/hosts.j2
+        dest: ~/single_node/hosts
+        mode: '0644'
+      become: true
+      become_user: "{{ username }}"
+
+    # - name: Run PAH installer playbook
+    #   ansible.builtin.shell: |
+    #     ansible-playbook single-node-install.yml -i hosts -e "olpah_admin_password=password olpah_db_password=password"
+    #   become: true
+    #   become: "{{ username }}"

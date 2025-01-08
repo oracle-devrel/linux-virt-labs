@@ -1,0 +1,10 @@
+---
+- name: get namespace name
+  hosts: localhost
+  tasks:
+    - name: get namespace
+      oracle.oci.oci_object_storage_namespace_facts:
+      register: output
+    - name: print namespace
+      debug:
+        msg: {% raw %} "{{ output }}" {% endraw %}
