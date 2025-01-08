@@ -310,7 +310,7 @@
           + groups['server']|default([])
 
     - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "olam_passwordless_setup.yml"
+      ansible.builtin.include_tasks: "passwordless_setup.yml"
       when: passwordless_ssh
 
     - name: Install Oracle Linux Automation Engine
