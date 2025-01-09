@@ -24,6 +24,7 @@ olam_single_host: false
 use_olae_only: false
 use_olam_builder: false
 use_olam_pah: false
+add_pah_ports: false
 use_freeipa: false
 use_git: false
 
