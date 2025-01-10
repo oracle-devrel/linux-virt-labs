@@ -69,8 +69,17 @@
       become: true
       become_user: "{{ username }}"
 
-    # - name: Run PAH installer playbook
-    #   ansible.builtin.shell: |
-    #     ansible-playbook single-node-install.yml -i hosts -e "olpah_admin_password=password olpah_db_password=password"
-    #   become: true
-    #   become: "{{ username }}"
+    - name: Run PAH installer playbook
+      ansible.builtin.shell: |
+        ansible-playbook single-node-install.yml -i hosts -e "olpah_admin_password=password olpah_db_password=password"
+      args:
+        chdir: ~/single_node
+      become: true
+      become_user: "{{ username }}"
+      register: pah_output
+      changed_when: pah_output.rc != 0
+
+    - name: Print the PAH playbook results
+      ansible.builtin.debug:
+        msg: "{{ pah_output.stdout }}"
+      when: debug_enabled
