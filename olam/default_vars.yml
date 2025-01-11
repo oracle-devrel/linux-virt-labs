@@ -19,7 +19,7 @@ block_volume_size_in_gbs: 50
 block_count: 1
 
 update_all: false
-passwordless_ssh: true
+passwordless_ssh: false
 olam_single_host: false
 use_olae_only: false
 use_olam_builder: false
