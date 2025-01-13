@@ -1,0 +1,28 @@
+compute_instances:
+  1:
+    instance_name: "olvm"
+    type: "server"
+    instance_ocpus: 2
+    instance_memory: 32
+  2:
+    instance_name: "olkvm01"
+    type: "kvm"
+    instance_ocpus: 16
+    instance_memory: 128
+os: "Oracle Linux"
+os_version: "8"
+instance_shape: "VM.Standard.E4.Flex"
+subnet1_cidr_block: "10.0.0.0/24"
+subnet2_cidr_block: "10.0.1.0/24"
+vlan_cidr_block: 10.0.10.0/24
+
+username: "oracle"
+user_default_password: "oracle"
+private_key: "id_rsa"
+debug_enabled: false
+add_vm_block_storage: false
+blk_volume_size_in_gbs: 1000
+ol8_enable_repo: "ol8_olcne18"
+ol8_disable_repo: "ol8_olcne12 ol8_olcne13 ol8_olcne14 ol8_olcne15 ol8_olcne16 ol8_olcne17"
+ol9_enable_repo: "ol9_olcne18"
+ol9_disable_repo: "ol9_olcne17"
