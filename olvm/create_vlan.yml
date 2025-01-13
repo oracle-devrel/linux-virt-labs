@@ -49,6 +49,7 @@
     nsg_ids:
       - "{{ my_nsg_id }}"
     vcn_id: "{{ my_vcn_id }}"
+    vlan_tag: 1
   register: result
   retries: 10
   delay: 30

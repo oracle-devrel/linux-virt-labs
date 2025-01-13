@@ -288,6 +288,15 @@
 
   tasks:
 
+    - name: Wait for systems to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
+    - name: Get a set of all available facts
+      ansible.builtin.setup:
+      
     - name: Print in-memory inventory
       ansible.builtin.debug:
         msg: "{{ groups['all'] }}"
