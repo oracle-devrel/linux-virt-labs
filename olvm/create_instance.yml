@@ -207,7 +207,7 @@
         prohibit_public_ip_on_vnic: false
         route_table_id: "{{ my_rt_id }}"
         security_list_ids: "{{ my_security_list_id }}"
-        dns_label: "olv-public"
+        dns_label: "olvpub"
       register: result
       retries: 10
       delay: 30
@@ -230,7 +230,7 @@
         prohibit_public_ip_on_vnic: true
         route_table_id: "{{ my_rt_id }}"
         security_list_ids: "{{ my_security_list_id }}"
-        dns_label: "olv-private"
+        dns_label: "olvpriv"
       register: result
       retries: 10
       delay: 30
