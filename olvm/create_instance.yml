@@ -317,7 +317,7 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
-- name: Configure new instances
+- name: Configure secondary nic
   hosts: all
   gather_facts: false
   vars_files:
@@ -363,6 +363,9 @@
             subnet_id: "{{ my_subnet2_id }}"
           delegate_to: localhost
           register: secondary_nic_ip
+          retries: 10
+          delay: 30
+          until: secondary_nic_ip is not failed
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:

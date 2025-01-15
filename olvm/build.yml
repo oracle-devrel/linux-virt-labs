@@ -29,6 +29,7 @@
         -
           name: "OS Management Service Agent"
           desired_state: DISABLED
+    key_by: [compartment_id, availability_domain, display_name]
   register: result
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
@@ -89,6 +90,7 @@
           subnet_id: "{{ my_subnet2_id }}"
         display_name: "vdsm"
         instance_id: "{{ my_instance_id }}"
+        key_by: [compartment_id, display_name]
       register: result
       retries: 10
       delay: 30
@@ -112,6 +114,7 @@
           subnet_id: "{{ my_subnet2_id }}"
         display_name: "vdsm{{ item.value.instance_name[-2] }}"
         instance_id: "{{ my_instance_id }}"
+        key_by: [compartment_id, display_name]
       register: result
       retries: 10
       delay: 30
@@ -134,6 +137,7 @@
           vlan_id: "{{ my_vlan_id }}"
         display_name: "l2-vm-network"
         instance_id: "{{ my_instance_id }}"
+        key_by: [compartment_id, display_name]
       register: result
       retries: 10
       delay: 30
@@ -155,6 +159,7 @@
         availability_domain: "{{ my_availability_domain }}"
         display_name: "blk-vm-storage }}"
         size_in_gbs: "{{ blk_volume_size_in_gbs }}"
+        key_by: [compartment_id, display_name]
       register: result
       vars:
         timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
