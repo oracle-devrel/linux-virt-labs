@@ -317,6 +317,16 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+- name: Configure new instances
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  serial: 1
+
+  tasks:
+
     - name: Add ip address to secondary nic
       block:
         - name: Fetch instance details
@@ -325,6 +335,9 @@
             display_name: "{{ inventory_hostname }}"
           delegate_to: localhost
           register: instance_facts
+          retries: 10
+          delay: 30
+          until: instance_facts is not failed
 
         - name: Print instance facts
           ansible.builtin.debug:
@@ -336,6 +349,9 @@
             instance_id: "{{ instance_facts.instances.id }}"
           delegate_to: localhost
           register: vnic_attach_facts
+          retries: 10
+          delay: 30
+          until: vnic_attach_facts is not failed
 
         - name: Print vnic attachments facts
           ansible.builtin.debug:
