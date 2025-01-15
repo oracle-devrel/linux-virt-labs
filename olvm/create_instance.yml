@@ -359,7 +359,6 @@
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
-            vnic_id: "{{ results.vnic_attachments[0].vnic_id }}"
             subnet_id: "{{ my_subnet2_id }}"
           delegate_to: localhost
           register: secondary_nic_ip
