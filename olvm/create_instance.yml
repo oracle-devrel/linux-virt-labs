@@ -296,7 +296,7 @@
 
     - name: Get a set of all available facts
       ansible.builtin.setup:
-      
+
     - name: Print in-memory inventory
       ansible.builtin.debug:
         msg: "{{ groups['all'] }}"
@@ -316,6 +316,28 @@
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
+
+    - name: Add ip address to secondary nic
+      block:
+        - name: Fetch instance details
+          oracle.oci.oci_compute_instance_facts:
+            compartment_id: "{{ my_compartment_id }}"
+            display_name: "{{ inventory_hostname }}"
+          delegate_to: localhost
+          register: instance_facts
+
+        - name: Print instance facts
+          ansible.builtin.debug:
+            var: instance_facts
+
+        # - name: Fetch secondary NIC IP address
+        #   oracle.oci.oci_network_private_ip_facts:
+        #     vnic_attachment_id: "ocid1.vnicattachment.oc1.us-ashburn-1.aaaaaaaaaaxxxxxxxx"  # Replace with your secondary VNIC attachment ID
+        #   delegate_to: localhost  # Process the facts locally
+        #   register: secondary_nic_ip
+
+        # - debug: var=secondary_nic_ip.private_ip  # Access the IP address from the facts
+
 
 - name: Print instances
   hosts: all

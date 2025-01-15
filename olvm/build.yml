@@ -130,9 +130,9 @@
         compartment_id: "{{ my_compartment_id }}"
         create_vnic_details:
           assign_public_ip: false
-          display_name: "l2-vm-network }}"
+          display_name: "l2-vm-network"
           vlan_id: "{{ my_vlan_id }}"
-        display_name: "l2-vm-network }}"
+        display_name: "l2-vm-network"
         instance_id: "{{ my_instance_id }}"
       register: result
       retries: 10
