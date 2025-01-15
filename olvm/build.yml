@@ -108,9 +108,9 @@
         create_vnic_details:
           assign_public_ip: false
           assign_private_dns_record: true
-          display_name: "vdsm{{ item.value.instance_name[:-2] }}"
+          display_name: "vdsm{{ item.value.instance_name[-2] }}"
           subnet_id: "{{ my_subnet2_id }}"
-        display_name: "vdsm{{ item.value.instance_name[:-2] }}"
+        display_name: "vdsm{{ item.value.instance_name[-2] }}"
         instance_id: "{{ my_instance_id }}"
       register: result
       retries: 10
