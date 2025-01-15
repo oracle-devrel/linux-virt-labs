@@ -359,12 +359,13 @@
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
-            subnet_id: "{{ my_subnet2_id }}"
+            vnic_id: "{{ results.vnic_attachments[0].vnic_id }}"
           delegate_to: localhost
           register: secondary_nic_ip
           retries: 10
           delay: 30
           until: secondary_nic_ip is not failed
+          when: results.vnic_attachments[0].subnet_id == my_subnet2_id
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
