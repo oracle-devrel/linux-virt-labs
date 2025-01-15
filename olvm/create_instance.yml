@@ -334,19 +334,19 @@
             compartment_id: "{{ my_compartment_id }}"
             display_name: "{{ inventory_hostname }}"
           delegate_to: localhost
-          register: instance_facts
+          register: results
           retries: 10
           delay: 30
-          until: instance_facts is not failed
+          until: results is not failed
 
         - name: Print instance facts
           ansible.builtin.debug:
-            var: instance_facts
+            var: results
 
         - name: Get vnic attachments of a specific instance
           oracle.oci.oci_compute_vnic_attachment_facts:
             compartment_id: "{{ my_compartment_id }}"
-            instance_id: "{{ instance_facts.instances.id }}"
+            instance_id: "{{ results[0].instances.id }}"
           delegate_to: localhost
           register: vnic_attach_facts
           retries: 10
