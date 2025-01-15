@@ -330,10 +330,21 @@
           ansible.builtin.debug:
             var: instance_facts
 
+        - name: Get vnic attachments of a specific instance
+          oracle.oci.oci_compute_vnic_attachment_facts:
+            compartment_id: "{{ my_compartment_id }}"
+            instance_id: "{{ instance_facts.instances.id }}"
+          delegate_to: localhost
+          register: vnic_attach_facts
+
+        - name: Print vnic attachments facts
+          ansible.builtin.debug:
+            var: vnic_attach_facts
+
         # - name: Fetch secondary NIC IP address
         #   oracle.oci.oci_network_private_ip_facts:
         #     vnic_attachment_id: "ocid1.vnicattachment.oc1.us-ashburn-1.aaaaaaaaaaxxxxxxxx"  # Replace with your secondary VNIC attachment ID
-        #   delegate_to: localhost  # Process the facts locally
+        #   delegate_to: localhost
         #   register: secondary_nic_ip
 
         # - debug: var=secondary_nic_ip.private_ip  # Access the IP address from the facts
