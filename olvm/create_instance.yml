@@ -346,7 +346,7 @@
         - name: Get vnic attachments of a specific instance
           oracle.oci.oci_compute_vnic_attachment_facts:
             compartment_id: "{{ my_compartment_id }}"
-            instance_id: "{{ results[0].instances.id }}"
+            instance_id: "{{ results.instances[0].id }}"
           delegate_to: localhost
           register: vnic_attach_facts
           retries: 10
