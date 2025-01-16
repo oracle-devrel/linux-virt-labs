@@ -359,7 +359,7 @@
 
         - name: Print vnic attachment facts for private subnet
           ansible.builtin.debug:
-            var: "{{ vnic_attachment_details | community.general.json_query('results.vnic_attachments[]') }}"
+            var: "{{ vnic_attachment_details | community.general.json_query('vnic_attachment_details.vnic_attachments[*]') }}"
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
@@ -370,7 +370,7 @@
           delay: 30
           until: secondary_nic_ip is not failed
           vars:
-            subnet_query: "results.vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
+            subnet_query: "vnic_attachment_details.vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
