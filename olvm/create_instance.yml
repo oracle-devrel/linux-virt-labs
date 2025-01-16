@@ -369,7 +369,7 @@
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
-            var: secondary_nic_ip.private_ips[0].ip_address
+            var: secondary_nic_ip
 
 
 - name: Print instances
