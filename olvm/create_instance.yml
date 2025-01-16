@@ -334,36 +334,36 @@
             compartment_id: "{{ my_compartment_id }}"
             display_name: "{{ inventory_hostname }}"
           delegate_to: localhost
-          register: results
+          register: instance_details
           retries: 10
           delay: 30
-          until: results is not failed
+          until: instance_details is not failed
 
         - name: Print instance facts
           ansible.builtin.debug:
-            var: results
+            var: instance_details
 
         - name: Get vnic attachments of a specific instance
           oracle.oci.oci_compute_vnic_attachment_facts:
             compartment_id: "{{ my_compartment_id }}"
             instance_id: "{{ results.instances[0].id }}"
           delegate_to: localhost
-          register: results
+          register: vnic_attachment_details
           retries: 10
           delay: 30
-          until: results is not failed
+          until: vnic_attachment_details is not failed
 
         - name: Print vnic attachments facts
           ansible.builtin.debug:
-            var: results
+            var: vnic_attachment_details
 
         - name: Print vnic attachment facts for private subnet
           ansible.builtin.debug:
-            var: "{{ results | community.general.json_query('results.vnic_attachments[*]') }}"
+            var: "{{ vnic_attachment_details | community.general.json_query('results.vnic_attachments[]') }}"
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
-            vnic_id: "{{ results | community.general.json_query(subnet_query) }}"
+            vnic_id: "{{ vnic_attachment_details | community.general.json_query(subnet_query) }}"
           delegate_to: localhost
           register: secondary_nic_ip
           retries: 10
