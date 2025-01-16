@@ -359,7 +359,7 @@
 
         - name: Print vnic attachment facts for private subnet
           ansible.builtin.debug:
-            var: "{{ results | community.general.json_query('vnic_attachments[?subnet_id==' + my_subnet2_id + ']') }}"
+            var: "{{ results | community.general.json_query('vnic_attachments') }}"
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
