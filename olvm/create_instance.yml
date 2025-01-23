@@ -361,7 +361,7 @@
           ansible.builtin.debug:
             msg: "{{ results | community.general.json_query(subnet_query) }}"
           vars:
-            subnet_query: "vnic_attachment_details.vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
+            subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         # - name: Fetch secondary vnic ip address
         #   oracle.oci.oci_network_private_ip_facts:

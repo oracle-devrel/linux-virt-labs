@@ -205,15 +205,15 @@
 - name: Add host to ini host file
   ansible.builtin.lineinfile:
     path: hosts
-    line: "{{ name }} ansible_host={{ ansible_host }} ansible_user={{ ansible_user }} ansible_private_key_file={{ ansible_key_file }} ansible_ssh_common_args={{ ansible_ssh_common_args }}"
+    line: "{{ instance_name }} ansible_host={{ instance_ansible_host }} ansible_user={{ instance_ansible_user }} ansible_private_key_file={{ instance_ansible_private_key_file }} ansible_ssh_common_args={{ instance_ansible_ssh_common_args }}"
     insertafter: '^\[{{ item.value.type }}\]$'
+    create: true
+    mode: "664"
   delegate_to: localhost
   vars:
-    name: "{{ instance_display_name }}"
-    groups: "{{ item.value.type }}"
-    ansible_user: opc
-    ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
-    ansible_host: "{{ instance_public_ip }}"
-    ansible_port: 22
-    instance_ocid: "{{ my_instance_id }}"
+    instance_name: "{{ instance_display_name }}"
+    instance_ansible_user: opc
+    instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    instance_ansible_host: "{{ instance_public_ip }}"
+    instance_ansible_port: 22
