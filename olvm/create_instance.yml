@@ -357,6 +357,10 @@
           ansible.builtin.debug:
             msg: "{{ results }}"
 
+        - name: Print second subnet id
+          ansible.builtin.debug:
+            msg: "{{ my_subnet2_id }}"
+
         - name: Print vnic attachment facts for private subnet
           ansible.builtin.debug:
             msg: "{{ results | community.general.json_query(subnet_query) }}"
