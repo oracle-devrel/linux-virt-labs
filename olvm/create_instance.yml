@@ -333,6 +333,9 @@
           oracle.oci.oci_compute_instance_facts:
             compartment_id: "{{ my_compartment_id }}"
             display_name: "{{ inventory_hostname }}"
+            sort_by: TIMECREATED
+            sort_order: ASC
+            lifecycle_state: RUNNING
           delegate_to: localhost
           register: instance_details
           retries: 10
