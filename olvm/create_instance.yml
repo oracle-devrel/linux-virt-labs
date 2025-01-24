@@ -404,7 +404,7 @@
           ansible.builtin.set_fact:
             interface: "{{ item }}"
           with_items: "{{ ansible_interfaces | reject('==', 'lo') }}"
-          when: ansible_facts[itme].macaddress == mac_addr
+          when: ansible_facts[item].macaddress == mac_addr
 
         - name: Assign static IP
           community.general.nmcli:
