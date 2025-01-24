@@ -14,4 +14,3 @@ collections:
   - freeipa.ansible_freeipa
   - community.libvirt
   - oracle.oci
-  - community.general.nmcli
