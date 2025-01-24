@@ -329,7 +329,7 @@
 
     - name: Add ip address to secondary nic
       block:
-        - name: Fetch instance details
+        - name: Get instance details
           oracle.oci.oci_compute_instance_facts:
             compartment_id: "{{ my_compartment_id }}"
             display_name: "{{ inventory_hostname }}"
@@ -359,27 +359,36 @@
         - name: Print vnic attachments facts
           ansible.builtin.debug:
             msg: "{{ results }}"
+          when: debug_enabled
 
         - name: Print second subnet id
           ansible.builtin.debug:
             msg: "{{ my_subnet2_id }}"
+          when: debug_enabled
 
-        - name: Print vnic attachment facts for private subnet
+        - name: Print secondary vnic id
           ansible.builtin.debug:
             msg: "{{ results | community.general.json_query(subnet_query) }}"
+          vars:
+            subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
+          when: debug_enabled
+
+        - name: Set secondary vnic id
+          ansible.builtin.set_fact:
+            secondary_vnic_id: "{{ results | community.general.json_query(subnet_query) }}"
           vars:
             subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         - name: Fetch secondary vnic ip address
           oracle.oci.oci_network_private_ip_facts:
-            vnic_id: "{{ results | community.general.json_query(subnet_query) }}"
+            tenancy: "{{ my_compartment_id }}"
+            subnet_id: "{{ my_subnet2_id }}"
+            vnic_id: "{{ secondary_vnic_id }}"
           delegate_to: localhost
           register: secondary_nic_ip
           retries: 10
           delay: 30
           until: secondary_nic_ip is not failed
-          vars:
-            subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
