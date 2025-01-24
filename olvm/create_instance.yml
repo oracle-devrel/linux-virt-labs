@@ -319,7 +319,7 @@
 
 - name: Configure secondary nic
   hosts: all
-  gather_facts: false
+  gather_facts: true
   vars_files:
     - default_vars.yml
     - oci_vars.yml
@@ -345,6 +345,7 @@
         - name: Print instance facts
           ansible.builtin.debug:
             var: instance_details
+          when: debug_enabled
 
         - name: Get vnic attachments of a specific instance
           oracle.oci.oci_compute_vnic_attachment_facts:
@@ -359,33 +360,61 @@
         - name: Print vnic attachments facts
           ansible.builtin.debug:
             var: vnic_attachments
+          when: debug_enabled
 
         - name: Print second subnet id
           ansible.builtin.debug:
             var: my_subnet2_id
+          when: debug_enabled
 
         - name: Set secondary vnic id
           ansible.builtin.set_fact:
-            secondary_vnic_id: "{{ results | community.general.json_query(subnet_query) }}"
+            secondary_vnic_id: "{{ vnic_attachments | community.general.json_query(subnet_query) }}"
           vars:
             subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         - name: Print secondary vnic id
-          ansible.builtin.debug: 
+          ansible.builtin.debug:
             var: secondary_vnic_id
+          when: debug_enabled
 
         - name: Get secondary vnic ip address
           oracle.oci.oci_network_vnic_facts:
-            vnic_id: "{{ secondary_vnic_id }}"
+            vnic_id: "{{ secondary_vnic_id[0] }}"
           delegate_to: localhost
-          register: secondary_nic_ip
+          register: secondary_vnic_ip
           retries: 10
           delay: 30
-          until: secondary_nic_ip is not failed
+          until: secondary_vnic_ip is not failed
+
+        - name: Set secondary vnic ip
+          ansible.builtin.set_fact:
+            secondary_vnic_ip: "{{ secondary_vnic_ip.vnic.private_ip }}"
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
-            msg: "{{ secondary_nic_ip.vnic.private_ip }}"
+            var: secondary_vnic_ip
+          when: debug_enabled
+
+        - name: Get secondary vnic mac
+          ansible.builtin.set_fact:
+            mac_addr: "{{ secondary_vnic_ip.vnic.mac_address | lower }}"
+
+        - name: Get network interface
+          ansible.builtin.set_fact:
+            interface: "{{ item }}"
+          with_items: "{{ ansible_interfaces | reject('==', 'lo') }}"
+          when: ansible_facts[itme].macaddress == mac_addr
+
+        - name: Assign static IP
+          community.network.nmcli:
+            interface: ens4
+            type: ethernet
+            ip:
+              address: "{{ secondary_vnic_ip }}"
+              netmask: 255.255.255.0
+              gateway: 10.0.1.1
+            ipv4.method: manual
 
 - name: Print instances
   hosts: all
