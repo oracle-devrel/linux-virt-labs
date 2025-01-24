@@ -408,10 +408,12 @@
 
         - name: Assign static IP
           community.general.nmcli:
-            ifname: ens4
+            conn_name: "ethernet-{{ interface }}"
+            ifname: "{{ interface }}"
             type: ethernet
             ip4: "{{ secondary_vnic_ip }}/24"
             gw4: 10.0.1.1
+            state: present
 
 - name: Print instances
   hosts: all
