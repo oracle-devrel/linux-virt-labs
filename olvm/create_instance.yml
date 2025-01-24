@@ -351,27 +351,18 @@
             compartment_id: "{{ my_compartment_id }}"
             instance_id: "{{ instance_details.instances[0].id }}"
           delegate_to: localhost
-          register: results
+          register: vnic_attachments
           retries: 10
           delay: 30
-          until: results is not failed
+          until: vnic_attachments is not failed
 
         - name: Print vnic attachments facts
           ansible.builtin.debug:
-            msg: "{{ results }}"
-          when: debug_enabled
+            var: vnic_attachments
 
         - name: Print second subnet id
           ansible.builtin.debug:
-            msg: "{{ my_subnet2_id }}"
-          when: debug_enabled
-
-        - name: Print secondary vnic id
-          ansible.builtin.debug:
-            msg: "{{ results | community.general.json_query(subnet_query) }}"
-          vars:
-            subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
-          when: debug_enabled
+            var: my_subnet2_id
 
         - name: Set secondary vnic id
           ansible.builtin.set_fact:
@@ -379,7 +370,11 @@
           vars:
             subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
-        - name: Fetch secondary vnic ip address
+        - name: Print secondary vnic id
+          ansible.builtin.debug: 
+            var: secondary_vnic_id
+
+        - name: Get secondary vnic ip address
           oracle.oci.oci_network_vnic_facts:
             vnic_id: "{{ secondary_vnic_id }}"
           delegate_to: localhost
