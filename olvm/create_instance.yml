@@ -414,6 +414,7 @@
             ip4: "{{ secondary_vnic_ip }}/24"
             gw4: 10.0.1.1
             state: present
+          become: true
 
 - name: Print instances
   hosts: all
