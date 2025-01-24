@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
 # This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
@@ -316,6 +316,23 @@
 
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
+
+- name: Install OLVM
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+
+  tasks:
+
+    - name: Install ovirt-engine
+      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
+      when: inventory_hostname in groups['server']
+
+    - name: Install OLVM KVM
+      ansible.builtin.include_tasks: "provision_olvm_kvm.yml"
+      when: inventory_hostname in groups['kvm']
 
 - name: Configure secondary nic
   hosts: all

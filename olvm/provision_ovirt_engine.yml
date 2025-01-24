@@ -1,0 +1,27 @@
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+---
+
+- name: Add oracle-ovirt release repository
+  ansible.builtin.dnf:
+    name: 
+      - oracle-ovirt-release-45-el8
+      - kernel-uek-modules-extra
+    state: present
+
+- name: Point to public YUM mirrors
+  ansible.builtin.copy:
+    dest: /etc/yum/vars/ociregion
+    content: ""
+
+- name: Point to public YUM mirrors
+  ansible.builtin.copy:
+    dest: /etc/yum/vars/ociregion
+    content: "oracle.com"
+
+# - name: Install ovirt-engine
+#   ansible.builtin.dnf:
+#     name: ovirt-engine
+#     state: present
