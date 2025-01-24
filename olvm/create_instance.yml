@@ -378,18 +378,18 @@
             var: secondary_vnic_id
           when: debug_enabled
 
-        - name: Get secondary vnic ip address
+        - name: Get secondary vnic facts
           oracle.oci.oci_network_vnic_facts:
             vnic_id: "{{ secondary_vnic_id[0] }}"
           delegate_to: localhost
-          register: secondary_vnic_ip
+          register: secondary_vnic_facts
           retries: 10
           delay: 30
-          until: secondary_vnic_ip is not failed
+          until: secondary_vnic_facts is not failed
 
         - name: Set secondary vnic ip
           ansible.builtin.set_fact:
-            secondary_vnic_ip: "{{ secondary_vnic_ip.vnic.private_ip }}"
+            secondary_vnic_ip: "{{ secondary_vnic_facts.vnic.private_ip }}"
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
@@ -398,7 +398,7 @@
 
         - name: Get secondary vnic mac
           ansible.builtin.set_fact:
-            mac_addr: "{{ secondary_vnic_ip.vnic.mac_address | lower }}"
+            mac_addr: "{{ secondary_vnic_facts.vnic.mac_address | lower }}"
 
         - name: Get network interface
           ansible.builtin.set_fact:
