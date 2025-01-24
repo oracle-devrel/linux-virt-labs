@@ -407,14 +407,11 @@
           when: ansible_facts[itme].macaddress == mac_addr
 
         - name: Assign static IP
-          community.network.nmcli:
-            interface: ens4
+          community.general.nmcli:
+            ifname: ens4
             type: ethernet
-            ip:
-              address: "{{ secondary_vnic_ip }}"
-              netmask: 255.255.255.0
-              gateway: 10.0.1.1
-            ipv4.method: manual
+            ip4: "{{ secondary_vnic_ip }}/24"
+            gw4: 10.0.1.1
 
 - name: Print instances
   hosts: all
