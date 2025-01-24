@@ -380,9 +380,7 @@
             subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
 
         - name: Fetch secondary vnic ip address
-          oracle.oci.oci_network_private_ip_facts:
-            tenancy: "{{ my_compartment_id }}"
-            subnet_id: "{{ my_subnet2_id }}"
+          oracle.oci.oci_network_vnic_facts:
             vnic_id: "{{ secondary_vnic_id }}"
           delegate_to: localhost
           register: secondary_nic_ip
@@ -392,8 +390,7 @@
 
         - name: Print secondary vnic ip address
           ansible.builtin.debug:
-            msg: "{{ secondary_nic_ip }}"
-
+            msg: "{{ secondary_nic_ip.vnic.private_ip }}"
 
 - name: Print instances
   hosts: all
