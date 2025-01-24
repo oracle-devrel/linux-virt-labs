@@ -93,21 +93,3 @@
 
 - name: Reset ssh connection to allow user changes to affect 'current login user'
   ansible.builtin.meta: reset_connection
-
-- name: Deploy VM1
-  vars:
-    base_image_name: "{{ ol8_base_image_name }}"
-    base_image_url: "{{ ol8_base_image_url }}"
-    base_image_sha: "{{ ol8_base_image_sha }}"
-    vm_name: ol8-dev
-  ansible.builtin.import_tasks: provision_kvm_vm.yml
-  when: create_vm
-
-- name: Deploy VM2
-  vars:
-    base_image_name: "{{ ol9_base_image_name }}"
-    base_image_url: "{{ ol9_base_image_url }}"
-    base_image_sha: "{{ ol9_base_image_sha }}"
-    vm_name: ol9-dev
-  ansible.builtin.import_tasks: provision_kvm_vm.yml
-  when: create_vm
