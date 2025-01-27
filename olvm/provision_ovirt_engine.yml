@@ -11,17 +11,32 @@
       - kernel-uek-modules-extra
     state: present
 
-- name: Point to public YUM mirrors
-  ansible.builtin.copy:
-    dest: /etc/yum/vars/ociregion
-    content: ""
+- name: Set ovirt-4.5 repo to public YUM mirror
+  ansible.general.ini_file:
+    path: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+    section: ovirt-4.5
+    option: baseurl
+    value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/$basearch/
     mode: "0644"
+    state: present
 
-- name: Point to public YUM mirrors
-  ansible.builtin.copy:
-    dest: /etc/yum/vars/ociregion
-    content: "oracle.com"
+- name: Set ovirt-4.5-extra to public YUM mirror
+  ansible.general.ini_file:
+    dest: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+    section: ovirt-4.5-extra
+    option: baseurl
+    value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/extras/$basearch/
     mode: "0644"
+    state: present
+
+- name: Set ol8_kvm_appstream to public YUM mirror
+  ansible.general.ini_file:
+    dest: /etc/yum.repos.d/virt-ol8.repo
+    section: ol8_kvm_appstream
+    option: baseurl
+    value: https://yum.oracle.com/repo/OracleLinux/OL8/kvm/appstream/$basearch/
+    mode: "0644"
+    state: present
 
 - name: Install ovirt-engine
   ansible.builtin.dnf:
