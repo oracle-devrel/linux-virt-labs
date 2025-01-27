@@ -429,11 +429,6 @@
 
     - name: Install ovirt-engine
       ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
-      when: inventory_hostname in groups['server']
-
-    - name: Install OLVM KVM
-      ansible.builtin.include_tasks: "provision_olvm_kvm.yml"
-      when: inventory_hostname in groups['kvm']
 
 - name: Print instances
   hosts: all

@@ -6,7 +6,7 @@
 
 - name: Add oracle-ovirt release repository
   ansible.builtin.dnf:
-    name: 
+    name:
       - oracle-ovirt-release-45-el8
       - kernel-uek-modules-extra
     state: present
@@ -15,13 +15,35 @@
   ansible.builtin.copy:
     dest: /etc/yum/vars/ociregion
     content: ""
+    mode: "0644"
 
 - name: Point to public YUM mirrors
   ansible.builtin.copy:
     dest: /etc/yum/vars/ociregion
     content: "oracle.com"
+    mode: "0644"
 
-# - name: Install ovirt-engine
-#   ansible.builtin.dnf:
-#     name: ovirt-engine
-#     state: present
+- name: Install ovirt-engine
+  ansible.builtin.dnf:
+    name: ovirt-engine
+    state: present
+  when: inventory_hostname in groups['server']
+
+- name: Activate Cockpit web console
+  ansible.builtin.systemd:
+    state: started
+    name: cockpit.socket
+    enabled: true
+  when: inventory_hostname in groups['kvm']
+
+- name: Open firewall for cockpit and virsh
+  ansible.posix.firewalld:
+    zone: public
+    service: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: true
+  loop:
+    - libvirt
+    - libvirt-tls
+    - cockpit
