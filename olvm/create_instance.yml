@@ -319,7 +319,6 @@
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "passwordless_setup.yml"
-      when: passwordless_ssh
 
     - name: Provision VNC Server
       ansible.builtin.include_tasks: provision_vnc.yml
