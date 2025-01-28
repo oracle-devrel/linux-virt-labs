@@ -17,6 +17,8 @@
         name: oracle-epel-release-el8
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+      retries: 5
+      delay: 10
 
     - name: Enable ol8_developer_EPEL repo
       ansible.builtin.command:
@@ -34,6 +36,8 @@
           - perl
           - xcb-util-cursor
         state: present
+      retries: 5
+      delay: 10
 
     - name: Add virtualbox repo keys
       ansible.builtin.rpm_key:
@@ -50,6 +54,8 @@
       ansible.builtin.dnf:
         name: "VirtualBox-{{ virtualbox_version }}"
         state: present
+      retries: 5
+      delay: 10
 
     - name: Check if extension pack is already installed
       ansible.builtin.shell: |

@@ -16,6 +16,8 @@
       ansible.builtin.dnf:
         name: '@Server with GUI'
         state: present
+      retries: 5
+      delay: 10
 
     - name: Installing the vnc package
       ansible.builtin.dnf:
@@ -23,6 +25,8 @@
           - tigervnc-server
           - tigervnc-server-module
         state: present
+      retries: 5
+      delay: 10
 
     - name: Set systemd default boot target to graphical.target
       ansible.builtin.file:

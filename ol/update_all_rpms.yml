@@ -18,6 +18,8 @@
         state: latest
         update_only: true
       when: ansible_distribution == 'OracleLinux'
+      retries: 5
+      delay: 10
 
     - name: Check if a reboot is required
       ansible.builtin.command: /usr/bin/needs-restarting -r

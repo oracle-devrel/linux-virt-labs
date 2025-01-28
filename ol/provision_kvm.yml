@@ -23,6 +23,8 @@
           - cockpit-machines
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+      retries: 5
+      delay: 10
 
     - name: Install Oracle Linux 9 virtualization packages
       ansible.builtin.dnf:
@@ -36,6 +38,8 @@
           - cockpit-machines
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+      retries: 5
+      delay: 10
 
     - name: Start and enable Oracle Linux 8 monolithic virtualization services
       ansible.builtin.systemd:
