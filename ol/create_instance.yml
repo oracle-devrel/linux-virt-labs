@@ -58,7 +58,7 @@
         msg: "{{ my_region_id }}"
       when: debug_enabled
 
-    - name: Get list availbility domains
+    - name: Get list availability domains
       oracle.oci.oci_identity_availability_domain_facts:
         compartment_id: "{{ my_tenancy_id }}"
         region: "{{ my_region_id }}"
