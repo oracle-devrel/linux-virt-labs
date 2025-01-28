@@ -10,6 +10,8 @@
       - oracle-ovirt-release-45-el8
       - kernel-uek-modules-extra
     state: present
+  retries: 5
+  delay: 10
 
 - name: Set ovirt-4.5 repo to public YUM mirror
   community.general.ini_file:
@@ -43,6 +45,8 @@
     name: ovirt-engine
     state: present
   when: inventory_hostname in groups['server']
+  retries: 5
+  delay: 10
 
 - name: Activate Cockpit web console
   ansible.builtin.systemd:
