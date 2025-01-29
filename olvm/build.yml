@@ -205,6 +205,7 @@
 - name: Add host to ini host file
   ansible.builtin.lineinfile:
     path: hosts
+    regexp: '^{{ instance_name }}'
     line: "{{ instance_name }} ansible_host={{ instance_ansible_host }} ansible_user={{ instance_ansible_user }} ansible_private_key_file={{ instance_ansible_private_key_file }} ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}"
     insertafter: '^\[{{ item.value.type }}\]$'
     create: true
