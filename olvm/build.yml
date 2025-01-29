@@ -71,11 +71,11 @@
 
 - name: Set the instance primary private ip address
   ansible.builtin.set_fact:
-    instance_private_ip: "{{ result.primary_private_ip }}"
+    instance_private_ip: "{{ result.instance.primary_private_ip }}"
 
 - name: Set the instance primary public ip address
   ansible.builtin.set_fact:
-    instance_public_ip: "{{ result.primary_public_ip }}"
+    instance_public_ip: "{{ result.instance.primary_public_ip }}"
 
 - name: Add secondary private subnet vnic_attachment
   when: item.value.type == "server"
