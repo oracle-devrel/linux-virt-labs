@@ -47,7 +47,7 @@
     state: directory
     mode: "0700"
     owner: "{{ username }}"
-    group: "{{ username }}"
+    group: "{{ usergroup }}"
 
 - name: Generate vnc password for the remote user
   ansible.builtin.shell: |

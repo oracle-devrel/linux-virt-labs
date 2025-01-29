@@ -17,6 +17,7 @@ subnet2_cidr_block: "10.0.1.0/24"
 vlan_cidr_block: 10.0.10.0/24
 
 username: "oracle"
+usergroup: "{{ username }}"
 user_default_password: "oracle"
 private_key: "id_rsa"
 debug_enabled: false
