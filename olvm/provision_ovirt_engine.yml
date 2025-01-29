@@ -83,7 +83,7 @@
 
 - name: Copy answer file
   ansible.builtin.expect:
-    command: /usr/bin/engine-setup --generate-answer=file --accept-defaults
+    command: /bin/engine-setup --generate-answer=file --accept-defaults
     responses:
       'Engine admin password': "How-2-install"
       'Confirm engine admin password': "How-2-install"
