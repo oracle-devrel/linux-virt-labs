@@ -52,30 +52,30 @@
   ansible.builtin.set_fact:
     instance_display_name: "{{ result.instance.display_name }}"
 
-- name: Get the primary vnic attachment details of instance
-  oracle.oci.oci_compute_vnic_attachment_facts:
-    compartment_id: "{{ my_compartment_id }}"
-    instance_id: "{{ my_instance_id }}"
-  register: result
-  retries: 10
-  delay: 30
-  until: result is not failed
+# - name: Get the primary vnic attachment details of instance
+#   oracle.oci.oci_compute_vnic_attachment_facts:
+#     compartment_id: "{{ my_compartment_id }}"
+#     instance_id: "{{ my_instance_id }}"
+#   register: result
+#   retries: 10
+#   delay: 30
+#   until: result is not failed
 
-- name: Get primary vnic details
-  oracle.oci.oci_network_vnic_facts:
-    vnic_id: "{{ result.vnic_attachments[0].vnic_id }}"
-  register: result
-  retries: 10
-  delay: 30
-  until: result is not failed
+# - name: Get primary vnic details
+#   oracle.oci.oci_network_vnic_facts:
+#     vnic_id: "{{ result.vnic_attachments[0].vnic_id }}"
+#   register: result
+#   retries: 10
+#   delay: 30
+#   until: result is not failed
 
 - name: Set the instance primary private ip address
   ansible.builtin.set_fact:
-    instance_private_ip: "{{ result.vnic.private_ip }}"
+    instance_private_ip: "{{ result.primary_private_ip }}"
 
 - name: Set the instance primary public ip address
   ansible.builtin.set_fact:
-    instance_public_ip: "{{ result.vnic.public_ip }}"
+    instance_public_ip: "{{ result.primary_public_ip }}"
 
 - name: Add secondary private subnet vnic_attachment
   when: item.value.type == "server"
@@ -91,14 +91,14 @@
         display_name: "vdsm"
         instance_id: "{{ my_instance_id }}"
         key_by: [compartment_id, display_name]
-      register: result
+      register: server_subnet2
       retries: 10
       delay: 30
-      until: result is not failed
+      until: server_subnet2 is not failed
 
     - name: Print vnic_attachment for subnet2
       ansible.builtin.debug:
-        var: result
+        var: server_subnet2
       when: debug_enabled
 
 - name: Add secondary private subnet vnic_attachment
@@ -115,14 +115,14 @@
         display_name: "vdsm{{ item.value.instance_name[-2:] }}"
         instance_id: "{{ my_instance_id }}"
         key_by: [compartment_id, display_name]
-      register: result
+      register: kvm_subnet2
       retries: 10
       delay: 30
-      until: result is not failed
+      until: kvm_subnet2 is not failed
 
     - name: Print vnic_attachment for subnet2
       ansible.builtin.debug:
-        var: result
+        var: kvm_subnet2
       when: debug_enabled
 
 - name: Add vlan vnic to instance
@@ -138,14 +138,14 @@
         display_name: "l2-vm-network"
         instance_id: "{{ my_instance_id }}"
         key_by: [compartment_id, display_name]
-      register: result
+      register: kvm_vlan
       retries: 10
       delay: 30
-      until: result is not failed
+      until: kvm_vlan is not failed
 
     - name: Print vnic_attachment for vlan
       ansible.builtin.debug:
-        var: result
+        var: kvm_vlan
       when: debug_enabled
 
 - name: Add shared block volume to kvm nodes for vm storage
@@ -160,16 +160,16 @@
         display_name: "blk-vm-storage }}"
         size_in_gbs: "{{ blk_volume_size_in_gbs }}"
         key_by: [compartment_id, display_name]
-      register: result
+      register: kvm_create_block
       vars:
         timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
       retries: 10
       delay: 30
-      until: result is not failed
+      until: kvm_create_block is not failed
 
     - name: Set the block storage block volume id
       ansible.builtin.set_fact:
-        volume_id: "{{ result.volume.id }}"
+        volume_id: "{{ kvm_create_block.volume.id }}"
 
     - name: Attach shared block volume for vm storage
       oracle.oci.oci_compute_volume_attachment:
@@ -179,9 +179,10 @@
         compartment_id: "{{ my_compartment_id }}"
         is_read_only: false
         is_shareable: true
+      register: kvm_add_block
       retries: 10
       delay: 30
-      until: result is not failed
+      until: kvm_add_block is not failed
 
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
