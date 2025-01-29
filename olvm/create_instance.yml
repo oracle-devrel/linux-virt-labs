@@ -322,7 +322,13 @@
 
     - name: Provision VNC Server
       ansible.builtin.include_tasks: provision_vnc.yml
-      when: inventory_hostname in groups['vnc']
+      when: inventory_hostname in groups['server']
+      args:
+        apply:
+          become: true
+
+    - name: Install ovirt-engine
+      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
       args:
         apply:
           become: true
@@ -425,19 +431,6 @@
             gw4: 10.0.1.1
             state: present
           become: true
-
-- name: Install OLVM
-  hosts: all
-  gather_facts: false
-  become: true
-  vars_files:
-    - default_vars.yml
-    - oci_vars.yml
-
-  tasks:
-
-    - name: Install ovirt-engine
-      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
 
 - name: Print instances
   hosts: all

@@ -80,7 +80,7 @@
 - name: Install pexpect using pip
   ansible.builtin.pip:
     name: pexpect
-    
+
 - name: Copy answer file
   ansible.builtin.expect:
     command: /usr/bin/engine-setup --generate-answer=file --accept-defaults
