@@ -87,6 +87,7 @@
     responses:
       'Engine admin password': "How-2-install"
       'Confirm engine admin password': "How-2-install"
+    timeout: 600
   become: true
   when: inventory_hostname in groups['server']
   register: result
