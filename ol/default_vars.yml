@@ -46,6 +46,7 @@ use_haproxy: false
 use_nginx: false
 use_nfs: false
 use_quay_ha: false
+use_pcp: false
 
 use_vbox: false
 virtualbox_version: "7.1"
