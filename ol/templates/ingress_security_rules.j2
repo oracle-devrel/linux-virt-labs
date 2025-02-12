@@ -86,3 +86,11 @@ instance_ingress_security_rules:
         max: 6379
         min: 6379    
 {% endif %}
+{% if use_pcp %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 44321
+        min: 44321
+{% endif %}
