@@ -45,15 +45,15 @@ instance_ingress_security_rules:
     protocol: 6
     tcp_options:
       destination_port_range:
-        max: 5900
-        min: 6923
+        max: 6923
+        min: 5900
   # Allow incoming vdsm connections
   - source: "10.0.1.0/24"
     protocol: 6
     tcp_options:
       destination_port_range:
-        max: 49152
-        min: 49216
+        max: 49216
+        min: 49152
   # Allow incoming ipsec (pluto) connections
   - source: "10.0.1.0/24"
     protocol: 6
