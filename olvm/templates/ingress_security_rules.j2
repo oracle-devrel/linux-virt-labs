@@ -12,3 +12,75 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 22
         min: 22
+  # Allow incoming cockpit connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 9090
+        min: 9090
+  # Allow incoming libvirt connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 16509
+        min: 16509
+  # Allow incoming libvirt-tls connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 16514
+        min: 16514
+  # Allow incoming vdsm connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 54321
+        min: 54321
+  # Allow incoming vdsm connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 5900
+        min: 6923
+  # Allow incoming vdsm connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 49152
+        min: 49216
+  # Allow incoming ipsec (pluto) connections
+  - source: "10.0.1.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 4500
+        min: 4500
+  # Allow incoming ipsec (pluto) connections
+  - source: "10.0.1.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 500
+        min: 500
+  # Allow incoming ipsec (pluto) connections
+  - source: "10.0.1.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 4500
+        min: 4500
+  # Allow incoming dhcpv6-client connections
+  - source: "10.0.1.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 546
+        min: 546
+  - source: "10.0.1.0/24"
+    protocol: 1
