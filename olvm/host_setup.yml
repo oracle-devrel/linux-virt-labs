@@ -70,7 +70,7 @@
 
 - name: Get engine IP address
   ansible.builtin.shell:
-    cmd: dig vdsm.olvpriv.vcn.oraclevpcn.com +short
+    cmd: dig vdsm.olvpriv.vcn.oraclevcn.com +short
   register: dns_ip
   changed_when: dns_ip.rc == 0
 
@@ -80,12 +80,12 @@
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
   loop:
-    - { regexp: '^.*vdsm.*$', line: '{{ dns_ip }} vdsm.olvpriv.vcn.oraclevpcn.com vdsm' }
+    - { regexp: '^.*vdsm.*$', line: '{{ dns_ip }} vdsm.olvpriv.vcn.oraclevcn.com vdsm' }
   become: true
 
 - name: Get kvm host IP address
   ansible.builtin.shell:
-    cmd: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevpcn.com +short"
+    cmd: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevcn.com +short"
   register: kvm_dns_ip
   loop: "{{ groups['kvm'] | flatten(levels=1) }}"
   changed_when: kvm_dns_ip.rc == 0
@@ -94,7 +94,7 @@
   ansible.builtin.lineinfile:
     dest: /etc/hosts
     regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
-    line: "{{ item[ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevpcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
+    line: "{{ item[ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
   loop:
     - "{{ kvm_dns_ip.results }}"
   loop_control:
