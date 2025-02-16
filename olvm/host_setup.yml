@@ -67,3 +67,36 @@
   become: true
 
 # Check denied packets with "journalctl -x -e" or with "dmesg | grep -i REJECT"
+
+- name: Get engine IP address
+  ansible.builtin.shell:
+    cmd: dig vdsm.olvpriv.vcn.oraclevpcn.com +short
+  register: dns_ip
+  changed_when: dns_ip.rc == 0
+
+- name: Add engine IP and FQDN to hosts file
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: '^.*vdsm.*$', line: '{{ dns_ip }} vdsm.olvpriv.vcn.oraclevpcn.com vdsm' }
+  become: true
+
+- name: Get kvm host IP address
+  ansible.builtin.shell:
+    cmd: "dig vdsm{{ hostvars[item][inventory_hostname_short][-2:] }}.olvpriv.vcn.oraclevpcn.com"
+  register: kvm_dns_ip
+  loop: "{{ groups['kvm'] | flatten(levels=1) }}"
+  changed_when: kvm_dns_ip.rc == 0
+
+- name: Add kvm host IP and FQDN to host file
+  ansible.builtin.lineinfile:
+    dest: /etc/hosts
+    regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
+    line: "{{ item[ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevpcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
+  loop:
+    - "{{ kvm_dns_ip.results }}"
+  loop_control:
+    extended: true
+  become: true

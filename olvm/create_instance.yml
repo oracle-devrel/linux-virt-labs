@@ -279,60 +279,6 @@
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
-- name: Configure new instances
-  hosts: all
-  gather_facts: false
-  vars_files:
-    - default_vars.yml
-    - oci_vars.yml
-
-  tasks:
-
-    - name: Wait for systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
-
-    - name: Get a set of all available facts
-      ansible.builtin.setup:
-
-    - name: Print in-memory inventory
-      ansible.builtin.debug:
-        msg: "{{ groups['all'] }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Print all variables/facts known for a host
-      ansible.builtin.debug:
-        msg: "{{ hostvars[item] }}"
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Configure instance
-      ansible.builtin.include_tasks: "host_setup.yml"
-
-    - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "passwordless_setup.yml"
-
-    - name: Provision VNC Server
-      ansible.builtin.include_tasks: provision_vnc.yml
-      when: inventory_hostname in groups['server']
-      args:
-        apply:
-          become: true
-
-    - name: Install ovirt-engine
-      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
-      args:
-        apply:
-          become: true
-
 - name: Configure secondary nic
   hosts: all
   gather_facts: true
@@ -430,6 +376,60 @@
             ip4: "{{ secondary_vnic_ip }}/24"
             gw4: 10.0.1.1
             state: present
+          become: true
+
+- name: Configure new instances
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+
+  tasks:
+
+    - name: Wait for systems to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
+    - name: Get a set of all available facts
+      ansible.builtin.setup:
+
+    - name: Print in-memory inventory
+      ansible.builtin.debug:
+        msg: "{{ groups['all'] }}"
+      delegate_to: localhost
+      when:
+        - debug_enabled
+        - inventory_hostname == ansible_play_hosts_all[0]
+
+    - name: Print all variables/facts known for a host
+      ansible.builtin.debug:
+        msg: "{{ hostvars[item] }}"
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+      delegate_to: localhost
+      when:
+        - debug_enabled
+        - inventory_hostname == ansible_play_hosts_all[0]
+
+    - name: Configure instance
+      ansible.builtin.include_tasks: "host_setup.yml"
+
+    - name: Configure passwordless SSH
+      ansible.builtin.include_tasks: "passwordless_setup.yml"
+
+    - name: Provision VNC Server
+      ansible.builtin.include_tasks: provision_vnc.yml
+      when: inventory_hostname in groups['server']
+      args:
+        apply:
+          become: true
+
+    - name: Install ovirt-engine
+      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
+      args:
+        apply:
           become: true
 
 - name: Print instances
