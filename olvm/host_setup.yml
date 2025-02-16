@@ -85,7 +85,7 @@
 
 - name: Get kvm host IP address
   ansible.builtin.shell:
-    cmd: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevpcn.com"
+    cmd: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevpcn.com +short"
   register: kvm_dns_ip
   loop: "{{ groups['kvm'] | flatten(levels=1) }}"
   changed_when: kvm_dns_ip.rc == 0
