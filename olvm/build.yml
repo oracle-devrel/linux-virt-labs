@@ -150,41 +150,47 @@
         var: kvm_vlan
       when: debug_enabled
 
-- name: Add shared block volume to kvm nodes for vm storage
+- name: Add block volumes for vm storage domains
+  ansible.builtin.include_tasks: create_block_stroage.yml
+  loop:
+    - "amd-storage-domain-01"
+    - "amd-storage-domain-02" 
   when:
     - item.value.type == "kvm"
-    - add_vm_block_storage
-  block:
-    - name: Create block volume for vm storage
-      oracle.oci.oci_blockstorage_volume:
-        compartment_id: "{{ my_compartment_id }}"
-        availability_domain: "{{ my_availability_domain }}"
-        display_name: "blk-vm-storage }}"
-        size_in_gbs: "{{ blk_volume_size_in_gbs }}"
-        key_by: [compartment_id, display_name]
-      register: kvm_create_block
-      vars:
-        timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
-      retries: 10
-      delay: 30
-      until: kvm_create_block is not failed
 
-    - name: Set the block storage block volume id
-      ansible.builtin.set_fact:
-        volume_id: "{{ kvm_create_block.volume.id }}"
+# - name: Add shared block volume to kvm nodes for vm storage
+#   when:
+#     - item.value.type == "kvm"
+#     - add_vm_block_storage
+#   block:
+#     - name: Create block volume for vm storage
+#       oracle.oci.oci_blockstorage_volume:
+#         compartment_id: "{{ my_compartment_id }}"
+#         availability_domain: "{{ my_availability_domain }}"
+#         display_name: "amd-storage-domain-01"
+#         size_in_gbs: "{{ blk_volume_size_in_gbs }}"
+#         key_by: [compartment_id, display_name]
+#       register: kvm_create_block
+#       retries: 10
+#       delay: 30
+#       until: kvm_create_block is not failed
 
-    - name: Attach shared block volume for vm storage
-      oracle.oci.oci_compute_volume_attachment:
-        instance_id: "{{ my_instance_id }}"
-        type: paravirtualized
-        volume_id: "{{ volume_id }}"
-        compartment_id: "{{ my_compartment_id }}"
-        is_read_only: false
-        is_shareable: true
-      register: kvm_add_block
-      retries: 10
-      delay: 30
-      until: kvm_add_block is not failed
+#     - name: Set the block storage block volume id
+#       ansible.builtin.set_fact:
+#         volume_id: "{{ kvm_create_block.volume.id }}"
+
+#     - name: Attach shared block volume for vm storage
+#       oracle.oci.oci_compute_volume_attachment:
+#         instance_id: "{{ my_instance_id }}"
+#         type: paravirtualized
+#         volume_id: "{{ volume_id }}"
+#         compartment_id: "{{ my_compartment_id }}"
+#         is_read_only: false
+#         is_shareable: true
+#       register: kvm_add_block
+#       retries: 10
+#       delay: 30
+#       until: kvm_add_block is not failed
 
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:

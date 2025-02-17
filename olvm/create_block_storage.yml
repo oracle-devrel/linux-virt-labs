@@ -1,0 +1,34 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create block volume for vm storage
+  oracle.oci.oci_blockstorage_volume:
+    compartment_id: "{{ my_compartment_id }}"
+    availability_domain: "{{ my_availability_domain }}"
+    display_name: "{{ item }}"
+    size_in_gbs: "{{ blk_volume_size_in_gbs }}"
+    key_by: [compartment_id, display_name]
+  register: kvm_create_block
+  retries: 10
+  delay: 30
+  until: kvm_create_block is not failed
+
+- name: Set the block storage block volume id
+  ansible.builtin.set_fact:
+    volume_id: "{{ kvm_create_block.volume.id }}"
+
+- name: Attach shared block volume for vm storage
+  oracle.oci.oci_compute_volume_attachment:
+    instance_id: "{{ my_instance_id }}"
+    type: paravirtualized
+    volume_id: "{{ volume_id }}"
+    compartment_id: "{{ my_compartment_id }}"
+    is_read_only: false
+    is_shareable: true
+  register: kvm_add_block
+  retries: 10
+  delay: 30
+  until: kvm_add_block is not failed
