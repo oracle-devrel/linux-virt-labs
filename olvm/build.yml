@@ -151,7 +151,7 @@
       when: debug_enabled
 
 - name: Add block volumes for vm storage domains
-  ansible.builtin.include_tasks: create_block_stroage.yml
+  ansible.builtin.include_tasks: create_block_storage.yml
   loop:
     - "amd-storage-domain-01"
     - "amd-storage-domain-02"
