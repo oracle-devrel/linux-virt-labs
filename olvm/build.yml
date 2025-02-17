@@ -154,7 +154,9 @@
   ansible.builtin.include_tasks: create_block_stroage.yml
   loop:
     - "amd-storage-domain-01"
-    - "amd-storage-domain-02" 
+    - "amd-storage-domain-02"
+  loop_control:
+    loop_var: storage_name
   when:
     - item.value.type == "kvm"
 

@@ -8,7 +8,7 @@
   oracle.oci.oci_blockstorage_volume:
     compartment_id: "{{ my_compartment_id }}"
     availability_domain: "{{ my_availability_domain }}"
-    display_name: "{{ item }}"
+    display_name: "{{ storage_name }}"
     size_in_gbs: "{{ blk_volume_size_in_gbs }}"
     key_by: [compartment_id, display_name]
   register: kvm_create_block
