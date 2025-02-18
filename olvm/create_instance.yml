@@ -421,7 +421,7 @@
         cmd: "dig vdsm.olvpriv.vcn.oraclevcn.com +short"
       register: dns_ip
       changed_when: dns_ip.rc == 0
-      when: inventory_hostname == groups['server']
+      when: inventory_hostname in groups['server']
 
     - name: Add engine IP and FQDN to hosts file
       ansible.builtin.lineinfile:
@@ -438,7 +438,7 @@
       register: kvm_dns_ip
       loop: "{{ groups['kvm'] | flatten(levels=1) }}"
       changed_when: kvm_dns_ip.rc == 0
-      when: inventory_hostname == groups['server']
+      when: inventory_hostname in groups['server']
 
     - name: Print kvm host IP address
       ansible.builtin.debug:
