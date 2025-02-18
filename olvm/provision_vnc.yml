@@ -19,7 +19,7 @@
     state: present
   retries: 5
   delay: 10
-  
+
 - name: Set systemd default boot target to graphical.target
   ansible.builtin.file:
     src: /usr/lib/systemd/system/graphical.target

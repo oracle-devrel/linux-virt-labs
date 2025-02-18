@@ -1,0 +1,29 @@
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+---
+
+- name: Get the engine public key
+  community.crypto.openssl_publickey:
+    path: /tmp/key.pub
+    privatekey_path: "/etc/pki/ovirt-engine/keys/engine_id_rsa"
+    format: OpenSSH
+  become: true
+  when: inventory_hostname == groups['server']
+
+- name: Fetch engine public key file from server
+  ansible.builtin.fetch:
+    src: "/tmp/key.pub"
+    dest: "buffer/engine-key.pub"
+    flat: true
+  become: true
+  when: inventory_hostname == groups['server']
+
+- name: Copy public key to each destination
+  ansible.posix.authorized_key:
+    user: "root"
+    state: present
+    key: "{{ lookup('file', 'buffer/engine-key.pub') }}"
+  become: true
+  when: inventory_hostname == groups['kvm']

@@ -426,11 +426,14 @@
         apply:
           become: true
 
-    - name: Install ovirt-engine
+    - name: Install OLVM engine
       ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
       args:
         apply:
           become: true
+
+    - name: Add OLVM engine public key to KVM hosts
+      ansible.builtin.include_tasks: "provision_ovirt_publickey.yml"
 
 - name: Print instances
   hosts: all
