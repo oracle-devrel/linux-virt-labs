@@ -9,6 +9,7 @@ compute_instances:
     type: "kvm"
     instance_ocpus: 16
     instance_memory: 128
+
 os: "Oracle Linux"
 os_version: "8"
 instance_shape: "VM.Standard.E4.Flex"
@@ -31,3 +32,9 @@ ol9_disable_repo: "ol9_olcne17"
 vnc_port: "1"
 vnc_default_password: "{{ username }}"
 vnc_geometry: "1920x1080"
+
+engine_fqdn: olvm.olvpub.vcn.oraclevcn.com
+engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
+engine_user: admin@ovirt@internalsso
+engine_pass: How-2-install
+engine_cafile: /tmp/pki-resource
