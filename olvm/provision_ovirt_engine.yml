@@ -81,7 +81,7 @@
   ansible.builtin.pip:
     name: pexpect
 
-- name: Copy answer file
+- name: Install OLVM Engine with defaults
   ansible.builtin.expect:
     command: /bin/engine-setup --generate-answer=file --accept-defaults
     responses:
