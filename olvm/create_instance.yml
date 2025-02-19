@@ -456,16 +456,25 @@
             msg: "{{ kvm_dns_ip }}"
 
         - name: Add kvm host IP and FQDN to host file
-          ansible.builtin.lineinfile:
+          ansible.builtin.blockinfile:
             dest: /etc/hosts
-            regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
-            line: "{{ item[0][ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
-          delegate_to: "{{ item[1] }}"
-          loop:
-            - "{{ kvm_dns_ip.results | product(groups['all']) | list }}"
-          loop_control:
-            extended: true
+            block: "{{ lookup('template', 'etc_hosts_kvm.j2') }}"
+            marker: "# {mark} ANSIBLE MANAGED BLOCK kvm"
+          delegate_to: "{{ item }}"
+          loop: "{{ groups['all'] }}"
           become: true
+
+        # - name: Add kvm host IP and FQDN to host file
+        #   ansible.builtin.lineinfile:
+        #     dest: /etc/hosts
+        #     regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
+        #     line: "{{ item[0][ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
+        #   delegate_to: "{{ item[1] }}"
+        #   loop:
+        #     - "{{ kvm_dns_ip.results | product(groups['all']) | list }}"
+        #   loop_control:
+        #     extended: true
+        #   become: true
 
     - name: Pause play to interact with the servers
       ansible.builtin.pause:
