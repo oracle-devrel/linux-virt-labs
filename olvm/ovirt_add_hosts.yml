@@ -35,20 +35,17 @@
     - name: Add KVM host
       ovirt.ovirt.ovirt_host:
         cluster: "Default"
-        name: "olkvm02"
-        address: "vdsm02.olvpriv.vcn.oraclevcn.com"
+        name: "olkvm0{{ ansible_loop.index0 + 1 }}"
+        address: "vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com"
         auth: "{{ ovirt_auth }}"
         timeout: 2200
         power_management_enabled: false
         public_key: true
         reboot_after_installation: false
+      loop: "{{ groups['kvm'] }}"
       async: 2200
       poll: 0
       register: kvm_sleeper
-
-    - name: Print KVM information
-      ansible.builtin.debug:
-        msg: "{{ kvm_sleeper }}"
 
     - name: Disconnect from the OLVM Engine application
       ovirt_auth:
