@@ -419,9 +419,6 @@
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "passwordless_setup.yml"
 
-
-
-
     - name: Add engine to hosts file
       when: inventory_hostname in groups['server']
       block:
@@ -476,15 +473,6 @@
         #     extended: true
         #   become: true
 
-    - name: Pause play to interact with the servers
-      ansible.builtin.pause:
-        prompt: |
-          Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort.
-          Aborting at this stage requires manual removal of all cloud resources this playbook creates.
-
-
-
-
     - name: Provision VNC Server
       ansible.builtin.include_tasks: provision_vnc.yml
       when: inventory_hostname in groups['server']
@@ -532,7 +520,7 @@
         base_image_name: OL9U5_x86_64-kvm-b253.qcow2
         base_image_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/{{ base_image_name }}
         base_image_sha: 3b00bbbefc8e78dd28d9f538834fb9e2a03d5ccdc2cadf2ffd0036c0a8f02021
-      when: inventory_hostname == groups['server']
+      when: inventory_hostname in groups['server']
 
 - name: Print instances
   hosts: all
