@@ -416,6 +416,12 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+    - name: Configure passwordless SSH
+      ansible.builtin.include_tasks: "passwordless_setup.yml"
+
+
+
+
     - name: Add engine to hosts file
       when: inventory_hostname in groups['server']
       block:
@@ -433,7 +439,7 @@
           ansible.builtin.lineinfile:
             dest: /etc/hosts
             regexp: "^.*vdsm.*$"
-            line: "{{ dns_ip }} vdsm.olvpriv.vcn.oraclevcn.com vdsm"
+            line: "{{ dns_ip.stdout }} vdsm.olvpriv.vcn.oraclevcn.com vdsm"
           delegate_to: "{{ item }}"
           loop: "{{ groups['all'] }}"
           become: true
@@ -453,9 +459,10 @@
           ansible.builtin.lineinfile:
             dest: /etc/hosts
             regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
-            line: "{{ item[ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
+            line: "{{ item[0][ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
+          delegate_to: "{{ item[1] }}"
           loop:
-            - "{{ kvm_dns_ip.results }}"
+            - "{{ kvm_dns_ip.results | product(groups['all']) | list }}"
           loop_control:
             extended: true
           become: true
@@ -466,8 +473,8 @@
           Playbook paused... hit <enter> to continue or <ctrl-c> then <a> to abort.
           Aborting at this stage requires manual removal of all cloud resources this playbook creates.
 
-    - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "passwordless_setup.yml"
+
+
 
     - name: Provision VNC Server
       ansible.builtin.include_tasks: provision_vnc.yml
