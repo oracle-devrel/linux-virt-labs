@@ -6,7 +6,6 @@
 
 - name: OLVM Engine application connection test
   hosts: olvm
-  gather_facts: false
 
   vars_files:
     - default_vars.yml
@@ -16,7 +15,7 @@
     - name: Download engine ca certificate
       ansible.builtin.get_url:
         url: "https://{{ engine_fqdn }}/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
-        dest: /tmp/pki-resource
+        dest: "{{ ansible_env.HOME + '/pki-resource' }}"
         mode: '0664'
         validate_certs: false
 
@@ -25,7 +24,7 @@
         url: "{{ engine_url }}"
         username: "{{ engine_user }}"
         password: "{{ engine_pass }}"
-        ca_file: "{{ engine_cafile }}"
+        ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
         insecure: true
       when: ovirt_auth is undefined or not ovirt_auth
       register: connection

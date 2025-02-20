@@ -5,17 +5,22 @@
 # See LICENSE.TXT for details.
 
 - name: Add KVM hosts to a Cluster in the Engine server
-  hosts: olvm
+  hosts: localhost
+  gather_facts: false
 
-  vars_files:
-    - default_vars.yml
+  vars:
+    engine_fqdn: olvm.olvpub.vcn.oraclevcn.com
+    engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
+    engine_user: admin@ovirt@internalsso
+    engine_pass: How-2-install
+    engine_cafile: /tmp/pki-resource
 
   tasks:
 
     - name: Download ca-cert
       ansible.builtin.get_url:
         url: "https://olvm.olvpub.vcn.oraclevcn.com/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
-        dest: "{{ ansible_env.HOME + '/pki-resource' }}"
+        dest: /tmp/pki-resource
         mode: '0664'
         validate_certs: false
 
@@ -24,27 +29,27 @@
         url: "{{ engine_url }}"
         username: "{{ engine_user }}"
         password: "{{ engine_pass }}"
-        ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+        ca_file: "{{ engine_cafile }}"
         insecure: true
       when: ovirt_auth is undefined or not ovirt_auth
       register: connection
       tags:
         - always
 
-    - name: Add KVM host
-      ovirt.ovirt.ovirt_host:
-        cluster: "Default"
-        name: "olkvm0{{ ansible_loop.index0 + 1 }}"
-        address: "vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com"
+    - name: Add qcow2 image
+      ovirt.ovirt.ovirt_disk:
+        name: "test-ol9u5"
         auth: "{{ ovirt_auth }}"
-        timeout: 2200
-        power_management_enabled: false
-        public_key: true
-        reboot_after_installation: false
-      loop: "{{ groups['kvm'] }}"
-      async: 2200
-      poll: 0
-      register: kvm_sleeper
+        upload_image_path: /tmp/OL9U5_x86_64-kvm-b253.qcow2
+        storage_domain: "amd-storage-domain-01"
+        wait: true
+        bootable: true
+      register: image_sleeper
+
+
+    - name: Print KVM information
+      ansible.builtin.debug:
+        msg: "{{ image_sleeper }}"
 
     - name: Disconnect from the OLVM Engine application
       ovirt_auth:

@@ -139,7 +139,6 @@
           vlan_id: "{{ my_vlan_id }}"
         display_name: "l2-vm-network"
         instance_id: "{{ my_instance_id }}"
-        key_by: [compartment_id, display_name]
       register: kvm_vlan
       retries: 10
       delay: 30
@@ -212,6 +211,18 @@
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
     instance_ocid: "{{ my_instance_id }}"
+
+- name: Create host ini file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^[{{ item }}'
+    line: "[{{ item }}]"
+    create: true
+    mode: "0664"
+  delegate_to: localhost
+  loop:
+    - server
+    - kvm
 
 - name: Add host to ini host file
   ansible.builtin.lineinfile:

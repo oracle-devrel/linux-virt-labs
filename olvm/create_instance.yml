@@ -522,8 +522,8 @@
         base_image_sha: dc5befa484c9aeb51fb0244d5926d53ab482453bd702512066734d8cb2c20600
       when: inventory_hostname in groups['kvm'][0]
 
-- name: Run oVirt Playbooks
-  ansible.builtin.import_playbook: ovirt_tasks.yml
+# - name: Run oVirt Playbooks
+#   ansible.builtin.import_playbook: ovirt_tasks.yml
 
 - name: Print instances
   hosts: all
