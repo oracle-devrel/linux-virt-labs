@@ -279,163 +279,21 @@
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
-- name: Configure secondary nic
-  hosts: all
-  gather_facts: true
-  vars_files:
-    - default_vars.yml
-    - oci_vars.yml
-  serial: 1
-
-  tasks:
-
-    - name: Add ip address to secondary nic
-      block:
-        - name: Get instance details
-          oracle.oci.oci_compute_instance_facts:
-            compartment_id: "{{ my_compartment_id }}"
-            display_name: "{{ inventory_hostname }}"
-            sort_by: TIMECREATED
-            sort_order: ASC
-            lifecycle_state: RUNNING
-          delegate_to: localhost
-          register: instance_details
-          retries: 10
-          delay: 30
-          until: instance_details is not failed
-
-        - name: Print instance facts
-          ansible.builtin.debug:
-            var: instance_details
-          when: debug_enabled
-
-        - name: Get vnic attachments of a specific instance
-          oracle.oci.oci_compute_vnic_attachment_facts:
-            compartment_id: "{{ my_compartment_id }}"
-            instance_id: "{{ instance_details.instances[0].id }}"
-          delegate_to: localhost
-          register: vnic_attachments
-          retries: 10
-          delay: 30
-          until: vnic_attachments is not failed
-
-        - name: Print vnic attachments facts
-          ansible.builtin.debug:
-            var: vnic_attachments
-          when: debug_enabled
-
-        - name: Print second subnet id
-          ansible.builtin.debug:
-            var: my_subnet2_id
-          when: debug_enabled
-
-        - name: Set secondary vnic id
-          ansible.builtin.set_fact:
-            secondary_vnic_id: "{{ vnic_attachments | community.general.json_query(subnet_query) }}"
-          vars:
-            subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
-
-        - name: Print secondary vnic id
-          ansible.builtin.debug:
-            var: secondary_vnic_id
-          when: debug_enabled
-
-        - name: Get secondary vnic facts
-          oracle.oci.oci_network_vnic_facts:
-            vnic_id: "{{ secondary_vnic_id[0] }}"
-          delegate_to: localhost
-          register: secondary_vnic_facts
-          retries: 10
-          delay: 30
-          until: secondary_vnic_facts is not failed
-
-        - name: Set secondary vnic ip
-          ansible.builtin.set_fact:
-            secondary_vnic_ip: "{{ secondary_vnic_facts.vnic.private_ip }}"
-
-        - name: Print secondary vnic ip address
-          ansible.builtin.debug:
-            var: secondary_vnic_ip
-          when: debug_enabled
-
-        - name: Get secondary vnic mac
-          ansible.builtin.set_fact:
-            mac_addr: "{{ secondary_vnic_facts.vnic.mac_address | lower }}"
-
-        - name: Get network interface
-          ansible.builtin.set_fact:
-            interface: "{{ item }}"
-          with_items: "{{ ansible_interfaces | reject('==', 'lo') }}"
-          when: ansible_facts[item].macaddress == mac_addr
-
-        - name: Assign static IP
-          community.general.nmcli:
-            conn_name: "ethernet-{{ interface }}"
-            ifname: "{{ interface }}"
-            type: ethernet
-            ip4: "{{ secondary_vnic_ip }}/24"
-            gw4: 10.0.1.1
-            state: present
-          become: true
-
 - name: Check if instances are available
   ansible.builtin.import_playbook: "check_instance_available.yml"
+
+- name: Configure secondary network on each instance
+  ansible.builtin.import_playbook: "configure_secondary_nic.yml"
+
+- name: Setup and configure instance basics
+  ansible.builtin.import_playbook: "setup_host_basics.yml"
+
+- name: Configure passwordless SSH
+  ansible.builtin.import_playbook: "configure_passwordless_ssh.yml"
+
+- name: Create hosts file for secondary nic dns
+  ansible.builtin.import_playbook: "create_hostfile_secondary_nic.yml"
   
-- name: Configure new instances
-  hosts: all
-  gather_facts: false
-  vars_files:
-    - default_vars.yml
-    - oci_vars.yml
-
-  tasks:
-
-    - name: Configure instance
-      ansible.builtin.include_tasks: "host_setup.yml"
-
-    - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "passwordless_setup.yml"
-
-    - name: Add engine to hosts file
-      when: inventory_hostname in groups['engine']
-      block:
-        - name: Get engine IP address
-          ansible.builtin.command: "dig vdsm.olvpriv.vcn.oraclevcn.com +short"
-          register: dns_ip
-          changed_when: dns_ip.rc == 0
-
-        - name: Print engine IP address
-          ansible.builtin.debug:
-            msg: "{{ dns_ip }}"
-
-        - name: Add engine IP and FQDN to engine hosts file
-          ansible.builtin.lineinfile:
-            dest: /etc/hosts
-            regexp: "^.*vdsm.*$"
-            line: "{{ dns_ip.stdout }} vdsm.olvpriv.vcn.oraclevcn.com vdsm"
-          delegate_to: "{{ item }}"
-          loop: "{{ groups['all'] }}"
-          become: true
-
-        - name: Get kvm host IP address
-          ansible.builtin.command: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevcn.com +short"
-          register: kvm_dns_ip
-          loop: "{{ groups['kvm'] | flatten(levels=1) }}"
-          changed_when: kvm_dns_ip.rc == 0
-
-        - name: Print kvm host IP address
-          ansible.builtin.debug:
-            msg: "{{ kvm_dns_ip }}"
-
-        - name: Add kvm host IP and FQDN to host file
-          ansible.builtin.blockinfile:
-            dest: /etc/hosts
-            block: "{{ lookup('template', 'etc_hosts_kvm.j2') }}"
-            marker: "# {mark} ANSIBLE MANAGED BLOCK kvm"
-          delegate_to: "{{ item }}"
-          loop: "{{ groups['all'] }}"
-          become: true
-
 - name: Provision VNC on OLVM engine
   ansible.builtin.import_playbook: "provision_vnc.yml"
 
