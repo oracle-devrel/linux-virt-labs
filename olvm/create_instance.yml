@@ -293,12 +293,12 @@
 
 - name: Create hosts file for secondary nic dns
   ansible.builtin.import_playbook: "create_hostfile_secondary_nic.yml"
-  
+
 - name: Provision VNC on OLVM engine
   ansible.builtin.import_playbook: "provision_vnc.yml"
 
 - name: Install OLVM engine
-  ansible.builtin.import_playbook: "provision_ovirt_engine.yml"
+  ansible.builtin.import_playbook: "provision_olvm_engine.yml"
 
 - name: Copy OLVM engine private key to kvm host
   ansible.builtin.import_playbook: "provision_olvm_engine_privatekey.yml"

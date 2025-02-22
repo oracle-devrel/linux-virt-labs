@@ -49,15 +49,16 @@
         mode: "0644"
         state: present
 
-    - name: Install the ovirt-engine packages
+    - name: Install the ovirt-engine packages # noqa: run-once[task]
       ansible.builtin.dnf:
         name: ovirt-engine
         state: present
-      when: inventory_hostname in groups['engine']
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
       retries: 5
       delay: 10
 
-    - name: Install additional packages for ansible
+    - name: Install additional packages for ansible # noqa: run-once[task]
       ansible.builtin.dnf:
         name:
           - python3-psycopg2
@@ -68,16 +69,16 @@
       when:
         - ansible_distribution == 'OracleLinux'
         - ansible_distribution_major_version == '8'
-      delegate_to: "{{ item }}"
-      loop: "{{ groups['engine'] }}"
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
 
-    - name: Install pexpect using pip
+    - name: Install pexpect using pip # noqa: run-once[task]
       ansible.builtin.pip:
         name: pexpect
-      delegate_to: "{{ item }}"
-      loop: "{{ groups['engine'] }}"
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
 
-    - name: Install OLVM Engine with defaults
+    - name: Install OLVM Engine with defaults # noqa: run-once[task]
       ansible.builtin.expect:
         command: /bin/engine-setup --generate-answer=file --accept-defaults
         responses:
@@ -87,8 +88,8 @@
       become: true
       register: result
       changed_when: result.rc == 0
-      delegate_to: "{{ item }}"
-      loop: "{{ groups['engine'] }}"
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
 
     - name: Activate Cockpit web console on the KVM hosts
       ansible.builtin.systemd:

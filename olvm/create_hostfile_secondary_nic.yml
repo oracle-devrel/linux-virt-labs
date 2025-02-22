@@ -45,6 +45,7 @@
     - name: Print kvm host IP address # noqa: run-once[task]
       ansible.builtin.debug:
         msg: "{{ kvm_dns_ip }}"
+      when: debug_enabled
       run_once: true
 
     - name: Add kvm host IP and FQDN to host file

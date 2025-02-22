@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Get Started with OLVM
+- name: Add VNC to OLVM engine for webui access
   hosts: olvm
   vars_files:
     - default_vars.yml
