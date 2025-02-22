@@ -4,16 +4,11 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Add KVM hosts to a Cluster in the Engine server
-  hosts: localhost
-  gather_facts: false
+- name: Upload disk image to data storage
+  hosts: olvm
 
-  vars:
-    engine_fqdn: olvm.olvpub.vcn.oraclevcn.com
-    engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
-    engine_user: admin@ovirt@internalsso
-    engine_pass: How-2-install
-    engine_cafile: /tmp/pki-resource
+  vars_files:
+    - default_vars.yml
 
   tasks:
 
@@ -32,7 +27,7 @@
         ca_file: "{{ engine_cafile }}"
         insecure: true
       when: ovirt_auth is undefined or not ovirt_auth
-      register: connection
+      register: auth_connection
       tags:
         - always
 
@@ -52,7 +47,7 @@
         msg: "{{ image_sleeper }}"
 
     - name: Disconnect from the OLVM Engine application
-      ovirt_auth:
+      ovirt.ovirt.ovirt_auth:
         state: absent
         ovirt_auth: "{{ ovirt_auth }}"
       tags:

@@ -78,7 +78,7 @@
     instance_public_ip: "{{ result.instance.primary_public_ip }}"
 
 - name: Add secondary private subnet vnic_attachment
-  when: item.value.type == "server"
+  when: item.value.type == "engine"
   block:
     - name: Create subnet2 vnic_attachment
       oracle.oci.oci_compute_vnic_attachment:
@@ -92,14 +92,14 @@
         display_name: "vdsm"
         instance_id: "{{ my_instance_id }}"
         key_by: [compartment_id, display_name]
-      register: server_subnet2
+      register: engine_subnet2
       retries: 10
       delay: 30
-      until: server_subnet2 is not failed
+      until: engine_subnet2 is not failed
 
     - name: Print vnic_attachment for subnet2
       ansible.builtin.debug:
-        var: server_subnet2
+        var: engine_subnet2
       when: debug_enabled
 
 - name: Add secondary private subnet vnic_attachment
@@ -215,13 +215,13 @@
 - name: Create host ini file
   ansible.builtin.lineinfile:
     path: hosts
-    regexp: '^[{{ host_group }}'
+    regexp: '^\[{{ host_group }}'
     line: "[{{ host_group }}]"
     create: true
     mode: "0664"
   delegate_to: localhost
   loop:
-    - server
+    - engine
     - kvm
   loop_control:
     loop_var: host_group
@@ -230,7 +230,12 @@
   ansible.builtin.lineinfile:
     path: hosts
     regexp: '^{{ instance_name }}'
-    line: "{{ instance_name }} ansible_host={{ instance_ansible_host }} ansible_user={{ instance_ansible_user }} ansible_private_key_file={{ instance_ansible_private_key_file }} ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}"
+    line: >-
+      {{ instance_name }} 
+      ansible_host={{ instance_ansible_host }} 
+      ansible_user={{ instance_ansible_user }} 
+      ansible_private_key_file={{ instance_ansible_private_key_file }} 
+      ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}
     insertafter: '^\[{{ item.value.type }}\]$'
     create: true
     mode: "664"

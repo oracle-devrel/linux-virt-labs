@@ -4,91 +4,107 @@
 # See LICENSE.TXT for details.
 ---
 
-- name: Add oracle-ovirt release repository
-  ansible.builtin.dnf:
-    name:
-      - oracle-ovirt-release-45-el8
-      - kernel-uek-modules-extra
-    state: present
-  retries: 5
-  delay: 10
-
-- name: Set ovirt-4.5 repo to public YUM mirror
-  community.general.ini_file:
-    path: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
-    section: ovirt-4.5
-    option: baseurl
-    value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/$basearch/
-    mode: "0644"
-    state: present
-
-- name: Set ovirt-4.5-extra to public YUM mirror
-  community.general.ini_file:
-    dest: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
-    section: ovirt-4.5-extra
-    option: baseurl
-    value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/extras/$basearch/
-    mode: "0644"
-    state: present
-
-- name: Set ol8_kvm_appstream to public YUM mirror
-  community.general.ini_file:
-    dest: /etc/yum.repos.d/virt-ol8.repo
-    section: ol8_kvm_appstream
-    option: baseurl
-    value: https://yum.oracle.com/repo/OracleLinux/OL8/kvm/appstream/$basearch/
-    mode: "0644"
-    state: present
-
-- name: Install ovirt-engine
-  ansible.builtin.dnf:
-    name: ovirt-engine
-    state: present
-  when: inventory_hostname in groups['server']
-  retries: 5
-  delay: 10
-
-- name: Activate Cockpit web console
-  ansible.builtin.systemd:
-    state: started
-    name: cockpit.socket
-    enabled: true
-  when: inventory_hostname in groups['kvm']
-
-- name: Open firewall for cockpit and virsh
-  ansible.posix.firewalld:
-    zone: public
-    service: "{{ item }}"
-    permanent: true
-    state: enabled
-    immediate: true
-  loop:
-    - libvirt
-    - libvirt-tls
-    - cockpit
-
-- name: Install additional packages for ansible
-  ansible.builtin.dnf:
-    name:
-      - python3-psycopg2
-      - python3-pyOpenSSL
-      - python3-pip
-    enablerepo: ol8_developer_EPEL
-    state: present
-  when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
-
-- name: Install pexpect using pip
-  ansible.builtin.pip:
-    name: pexpect
-
-- name: Install OLVM Engine with defaults
-  ansible.builtin.expect:
-    command: /bin/engine-setup --generate-answer=file --accept-defaults
-    responses:
-      'Engine admin password': "How-2-install"
-      'Confirm engine admin password': "How-2-install"
-    timeout: 600
+- name: Get Started with OLVM
+  hosts: all
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
   become: true
-  when: inventory_hostname in groups['server']
-  register: result
-  changed_when: result.rc == 0
+
+  tasks:
+
+    - name: Add oracle-ovirt release repository
+      ansible.builtin.dnf:
+        name:
+          - oracle-ovirt-release-45-el8
+          - kernel-uek-modules-extra
+        state: present
+      retries: 5
+      delay: 10
+
+    - name: Set ovirt-4.5 repo to public YUM mirror
+      community.general.ini_file:
+        path: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+        section: ovirt-4.5
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Set ovirt-4.5-extra to public YUM mirror
+      community.general.ini_file:
+        dest: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+        section: ovirt-4.5-extra
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/extras/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Set ol8_kvm_appstream to public YUM mirror
+      community.general.ini_file:
+        dest: /etc/yum.repos.d/virt-ol8.repo
+        section: ol8_kvm_appstream
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/kvm/appstream/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Install the ovirt-engine packages
+      ansible.builtin.dnf:
+        name: ovirt-engine
+        state: present
+      when: inventory_hostname in groups['engine']
+      retries: 5
+      delay: 10
+
+    - name: Install additional packages for ansible
+      ansible.builtin.dnf:
+        name:
+          - python3-psycopg2
+          - python3-pyOpenSSL
+          - python3-pip
+        enablerepo: ol8_developer_EPEL
+        state: present
+      when:
+        - ansible_distribution == 'OracleLinux'
+        - ansible_distribution_major_version == '8'
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['engine'] }}"
+
+    - name: Install pexpect using pip
+      ansible.builtin.pip:
+        name: pexpect
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['engine'] }}"
+
+    - name: Install OLVM Engine with defaults
+      ansible.builtin.expect:
+        command: /bin/engine-setup --generate-answer=file --accept-defaults
+        responses:
+          'Engine admin password': "{{ engine_pass }}"
+          'Confirm engine admin password': "{{ engine_pass }}"
+        timeout: 600
+      become: true
+      register: result
+      changed_when: result.rc == 0
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['engine'] }}"
+
+    - name: Activate Cockpit web console on the KVM hosts
+      ansible.builtin.systemd:
+        state: started
+        name: cockpit.socket
+        enabled: true
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['kvm'] }}"
+
+    - name: Open firewall for cockpit and virsh on the KVM hosts
+      ansible.posix.firewalld:
+        zone: public
+        service: "{{ item[0] }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      delegate_to: "{{ item[1] }}"
+      loop:
+        - "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"

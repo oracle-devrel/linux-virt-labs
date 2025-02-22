@@ -4,74 +4,83 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Install the "Server with GUI" package group
-  ansible.builtin.dnf:
-    name: '@Server with GUI'
-    state: present
-  retries: 5
-  delay: 10
+- name: Get Started with OLVM
+  hosts: olvm
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  become: true
 
-- name: Installing the vnc package
-  ansible.builtin.dnf:
-    name:
-      - tigervnc-server
-      - tigervnc-server-module
-    state: present
-  retries: 5
-  delay: 10
+  tasks:
 
-- name: Set systemd default boot target to graphical.target
-  ansible.builtin.file:
-    src: /usr/lib/systemd/system/graphical.target
-    dest: /etc/systemd/system/default.target
-    state: link
+    - name: Install the "Server with GUI" package group
+      ansible.builtin.dnf:
+        name: '@Server with GUI'
+        state: present
+      retries: 5
+      delay: 10
 
-- name: Set vncserver systemd template
-  ansible.builtin.copy:
-    src: "/usr/lib/systemd/system/vncserver@.service"
-    dest: "/etc/systemd/system/vncserver@:{{ vnc_port }}.service"
-    remote_src: true
-    mode: "0644"
+    - name: Installing the vnc package
+      ansible.builtin.dnf:
+        name:
+          - tigervnc-server
+          - tigervnc-server-module
+        state: present
+      retries: 5
+      delay: 10
 
-- name: Assign username to vnc port
-  ansible.builtin.lineinfile:
-    path: /etc/tigervnc/vncserver.users
-    line: ":{{ vnc_port }}={{ username }}"
+    - name: Set systemd default boot target to graphical.target
+      ansible.builtin.file:
+        src: /usr/lib/systemd/system/graphical.target
+        dest: /etc/systemd/system/default.target
+        state: link
 
-- name: Set vnc geometry and session
-  ansible.builtin.blockinfile:
-    path: /etc/tigervnc/vncserver-config-defaults
-    block: |
-      session=gnome
-      geometry={{ vnc_geometry }}
+    - name: Set vncserver systemd template
+      ansible.builtin.copy:
+        src: "/usr/lib/systemd/system/vncserver@.service"
+        dest: "/etc/systemd/system/vncserver@:{{ vnc_port }}.service"
+        remote_src: true
+        mode: "0644"
 
-- name: Create .vnc directory for user
-  ansible.builtin.file:
-    path: /home/{{ username }}/.vnc
-    state: directory
-    mode: "0700"
-    owner: "{{ username }}"
-    group: "{{ usergroup }}"
+    - name: Assign username to vnc port
+      ansible.builtin.lineinfile:
+        path: /etc/tigervnc/vncserver.users
+        line: ":{{ vnc_port }}={{ username }}"
 
-- name: Generate vnc password for the remote user
-  ansible.builtin.shell: |
-    set -o pipefail
-    echo {{ vnc_default_password }} | vncpasswd -f > /home/{{ username }}/.vnc/passwd
-  args:
-    chdir: "/home/{{ username }}/.vnc"
-    creates: "/home/{{ username }}/.vnc/passwd"
-    executable: /bin/bash
+    - name: Set vnc geometry and session
+      ansible.builtin.blockinfile:
+        path: /etc/tigervnc/vncserver-config-defaults
+        block: |
+          session=gnome
+          geometry={{ vnc_geometry }}
 
-- name: Change the permission to 600 for .vnc/passwd file
-  ansible.builtin.file:
-    path: "/home/{{ username }}/.vnc/passwd"
-    owner: "{{ username }}"
-    group: "{{ usergroup }}"
-    mode: "0600"
+    - name: Create .vnc directory for user
+      ansible.builtin.file:
+        path: /home/{{ username }}/.vnc
+        state: directory
+        mode: "0700"
+        owner: "{{ username }}"
+        group: "{{ usergroup }}"
 
-- name: Start and enable the vnc service
-  ansible.builtin.systemd:
-    name: "vncserver@:{{ vnc_port }}.service"
-    daemon_reload: true
-    enabled: true
-    state: started
+    - name: Generate vnc password for the remote user
+      ansible.builtin.shell: |
+        set -o pipefail
+        echo {{ vnc_default_password }} | vncpasswd -f > /home/{{ username }}/.vnc/passwd
+      args:
+        chdir: "/home/{{ username }}/.vnc"
+        creates: "/home/{{ username }}/.vnc/passwd"
+        executable: /bin/bash
+
+    - name: Change the permission to 600 for .vnc/passwd file
+      ansible.builtin.file:
+        path: "/home/{{ username }}/.vnc/passwd"
+        owner: "{{ username }}"
+        group: "{{ usergroup }}"
+        mode: "0600"
+
+    - name: Start and enable the vnc service
+      ansible.builtin.systemd:
+        name: "vncserver@:{{ vnc_port }}.service"
+        daemon_reload: true
+        enabled: true
+        state: started

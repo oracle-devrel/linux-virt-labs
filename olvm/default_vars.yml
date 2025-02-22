@@ -1,7 +1,7 @@
 compute_instances:
   1:
     instance_name: "olvm"
-    type: "server"
+    type: "engine"
     instance_ocpus: 2
     instance_memory: 32
   2:

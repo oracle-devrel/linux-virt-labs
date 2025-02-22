@@ -16,7 +16,7 @@
     compute_instances:
       1:
         instance_name: "olvm"
-        type: "server"
+        type: "engine"
         instance_ocpus: 2
         instance_memory: 32
       2:
@@ -378,6 +378,9 @@
             state: present
           become: true
 
+- name: Check if instances are available
+  ansible.builtin.import_playbook: "check_instance_available.yml"
+  
 - name: Configure new instances
   hosts: all
   gather_facts: false
@@ -387,32 +390,6 @@
 
   tasks:
 
-    - name: Wait for systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
-
-    - name: Get a set of all available facts
-      ansible.builtin.setup:
-
-    - name: Print in-memory inventory
-      ansible.builtin.debug:
-        msg: "{{ groups['all'] }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Print all variables/facts known for a host
-      ansible.builtin.debug:
-        msg: "{{ hostvars[item] }}"
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
@@ -420,11 +397,10 @@
       ansible.builtin.include_tasks: "passwordless_setup.yml"
 
     - name: Add engine to hosts file
-      when: inventory_hostname in groups['server']
+      when: inventory_hostname in groups['engine']
       block:
         - name: Get engine IP address
-          ansible.builtin.shell:
-            cmd: "dig vdsm.olvpriv.vcn.oraclevcn.com +short"
+          ansible.builtin.command: "dig vdsm.olvpriv.vcn.oraclevcn.com +short"
           register: dns_ip
           changed_when: dns_ip.rc == 0
 
@@ -442,8 +418,7 @@
           become: true
 
         - name: Get kvm host IP address
-          ansible.builtin.shell:
-            cmd: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevcn.com +short"
+          ansible.builtin.command: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevcn.com +short"
           register: kvm_dns_ip
           loop: "{{ groups['kvm'] | flatten(levels=1) }}"
           changed_when: kvm_dns_ip.rc == 0
@@ -461,69 +436,14 @@
           loop: "{{ groups['all'] }}"
           become: true
 
-        # - name: Add kvm host IP and FQDN to host file
-        #   ansible.builtin.lineinfile:
-        #     dest: /etc/hosts
-        #     regexp: "^.*vdsm0{{ ansible_loop.index0 + 1 }}.*$"
-        #     line: "{{ item[0][ansible_loop.index0].stdout }} vdsm0{{ ansible_loop.index0 + 1 }}.olvpriv.vcn.oraclevcn.com vdsm0{{ ansible_loop.index0 + 1 }}"
-        #   delegate_to: "{{ item[1] }}"
-        #   loop:
-        #     - "{{ kvm_dns_ip.results | product(groups['all']) | list }}"
-        #   loop_control:
-        #     extended: true
-        #   become: true
+- name: Provision VNC on OLVM engine
+  ansible.builtin.import_playbook: "provision_vnc.yml"
 
-    - name: Provision VNC Server
-      ansible.builtin.include_tasks: provision_vnc.yml
-      when: inventory_hostname in groups['server']
-      args:
-        apply:
-          become: true
+- name: Install OLVM engine
+  ansible.builtin.import_playbook: "provision_ovirt_engine.yml"
 
-    - name: Install OLVM engine
-      ansible.builtin.include_tasks: "provision_ovirt_engine.yml"
-      args:
-        apply:
-          become: true
-
-    - name: Get the engine public key
-      community.crypto.openssl_publickey:
-        path: /tmp/key.pub
-        privatekey_path: "/etc/pki/ovirt-engine/keys/engine_id_rsa"
-        format: OpenSSH
-      become: true
-      when: inventory_hostname == groups['server']
-
-    - name: Fetch engine public key file from server
-      ansible.builtin.fetch:
-        src: "/tmp/key.pub"
-        dest: "buffer/engine-key.pub"
-        flat: true
-      become: true
-      when: inventory_hostname == groups['server']
-
-    - name: Copy public key to each destination
-      ansible.posix.authorized_key:
-        user: "root"
-        state: present
-        key: "{{ lookup('file', 'buffer/engine-key.pub') }}"
-      become: true
-      when: inventory_hostname == groups['kvm']
-
-    - name: Download ol9 ova image
-      ansible.builtin.get_url:
-        url: "{{ base_image_url }}"
-        dest: "/tmp/{{ base_image_name }}"
-        checksum: "sha256:{{ base_image_sha }}"
-        mode: "0664"
-      vars:
-        base_image_name: OL9U5_x86_64-olvm-b253.ova
-        base_image_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/{{ base_image_name }}
-        base_image_sha: dc5befa484c9aeb51fb0244d5926d53ab482453bd702512066734d8cb2c20600
-      when: inventory_hostname in groups['kvm'][0]
-
-# - name: Run oVirt Playbooks
-#   ansible.builtin.import_playbook: ovirt_tasks.yml
+- name: Copy OLVM engine private key to kvm host
+  ansible.builtin.import_playbook: "provision_olvm_engine_privatekey.yml"
 
 - name: Print instances
   hosts: all
