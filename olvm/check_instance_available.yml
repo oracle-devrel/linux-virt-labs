@@ -22,14 +22,14 @@
     - name: Get a set of all available facts
       ansible.builtin.setup:
 
-    - name: Print in-memory inventory
+    - name: Print in-memory inventory # noqa: run-once[task]
       ansible.builtin.debug:
         msg: "{{ groups['all'] }}"
       delegate_to: localhost
       run_once: true
       when: debug_enabled
 
-    - name: Print all variables/facts known for a host
+    - name: Print all variables/facts known for a host # noqa: run-once[task]
       ansible.builtin.debug:
         msg: "{{ hostvars[item] }}"
       loop: "{{ groups['all'] | flatten(levels=1) }}"
