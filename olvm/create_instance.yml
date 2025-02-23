@@ -137,17 +137,25 @@
       retries: 10
       delay: 30
       until: result is not failed
-    
+
+    - name: Print list of services
+      ansible.builtin.debug:
+        msg: "{{ result }}"
+      when: debug_enabled
+
     - name: Set service id
       ansible.builtin.set_fact:
-        my_service_id: "{{ result[0].service.id }}"
+        my_service_id: "{{ result.services[0].id }}"
+
+    - name: Set service cidr cidr_block
+      ansible.builtin.set_fact:
+        my_service_cidr_block: "{{ result.services[0].cidr_block }}"
 
     - name: Create service gateway
       oracle.oci.oci_network_service_gateway:
         compartment_id: "{{ my_compartment_id }}"
         services:
-        -
-          service_id: "{{ my_service_id }}" 
+          - service_id: "{{ my_service_id }}"
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Service Gateway-OLV-VCN"
         state: 'present'
@@ -166,7 +174,10 @@
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Route Table for Private Subnet-OLV-VCN"
         route_rules:
-          - network_entity_id: "{{ my_service_gateway_id }}"
+          -
+            network_entity_id: "{{ my_service_gateway_id }}"
+            destination: "{{ my_service_cidr_block }}"
+            destination_type: SERVICE_CIDR_BLOCK
         state: 'present'
       register: result
       retries: 10
@@ -211,7 +222,7 @@
 
     - name: Create security_list
       oracle.oci.oci_network_security_list:
-        display_name: "Security List for "OLV-VCN"
+        display_name: "Security List for OLV-VCN"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         ingress_security_rules: "{{ loaded_ingress.instance_ingress_security_rules }}"
@@ -398,7 +409,7 @@
       oracle.oci.oci_network_service_gateway:
         id: "{{ my_service_gateway_id }}"
         state: absent
-        
+
     - name: Delete the Internet Gateway
       oracle.oci.oci_network_internet_gateway:
         id: "{{ my_internet_gateway_id }}"
