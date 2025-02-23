@@ -168,6 +168,26 @@
       ansible.builtin.set_fact:
         my_service_gateway_id: "{{ result.service_gateway.id }}"
 
+    - name: Create route table for public subnet
+      oracle.oci.oci_network_route_table:
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        display_name: "Default Route Table for OLV-VCN"
+        route_rules:
+          -
+            network_entity_id: "{{ my_internet_gateway_id }}"
+            destination: "0.0.0.0/0"
+            destination_type: CIDR_BLOCK
+        state: 'present'
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set private subnet route table id
+      ansible.builtin.set_fact:
+        my_public_rt_id: "{{ result.route_table.id }}"
+
     - name: Create route table for private subnet
       oracle.oci.oci_network_route_table:
         compartment_id: "{{ my_compartment_id }}"
@@ -222,7 +242,7 @@
 
     - name: Create security_list
       oracle.oci.oci_network_security_list:
-        display_name: "Security List for OLV-VCN"
+        display_name: "Default Security List for OLV-VCN"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         ingress_security_rules: "{{ loaded_ingress.instance_ingress_security_rules }}"
@@ -243,6 +263,8 @@
         cidr_block: "{{ subnet1_cidr_block }}"
         display_name: "Public Subnet-OLV-VCN"
         prohibit_public_ip_on_vnic: false
+        route_table_id: "{{ my_public_rt_id }}"
+        security_list_ids: "{{ my_security_list_id }}"
         dns_label: "pub"
       register: result
       retries: 10
