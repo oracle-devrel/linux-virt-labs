@@ -103,9 +103,9 @@
     - name: Create a virtual cloud network
       oracle.oci.oci_network_vcn:
         compartment_id: "{{ my_compartment_id }}"
-        display_name: "Linuxvirt Virtual Cloud Network"
+        display_name: "OLV-VCN"
         cidr_blocks: "10.0.0.0/16"
-        dns_label: "vcn"
+        dns_label: "olv"
       register: result
       retries: 10
       delay: 30
@@ -115,12 +115,12 @@
       ansible.builtin.set_fact:
         my_vcn_id: "{{ result.vcn.id }}"
 
-    - name: Create internet_gateway
+    - name: Create internet gateway
       oracle.oci.oci_network_internet_gateway:
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         is_enabled: true
-        display_name: "Linuxvirt Internet Gateway"
+        display_name: "Internet Gateway-OLV-VCN"
         state: 'present'
       register: result
       retries: 10
@@ -131,24 +131,51 @@
       ansible.builtin.set_fact:
         my_internet_gateway_id: "{{ result.internet_gateway.id }}"
 
-    - name: Create route_table
-      oracle.oci.oci_network_route_table:
+    - name: Get list of services
+      oracle.oci.oci_network_service_facts:
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+    
+    - name: Set service id
+      ansible.builtin.set_fact:
+        my_service_id: "{{ result[0].service.id }}"
+
+    - name: Create service gateway
+      oracle.oci.oci_network_service_gateway:
         compartment_id: "{{ my_compartment_id }}"
+        services:
+        -
+          service_id: "{{ my_service_id }}" 
         vcn_id: "{{ my_vcn_id }}"
-        display_name: "Linuxvirt Route Table"
-        route_rules:
-          - network_entity_id: "{{ my_internet_gateway_id }}"
-            cidr_block: "0.0.0.0/0"
-            destination_type: CIDR_BLOCK
+        display_name: "Service Gateway-OLV-VCN"
         state: 'present'
       register: result
       retries: 10
       delay: 30
       until: result is not failed
 
-    - name: Set route table id
+    - name: Set services gateway id
       ansible.builtin.set_fact:
-        my_rt_id: "{{ result.route_table.id }}"
+        my_service_gateway_id: "{{ result.service_gateway.id }}"
+
+    - name: Create route table for private subnet
+      oracle.oci.oci_network_route_table:
+        compartment_id: "{{ my_compartment_id }}"
+        vcn_id: "{{ my_vcn_id }}"
+        display_name: "Route Table for Private Subnet-OLV-VCN"
+        route_rules:
+          - network_entity_id: "{{ my_service_gateway_id }}"
+        state: 'present'
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set private subnet route table id
+      ansible.builtin.set_fact:
+        my_private_rt_id: "{{ result.route_table.id }}"
 
     - name: Create ingress rules yaml list
       ansible.builtin.template:
@@ -184,7 +211,7 @@
 
     - name: Create security_list
       oracle.oci.oci_network_security_list:
-        display_name: "Linuxvirt Security List"
+        display_name: "Security List for "OLV-VCN"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         ingress_security_rules: "{{ loaded_ingress.instance_ingress_security_rules }}"
@@ -205,9 +232,7 @@
         cidr_block: "{{ subnet1_cidr_block }}"
         display_name: "Public Subnet-OLV-VCN"
         prohibit_public_ip_on_vnic: false
-        route_table_id: "{{ my_rt_id }}"
-        security_list_ids: "{{ my_security_list_id }}"
-        dns_label: "olvpub"
+        dns_label: "pub"
       register: result
       retries: 10
       delay: 30
@@ -228,9 +253,9 @@
         cidr_block: "{{ subnet2_cidr_block }}"
         display_name: "Private Subnet-OLV-VCN"
         prohibit_public_ip_on_vnic: true
-        route_table_id: "{{ my_rt_id }}"
+        route_table_id: "{{ my_private_rt_id }}"
         security_list_ids: "{{ my_security_list_id }}"
-        dns_label: "olvpriv"
+        dns_label: "priv"
       register: result
       retries: 10
       delay: 30
@@ -346,7 +371,7 @@
 
     - name: Delete network_security_group
       oracle.oci.oci_network_security_group:
-        network_security_group_id: "{{ my_nsg_id }}"
+        network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
         state: absent
 
     - name: Delete the subnet2
@@ -366,9 +391,14 @@
 
     - name: Delete the route table
       oracle.oci.oci_network_route_table:
-        id: "{{ my_rt_id }}"
+        id: "{{ my_private_rt_id }}"
         state: absent
 
+    - name: Delete the Service Gateway
+      oracle.oci.oci_network_service_gateway:
+        id: "{{ my_service_gateway_id }}"
+        state: absent
+        
     - name: Delete the Internet Gateway
       oracle.oci.oci_network_internet_gateway:
         id: "{{ my_internet_gateway_id }}"

@@ -8,7 +8,7 @@
   oracle.oci.oci_network_security_group:
     compartment_id: "{{ my_compartment_id }}"
     vcn_id: "{{ my_vcn_id }}"
-    display_name: "Linuxvirt VLAN NSG"
+    display_name: "L2 Network"
   register: result
   retries: 10
   delay: 30
@@ -16,11 +16,11 @@
 
 - name: Set network_security_group id
   ansible.builtin.set_fact:
-    my_nsg_id: "{{ result.network_security_group.id }}"
+    my_l2_vlan_nsg_id: "{{ result.network_security_group.id }}"
 
 - name: Perform action add on network_security_group_security_rule
   oracle.oci.oci_network_security_group_security_rule_actions:
-    network_security_group_id: "{{ my_nsg_id }}"
+    network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
     action: add
     security_rules:
       -
@@ -40,14 +40,11 @@
 
 - name: Create a vlan
   oracle.oci.oci_network_vlan:
-    availability_domain: "{{ my_availability_domain }}"
     cidr_block: "{{ vlan_cidr_block }}"
     compartment_id: "{{ my_compartment_id }}"
-    display_name: "VLAN VMs"
-    # route_table_id: "{{ rt_id }}"
-    # vlan_tag: "10"
+    display_name: "VLAN-VMs"
     nsg_ids:
-      - "{{ my_nsg_id }}"
+      - "{{ my_l2_vlan_nsg_id }}"
     vcn_id: "{{ my_vcn_id }}"
     vlan_tag: 1
   register: result

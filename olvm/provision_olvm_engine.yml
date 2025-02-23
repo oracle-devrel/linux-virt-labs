@@ -107,5 +107,4 @@
         state: enabled
         immediate: true
       delegate_to: "{{ item[1] }}"
-      loop:
-        - "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"
+      loop: "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"
