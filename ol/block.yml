@@ -12,7 +12,7 @@
       oracle.oci.oci_blockstorage_volume:
         compartment_id: "{{ my_compartment_id }}"
         availability_domain: "{{ my_availability_domain }}"
-        display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
+        display_name: "blockvolume-vd{{ block_devices[ansible_loop.index0] }}"
         size_in_gbs: "{{ block_volume_size_in_gbs }}"
         key_by: [compartment_id, display_name]
       register: result
