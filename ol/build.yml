@@ -83,6 +83,7 @@
   ansible.builtin.include_tasks: "block.yml"
   loop: "{{ query('sequence', 'start=1 end=' + (block_count) | string) }}"
   loop_control:
+    loop_var: blk_devices
     extended: true
   vars:
     block_devices:
@@ -91,6 +92,9 @@
       - d
       - e
       - f
+      - g
+      - h
+      - i
 
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
