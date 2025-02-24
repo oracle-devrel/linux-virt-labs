@@ -14,7 +14,7 @@
 
     - name: Download ca-cert
       ansible.builtin.get_url:
-        url: "https://olvm.olvpub.vcn.oraclevcn.com/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
+        url: "https://{{ engine_fqdn }}/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
         dest: /tmp/pki-resource
         mode: '0664'
         validate_certs: false

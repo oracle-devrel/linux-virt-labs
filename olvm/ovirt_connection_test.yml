@@ -27,16 +27,16 @@
         ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
         insecure: true
       when: ovirt_auth is undefined or not ovirt_auth
-      register: connection
+      register: auth_connection
       tags:
         - always
 
     - name: Show connection information
-      debug:
-        msg: "Connected to the OLVM Engine application at {{ connection.ansible_facts.ovirt_auth.url }}"
+      ansible.builtin.debug:
+        msg: "Connected to the OLVM Engine application at {{ auth_connection.ansible_facts.ovirt_auth.url }}"
 
     - name: Disconnect from the OLVM Engine application
-      ovirt_auth:
+      ovirt.ovirt.ovirt_auth:
         state: absent
         ovirt_auth: "{{ ovirt_auth }}"
       tags:

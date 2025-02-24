@@ -30,13 +30,14 @@
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
 
-    - name: Copy public key to each destination
+    - name: Copy public key to each destination # noqa: run-once[task]
       ansible.posix.authorized_key:
         user: "root"
         state: present
         key: "{{ lookup('file', 'buffer/engine-key.pub') }}"
       delegate_to: "{{ item }}"
       loop: "{{ groups['kvm'] }}"
+      run_once: true
 
     - name: Download ol9 ova image # noqa: run-once[task]
       ansible.builtin.get_url:

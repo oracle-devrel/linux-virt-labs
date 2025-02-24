@@ -47,6 +47,7 @@
       - "{{ my_l2_vlan_nsg_id }}"
     vcn_id: "{{ my_vcn_id }}"
     vlan_tag: 1
+    route_table_id: "{{ my_public_rt_id }}"
   register: result
   retries: 10
   delay: 30

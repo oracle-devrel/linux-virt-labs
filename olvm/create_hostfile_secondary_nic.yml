@@ -13,7 +13,7 @@
   tasks:
 
     - name: Get engine ip address # noqa: run-once[task]
-      ansible.builtin.command: "dig vdsm.olvpriv.vcn.oraclevcn.com +short"
+      ansible.builtin.command: "dig vdsm.{{ my_subnet2_domain_name }} +short"
       register: dns_ip
       changed_when: dns_ip.rc == 0
       delegate_to: "{{ groups['engine'][0] }}"
@@ -29,13 +29,13 @@
       ansible.builtin.lineinfile:
         dest: /etc/hosts
         regexp: "^.*vdsm.*$"
-        line: "{{ dns_ip.stdout }} vdsm.olvpriv.vcn.oraclevcn.com vdsm"
+        line: "{{ dns_ip.stdout }} vdsm.{{ my_subnet2_domain_name }} vdsm"
       delegate_to: "{{ item }}"
       loop: "{{ groups['all'] }}"
       become: true
 
     - name: Get kvm host IP address # noqa: run-once[task]
-      ansible.builtin.command: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.olvpriv.vcn.oraclevcn.com +short"
+      ansible.builtin.command: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.{{ my_subnet2_domain_name }} +short"
       register: kvm_dns_ip
       loop: "{{ groups['kvm'] | flatten(levels=1) }}"
       changed_when: kvm_dns_ip.rc == 0

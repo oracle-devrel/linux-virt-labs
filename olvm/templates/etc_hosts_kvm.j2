@@ -1,3 +1,3 @@
 {% for i in kvm_dns_ip.results %}
-{{ i.stdout }} vdsm0{{ loop.index }}.olvpriv.vcn.oraclevcn.com vdsm0{{ loop.index }}
+{{ i.stdout }} vdsm0{{ loop.index }}.{{ my_subnet2_domain_name }} vdsm0{{ loop.index }}
 {% endfor %}

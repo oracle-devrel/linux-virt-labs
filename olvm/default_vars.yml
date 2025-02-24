@@ -33,7 +33,7 @@ vnc_port: "1"
 vnc_default_password: "{{ username }}"
 vnc_geometry: "1920x1080"
 
-engine_fqdn: olvm.olvpub.vcn.oraclevcn.com
+engine_fqdn: olvm.pub.olv.oraclevcn.com
 engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
 engine_user: admin@ovirt@internalsso
 engine_pass: How-2-install

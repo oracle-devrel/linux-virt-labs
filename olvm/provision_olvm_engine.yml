@@ -6,6 +6,7 @@
 
 - name: Get Started with OLVM
   hosts: all
+  order: sorted
   vars_files:
     - default_vars.yml
     - oci_vars.yml
@@ -78,6 +79,13 @@
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
 
+    - name: Check if OLVM Eingine is installed # noqa: run-once[task]
+      ansible.builtin.stat:
+        path: "/etc/pki/ovirt-engine/keys/engine_id_rsa"
+      register: olvm_engine_installed
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
     - name: Install OLVM Engine with defaults # noqa: run-once[task]
       ansible.builtin.expect:
         command: /bin/engine-setup --generate-answer=file --accept-defaults
@@ -90,16 +98,18 @@
       changed_when: result.rc == 0
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
+      when: not olvm_engine_installed.stat.exists
 
-    - name: Activate Cockpit web console on the KVM hosts
+    - name: Activate Cockpit web console on the KVM hosts # noqa: run-once[task]
       ansible.builtin.systemd:
         state: started
         name: cockpit.socket
         enabled: true
       delegate_to: "{{ item }}"
       loop: "{{ groups['kvm'] }}"
+      run_once: true
 
-    - name: Open firewall for cockpit and virsh on the KVM hosts
+    - name: Open firewall for cockpit and virsh on the KVM hosts # noqa: run-once[task]
       ansible.posix.firewalld:
         zone: public
         service: "{{ item[0] }}"
@@ -108,3 +118,4 @@
         immediate: true
       delegate_to: "{{ item[1] }}"
       loop: "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"
+      run_once: true
