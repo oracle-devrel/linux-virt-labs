@@ -12,8 +12,9 @@
       oracle.oci.oci_blockstorage_volume:
         compartment_id: "{{ my_compartment_id }}"
         availability_domain: "{{ my_availability_domain }}"
-        display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
+        display_name: "blockvolume-vd{{ block_devices[ansible_loop.index0] }}"
         size_in_gbs: "{{ block_volume_size_in_gbs }}"
+        key_by: [compartment_id, display_name]
       register: result
       vars:
         timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
@@ -32,8 +33,10 @@
         volume_id: "{{ volume_id }}"
         compartment_id: "{{ my_compartment_id }}"
         device: "/dev/oracleoci/oraclevd{{ block_devices[ansible_loop.index0] }}"
+        display_name: "blockvolume-vd{{ block_devices[ansible_loop.index0] }}"
         is_read_only: false
         is_shareable: false
+        key_by: [compartment_id, display_name]
       retries: 10
       delay: 30
       until: result is not failed
