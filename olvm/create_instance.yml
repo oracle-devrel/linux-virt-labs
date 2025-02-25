@@ -344,22 +344,26 @@
   ansible.builtin.import_playbook: "configure_secondary_nic.yml"
 
 - name: Setup and configure instance basics
-  ansible.builtin.import_playbook: "setup_host_basics.yml"
+  ansible.builtin.import_playbook: "provision_instance_basics.yml"
 
 - name: Configure passwordless SSH
   ansible.builtin.import_playbook: "configure_passwordless_ssh.yml"
 
 - name: Create hosts file for secondary nic dns
   ansible.builtin.import_playbook: "create_hostfile_secondary_nic.yml"
+  when: use_secondary_hostfile
 
 - name: Provision VNC on OLVM engine
   ansible.builtin.import_playbook: "provision_vnc.yml"
+  when: use_vnc_on_engine
 
 - name: Install OLVM engine
   ansible.builtin.import_playbook: "provision_olvm_engine.yml"
+  when: install_engine
 
-- name: Copy OLVM engine private key to kvm host
-  ansible.builtin.import_playbook: "provision_olvm_engine_privatekey.yml"
+- name: Copy OLVM engine public key to kvm host
+  ansible.builtin.import_playbook: "provision_olvm_engine_publickey.yml"
+  when: copy_engine_publickey
 
 - name: Print instances
   hosts: all

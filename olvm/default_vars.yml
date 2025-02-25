@@ -38,3 +38,8 @@ engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
 engine_user: admin@ovirt@internalsso
 engine_pass: How-2-install
 # engine_cafile: /tmp/pki-resource
+use_secondary_hostfile: false
+use_vnc_on_engine: false
+install_engine: false
+copy_engine_publickey: false
+copy_ova_template: false

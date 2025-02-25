@@ -34,7 +34,7 @@ Temporary Items
 
 # Ansible playbook runtime
 */buffer/*
-.ansible
+*.ansible/*
 
 # VS Code files for those working on multiple tools
 **/.vscode/*
