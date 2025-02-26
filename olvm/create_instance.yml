@@ -426,9 +426,14 @@
         id: "{{ my_security_list_id }}"
         state: absent
 
-    - name: Delete the route table
+    - name: Delete the private route table
       oracle.oci.oci_network_route_table:
         id: "{{ my_private_rt_id }}"
+        state: absent
+
+    - name: Delete the public route table
+      oracle.oci.oci_network_route_table:
+        id: "{{ my_public_rt_id }}"
         state: absent
 
     - name: Delete the Service Gateway
@@ -452,3 +457,5 @@
         path: "{{ item }}"
       loop:
         - oci_vars.yml
+        - buffer
+        - hosts
