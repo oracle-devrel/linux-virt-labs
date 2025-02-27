@@ -23,6 +23,8 @@
           - cockpit
           - cockpit-machines
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install Oracle Linux 9 virtualization packages
@@ -36,6 +38,8 @@
           - cockpit
           - cockpit-machines
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Start and enable Oracle Linux 8 monolithic virtualization services
@@ -111,6 +115,8 @@
           ansible.builtin.dnf:
             name: oracle-olcne-release-el8
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
         - name: Enable ocne repository
@@ -124,6 +130,8 @@
           ansible.builtin.dnf:
             name: oracle-olcne-release-el9
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
         - name: Enable ocne repository
@@ -139,6 +147,8 @@
               - ocne
               - kubectl
             state: present
+          retries: 5
+          delay: 10
 
     - name: Create an ocne cluster
       when:
@@ -170,6 +180,8 @@
           ansible.builtin.dnf:
             name: oraclelinux-developer-release-el8
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
         - name: Enable ol developer repository
@@ -184,12 +196,16 @@
             name:
               - python36-oci-cli
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
         - name: Install ol developer repository
           ansible.builtin.dnf:
             name: oraclelinux-developer-release-el9
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
         - name: Enable ol developer repository
@@ -204,6 +220,8 @@
             name:
               - python36-oci-cli
             state: present
+          retries: 5
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
         - name: Generate random hex string
@@ -273,13 +291,23 @@
             chdir: ~/
           become: true
           become_user: "{{ username }}"
-          register: provision_cluster
-          changed_when: provision_cluster.rc == 0
+          async: 3600
+          poll: 10
+          register: cluster_sleeper
+          changed_when: cluster_sleeper.rc == 0
 
         - name: Print cluster provision output
           ansible.builtin.debug:
-            var: provision_cluster
+            var: cluster_sleeper
           when: debug_enabled
+
+        # - name: Check on cluster provisioning
+        #   ansible.builtin.async_status:
+        #     jid: "{{ cluster_sleeper.ansible_job_id }}"
+        #   register: job_result
+        #   until: job_result.finished
+        #   retries: 360
+        #   delay: 10
 
         - name: Add kubeconfig to .bashrc file
           ansible.builtin.lineinfile:
