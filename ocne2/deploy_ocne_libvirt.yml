@@ -115,7 +115,7 @@
             name: oracle-olcne-release-el8
             state: present
           retries: 5
-          delay: 10            
+          delay: 10
           when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
         - name: Enable ocne repository

@@ -292,22 +292,22 @@
           become: true
           become_user: "{{ username }}"
           async: 3600
-          poll: 0
+          poll: 10
           register: cluster_sleeper
-          changed_when: provision_cluster.rc == 0
+          changed_when: cluster_sleeper.rc == 0
 
         - name: Print cluster provision output
           ansible.builtin.debug:
             var: cluster_sleeper
           when: debug_enabled
 
-        - name: Check on cluster provisioning
-          ansible.builtin.async_status:
-            jid: "{{ cluster_sleeper.ansible_job_id }}"
-          register: job_result
-          until: job_result.finished
-          retries: 360
-          delay: 10
+        # - name: Check on cluster provisioning
+        #   ansible.builtin.async_status:
+        #     jid: "{{ cluster_sleeper.ansible_job_id }}"
+        #   register: job_result
+        #   until: job_result.finished
+        #   retries: 360
+        #   delay: 10
 
         - name: Add kubeconfig to .bashrc file
           ansible.builtin.lineinfile:
