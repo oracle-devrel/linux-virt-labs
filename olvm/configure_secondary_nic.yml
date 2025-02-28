@@ -1,0 +1,111 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Configure secondary nic
+  hosts: all
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  serial: 1
+
+  tasks:
+
+    - name: Get instance details
+      oracle.oci.oci_compute_instance_facts:
+        compartment_id: "{{ my_compartment_id }}"
+        display_name: "{{ inventory_hostname }}"
+        sort_by: TIMECREATED
+        sort_order: ASC
+        lifecycle_state: RUNNING
+      delegate_to: localhost
+      register: instance_details
+      retries: 10
+      delay: 30
+      until: instance_details is not failed
+
+    - name: Print instance facts
+      ansible.builtin.debug:
+        var: instance_details
+      when: debug_enabled
+
+    - name: Get vnic attachments of a specific instance
+      oracle.oci.oci_compute_vnic_attachment_facts:
+        compartment_id: "{{ my_compartment_id }}"
+        instance_id: "{{ instance_details.instances[0].id }}"
+      delegate_to: localhost
+      register: vnic_attachments
+      retries: 10
+      delay: 30
+      until: vnic_attachments is not failed
+
+    - name: Print vnic attachments facts
+      ansible.builtin.debug:
+        var: vnic_attachments
+      when: debug_enabled
+
+    - name: Print second subnet id
+      ansible.builtin.debug:
+        var: my_subnet2_id
+      when: debug_enabled
+
+    - name: Set secondary vnic id # noqa: jinja[invalid]
+      ansible.builtin.set_fact:
+        secondary_vnic_id: "{{ vnic_attachments | community.general.json_query(subnet_query) }}"
+      vars:
+        subnet_query: "vnic_attachments[?subnet_id=='{{ my_subnet2_id }}'].vnic_id"
+
+    - name: Print secondary vnic id
+      ansible.builtin.debug:
+        var: secondary_vnic_id
+      when: debug_enabled
+
+    - name: Get secondary vnic facts
+      oracle.oci.oci_network_vnic_facts:
+        vnic_id: "{{ secondary_vnic_id[0] }}"
+      delegate_to: localhost
+      register: secondary_vnic_facts
+      retries: 10
+      delay: 30
+      until: secondary_vnic_facts is not failed
+
+    - name: Set secondary vnic ip
+      ansible.builtin.set_fact:
+        secondary_vnic_ip: "{{ secondary_vnic_facts.vnic.private_ip }}"
+
+    - name: Print secondary vnic ip address
+      ansible.builtin.debug:
+        var: secondary_vnic_ip
+      when: debug_enabled
+
+    - name: Get secondary vnic mac
+      ansible.builtin.set_fact:
+        mac_addr: "{{ secondary_vnic_facts.vnic.mac_address | lower }}"
+
+    - name: Get network interface
+      ansible.builtin.set_fact:
+        interface: "{{ item }}"
+      with_items: "{{ ansible_interfaces | reject('==', 'lo') }}"
+      when: ansible_facts[item].macaddress == mac_addr
+
+    - name: Assign static IP
+      community.general.nmcli:
+        conn_name: "ethernet-{{ interface }}"
+        ifname: "{{ interface }}"
+        type: ethernet
+        ip4: "{{ secondary_vnic_ip }}/24"
+        gw4: 10.0.1.1
+        state: present
+      become: true
+
+    - name: Add two IPv4 DNS server addresses
+      community.general.nmcli:
+        conn_name: "ethernet-{{ interface }}"
+        type: ethernet
+        dns4:
+          - 10.0.1.1
+          - 169.254.169.254
+        state: present
+      become: true
