@@ -1,0 +1,63 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create network_security_group
+  oracle.oci.oci_network_security_group:
+    compartment_id: "{{ my_compartment_id }}"
+    vcn_id: "{{ my_vcn_id }}"
+    display_name: "L2 Network"
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Set network_security_group id
+  ansible.builtin.set_fact:
+    my_l2_vlan_nsg_id: "{{ result.network_security_group.id }}"
+
+- name: Perform action add on network_security_group_security_rule
+  oracle.oci.oci_network_security_group_security_rule_actions:
+    network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
+    action: add
+    security_rules:
+      -
+        direction: "EGRESS"
+        protocol: "all"
+        destination_type: "CIDR_BLOCK"
+        destination: "0.0.0.0/0"
+      -
+        direction: "INGRESS"
+        protocol: "all"
+        source_type: "CIDR_BLOCK"
+        source: "10.0.0.0/16"
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Create a vlan
+  oracle.oci.oci_network_vlan:
+    cidr_block: "{{ vlan_cidr_block }}"
+    compartment_id: "{{ my_compartment_id }}"
+    display_name: "VLAN-VMs"
+    nsg_ids:
+      - "{{ my_l2_vlan_nsg_id }}"
+    vcn_id: "{{ my_vcn_id }}"
+    vlan_tag: 1
+    route_table_id: "{{ my_public_rt_id }}"
+  register: result
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Set vlan id
+  ansible.builtin.set_fact:
+    my_vlan_id: "{{ result.vlan.id }}"
+
+- name: Print vlan details
+  ansible.builtin.debug:
+    msg: "Created a new vlan {{ result }}"
+  when: debug_enabled

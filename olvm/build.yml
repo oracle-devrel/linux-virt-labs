@@ -1,0 +1,249 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Launch an instance
+  oracle.oci.oci_compute_instance:
+    availability_domain: "{{ my_availability_domain }}"
+    compartment_id: "{{ my_compartment_id }}"
+    name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
+    image_id: "{{ ol_image_id }}"
+    shape: "{{ instance_shape }}"
+    shape_config:
+      ocpus: "{{ item.value.instance_ocpus }}"
+      memory_in_gbs: "{{ item.value.instance_memory }}"
+    create_vnic_details:
+      assign_public_ip: true
+      hostname_label: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
+      display_name: "public"
+      subnet_id: "{{ my_subnet1_id }}"
+    metadata:
+      ssh_authorized_keys: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+    agent_config:
+      is_monitoring_disabled: false
+      is_management_disabled: false
+      are_all_plugins_disabled: false
+      plugins_config:
+        -
+          name: "OS Management Service Agent"
+          desired_state: DISABLED
+    key_by: [compartment_id, availability_domain, display_name]
+  register: result
+  vars:
+    timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Print instance details
+  ansible.builtin.debug:
+    msg:
+      - "Launched a new instance:"
+      - "{{ result }}"
+  when: debug_enabled
+
+- name: Set the compute instance id
+  ansible.builtin.set_fact:
+    my_instance_id: "{{ result.instance.id }}"
+
+- name: Set the compute instance display_name
+  ansible.builtin.set_fact:
+    instance_display_name: "{{ result.instance.display_name }}"
+
+# - name: Get the primary vnic attachment details of instance
+#   oracle.oci.oci_compute_vnic_attachment_facts:
+#     compartment_id: "{{ my_compartment_id }}"
+#     instance_id: "{{ my_instance_id }}"
+#   register: result
+#   retries: 10
+#   delay: 30
+#   until: result is not failed
+
+# - name: Get primary vnic details
+#   oracle.oci.oci_network_vnic_facts:
+#     vnic_id: "{{ result.vnic_attachments[0].vnic_id }}"
+#   register: result
+#   retries: 10
+#   delay: 30
+#   until: result is not failed
+
+- name: Set the instance primary private ip address
+  ansible.builtin.set_fact:
+    instance_private_ip: "{{ result.instance.primary_private_ip }}"
+
+- name: Set the instance primary public ip address
+  ansible.builtin.set_fact:
+    instance_public_ip: "{{ result.instance.primary_public_ip }}"
+
+- name: Add secondary private subnet vnic_attachment
+  when: item.value.type == "engine"
+  block:
+    - name: Create subnet2 vnic_attachment
+      oracle.oci.oci_compute_vnic_attachment:
+        compartment_id: "{{ my_compartment_id }}"
+        create_vnic_details:
+          assign_public_ip: false
+          assign_private_dns_record: true
+          display_name: "vdsm"
+          hostname_label: "vdsm"
+          subnet_id: "{{ my_subnet2_id }}"
+        display_name: "vdsm"
+        instance_id: "{{ my_instance_id }}"
+        key_by: [compartment_id, display_name]
+      register: engine_subnet2
+      retries: 10
+      delay: 30
+      until: engine_subnet2 is not failed
+
+    - name: Print vnic_attachment for subnet2
+      ansible.builtin.debug:
+        var: engine_subnet2
+      when: debug_enabled
+
+- name: Add secondary private subnet vnic_attachment
+  when: item.value.type == "kvm"
+  block:
+    - name: Create subnet2 vnic_attachment
+      oracle.oci.oci_compute_vnic_attachment:
+        compartment_id: "{{ my_compartment_id }}"
+        create_vnic_details:
+          assign_public_ip: false
+          assign_private_dns_record: true
+          display_name: "vdsm{{ item.value.instance_name[-2:] }}"
+          hostname_label: "vdsm{{ item.value.instance_name[-2:] }}"
+          subnet_id: "{{ my_subnet2_id }}"
+        display_name: "vdsm{{ item.value.instance_name[-2:] }}"
+        instance_id: "{{ my_instance_id }}"
+        key_by: [compartment_id, display_name]
+      register: kvm_subnet2
+      retries: 10
+      delay: 30
+      until: kvm_subnet2 is not failed
+
+    - name: Print vnic_attachment for subnet2
+      ansible.builtin.debug:
+        var: kvm_subnet2
+      when: debug_enabled
+
+- name: Add vlan vnic to instance
+  when: item.value.type == "kvm"
+  block:
+    - name: Create vlan vnic_attachment
+      oracle.oci.oci_compute_vnic_attachment:
+        compartment_id: "{{ my_compartment_id }}"
+        create_vnic_details:
+          assign_public_ip: false
+          display_name: "l2-vm-network"
+          vlan_id: "{{ my_vlan_id }}"
+        display_name: "l2-vm-network"
+        instance_id: "{{ my_instance_id }}"
+      register: kvm_vlan
+      retries: 10
+      delay: 30
+      until: kvm_vlan is not failed
+
+    - name: Print vnic_attachment for vlan
+      ansible.builtin.debug:
+        var: kvm_vlan
+      when: debug_enabled
+
+- name: Add block volumes for vm storage domains
+  ansible.builtin.include_tasks: create_block_storage.yml
+  loop:
+    - "amd-storage-domain-01"
+    - "amd-storage-domain-02"
+  loop_control:
+    loop_var: storage_name
+  when:
+    - item.value.type == "kvm"
+
+# - name: Add shared block volume to kvm nodes for vm storage
+#   when:
+#     - item.value.type == "kvm"
+#     - add_vm_block_storage
+#   block:
+#     - name: Create block volume for vm storage
+#       oracle.oci.oci_blockstorage_volume:
+#         compartment_id: "{{ my_compartment_id }}"
+#         availability_domain: "{{ my_availability_domain }}"
+#         display_name: "amd-storage-domain-01"
+#         size_in_gbs: "{{ blk_volume_size_in_gbs }}"
+#         key_by: [compartment_id, display_name]
+#       register: kvm_create_block
+#       retries: 10
+#       delay: 30
+#       until: kvm_create_block is not failed
+
+#     - name: Set the block storage block volume id
+#       ansible.builtin.set_fact:
+#         volume_id: "{{ kvm_create_block.volume.id }}"
+
+#     - name: Attach shared block volume for vm storage
+#       oracle.oci.oci_compute_volume_attachment:
+#         instance_id: "{{ my_instance_id }}"
+#         type: paravirtualized
+#         volume_id: "{{ volume_id }}"
+#         compartment_id: "{{ my_compartment_id }}"
+#         is_read_only: false
+#         is_shareable: true
+#       register: kvm_add_block
+#       retries: 10
+#       delay: 30
+#       until: kvm_add_block is not failed
+
+- name: Print the public and private ip of the newly created instance
+  ansible.builtin.debug:
+    msg:
+      - "Instance name: {{ instance_display_name }}"
+      - "  public ip: {{ instance_public_ip }}"
+      - "  private ip: {{ instance_private_ip }}"
+  when: debug_enabled
+
+- name: Add host to in-memory host file
+  ansible.builtin.add_host:
+    name: "{{ instance_display_name }}"
+    groups: "{{ item.value.type }}"
+    ansible_user: opc
+    ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_host: "{{ instance_public_ip }}"
+    ansible_port: 22
+    instance_ocid: "{{ my_instance_id }}"
+
+- name: Create host ini file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^\[{{ host_group }}'
+    line: "[{{ host_group }}]"
+    create: true
+    mode: "0664"
+  delegate_to: localhost
+  loop:
+    - engine
+    - kvm
+  loop_control:
+    loop_var: host_group
+
+- name: Add host to ini host file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^{{ instance_name }}'
+    line: >-
+      {{ instance_name }}
+      ansible_host={{ instance_ansible_host }}
+      ansible_user={{ instance_ansible_user }}
+      ansible_private_key_file={{ instance_ansible_private_key_file }}
+      ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}
+    insertafter: '^\[{{ item.value.type }}\]$'
+    create: true
+    mode: "664"
+  delegate_to: localhost
+  vars:
+    instance_name: "{{ instance_display_name }}"
+    instance_ansible_user: opc
+    instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    instance_ansible_host: "{{ instance_public_ip }}"
+    instance_ansible_port: 22

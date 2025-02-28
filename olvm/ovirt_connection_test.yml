@@ -1,0 +1,43 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: OLVM Engine application connection test
+  hosts: olvm
+
+  vars_files:
+    - default_vars.yml
+
+  tasks:
+
+    - name: Download engine ca certificate
+      ansible.builtin.get_url:
+        url: "https://{{ engine_fqdn }}/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
+        dest: "{{ ansible_env.HOME + '/pki-resource' }}"
+        mode: '0664'
+        validate_certs: false
+
+    - name: Connect to the OLVM Engine application
+      ovirt.ovirt.ovirt_auth:
+        url: "{{ engine_url }}"
+        username: "{{ engine_user }}"
+        password: "{{ engine_pass }}"
+        ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+        insecure: true
+      when: ovirt_auth is undefined or not ovirt_auth
+      register: auth_connection
+      tags:
+        - always
+
+    - name: Show connection information
+      ansible.builtin.debug:
+        msg: "Connected to the OLVM Engine application at {{ auth_connection.ansible_facts.ovirt_auth.url }}"
+
+    - name: Disconnect from the OLVM Engine application
+      ovirt.ovirt.ovirt_auth:
+        state: absent
+        ovirt_auth: "{{ ovirt_auth }}"
+      tags:
+        - always

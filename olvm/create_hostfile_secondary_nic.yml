@@ -1,0 +1,58 @@
+---
+# Copyright (c) 2024 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create a host file for secondary nic hostnames
+  hosts: all
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+
+  tasks:
+
+    - name: Get engine ip address # noqa: run-once[task]
+      ansible.builtin.command: "dig vdsm.{{ my_subnet2_domain_name }} +short"
+      register: dns_ip
+      changed_when: dns_ip.rc == 0
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
+    - name: Print engine IP address # noqa: run-once[task]
+      ansible.builtin.debug:
+        msg: "{{ dns_ip }}"
+      when: debug_enabled
+      run_once: true
+
+    - name: Add engine IP and FQDN to engine hosts file
+      ansible.builtin.lineinfile:
+        dest: /etc/hosts
+        regexp: "^.*vdsm.*$"
+        line: "{{ dns_ip.stdout }} vdsm.{{ my_subnet2_domain_name }} vdsm"
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['all'] }}"
+      become: true
+
+    - name: Get kvm host IP address # noqa: run-once[task]
+      ansible.builtin.command: "dig vdsm{{ hostvars[item].inventory_hostname_short[-2:] }}.{{ my_subnet2_domain_name }} +short"
+      register: kvm_dns_ip
+      loop: "{{ groups['kvm'] | flatten(levels=1) }}"
+      changed_when: kvm_dns_ip.rc == 0
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
+    - name: Print kvm host IP address # noqa: run-once[task]
+      ansible.builtin.debug:
+        msg: "{{ kvm_dns_ip }}"
+      when: debug_enabled
+      run_once: true
+
+    - name: Add kvm host IP and FQDN to host file
+      ansible.builtin.blockinfile:
+        dest: /etc/hosts
+        block: "{{ lookup('template', 'etc_hosts_kvm.j2') }}"
+        marker: "# {mark} ANSIBLE MANAGED BLOCK kvm"
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['all'] }}"
+      become: true

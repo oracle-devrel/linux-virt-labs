@@ -1,0 +1,121 @@
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+---
+
+- name: Get Started with OLVM
+  hosts: all
+  order: sorted
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Add oracle-ovirt release repository
+      ansible.builtin.dnf:
+        name:
+          - oracle-ovirt-release-45-el8
+          - kernel-uek-modules-extra
+        state: present
+      retries: 5
+      delay: 10
+
+    - name: Set ovirt-4.5 repo to public YUM mirror
+      community.general.ini_file:
+        path: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+        section: ovirt-4.5
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Set ovirt-4.5-extra to public YUM mirror
+      community.general.ini_file:
+        dest: /etc/yum.repos.d/oracle-ovirt-45-ol8.repo
+        section: ovirt-4.5-extra
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/ovirt45/extras/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Set ol8_kvm_appstream to public YUM mirror
+      community.general.ini_file:
+        dest: /etc/yum.repos.d/virt-ol8.repo
+        section: ol8_kvm_appstream
+        option: baseurl
+        value: https://yum.oracle.com/repo/OracleLinux/OL8/kvm/appstream/$basearch/
+        mode: "0644"
+        state: present
+
+    - name: Install the ovirt-engine packages # noqa: run-once[task]
+      ansible.builtin.dnf:
+        name: ovirt-engine
+        state: present
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+      retries: 5
+      delay: 10
+
+    - name: Install additional packages for ansible # noqa: run-once[task]
+      ansible.builtin.dnf:
+        name:
+          - python3-psycopg2
+          - python3-pyOpenSSL
+          - python3-pip
+        enablerepo: ol8_developer_EPEL
+        state: present
+      when:
+        - ansible_distribution == 'OracleLinux'
+        - ansible_distribution_major_version == '8'
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
+    - name: Install pexpect using pip # noqa: run-once[task]
+      ansible.builtin.pip:
+        name: pexpect
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
+    - name: Check if OLVM Eingine is installed # noqa: run-once[task]
+      ansible.builtin.stat:
+        path: "/etc/pki/ovirt-engine/keys/engine_id_rsa"
+      register: olvm_engine_installed
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+
+    - name: Install OLVM Engine with defaults # noqa: run-once[task]
+      ansible.builtin.expect:
+        command: /bin/engine-setup --generate-answer=file --accept-defaults
+        responses:
+          'Engine admin password': "{{ engine_pass }}"
+          'Confirm engine admin password': "{{ engine_pass }}"
+        timeout: 600
+      become: true
+      register: result
+      changed_when: result.rc == 0
+      delegate_to: "{{ groups['engine'][0] }}"
+      run_once: true
+      when: not olvm_engine_installed.stat.exists
+
+    - name: Activate Cockpit web console on the KVM hosts # noqa: run-once[task]
+      ansible.builtin.systemd:
+        state: started
+        name: cockpit.socket
+        enabled: true
+      delegate_to: "{{ item }}"
+      loop: "{{ groups['kvm'] }}"
+      run_once: true
+
+    - name: Open firewall for cockpit and virsh on the KVM hosts # noqa: run-once[task]
+      ansible.posix.firewalld:
+        zone: public
+        service: "{{ item[0] }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      delegate_to: "{{ item[1] }}"
+      loop: "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"
+      run_once: true

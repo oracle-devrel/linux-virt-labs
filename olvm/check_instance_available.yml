@@ -1,0 +1,38 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Configure new instances
+  hosts: all
+  gather_facts: false
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+
+  tasks:
+
+    - name: Wait for systems to become reachable
+      ansible.builtin.wait_for_connection:
+      vars:
+        python_version: "/usr/bin/python3"
+        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+
+    - name: Get a set of all available facts
+      ansible.builtin.setup:
+
+    - name: Print in-memory inventory # noqa: run-once[task]
+      ansible.builtin.debug:
+        msg: "{{ groups['all'] }}"
+      delegate_to: localhost
+      run_once: true
+      when: debug_enabled
+
+    - name: Print all variables/facts known for a host # noqa: run-once[task]
+      ansible.builtin.debug:
+        msg: "{{ hostvars[item] }}"
+      loop: "{{ groups['all'] | flatten(levels=1) }}"
+      delegate_to: localhost
+      run_once: true
+      when: debug_enabled
