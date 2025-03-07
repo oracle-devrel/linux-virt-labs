@@ -3,6 +3,7 @@ compute_instances:
     instance_name: "ol-node-01"
     type: "server"
     boot_volume_size_in_gbs: 50
+    add_ocfs_block_storage: false
 os: "Oracle Linux"
 os_version: "8"
 instance_shape: "VM.Standard.E4.Flex"
@@ -17,6 +18,7 @@ debug_enabled: false
 add_block_storage: false
 block_volume_size_in_gbs: 50
 block_count: 1
+volume_type: "paravirtualized"
 
 use_vnc: false
 vnc_port: "1"
@@ -47,6 +49,7 @@ use_nginx: false
 use_nfs: false
 use_quay_ha: false
 use_pcp: false
+use_ocfs2: false
 
 use_vbox: false
 virtualbox_version: "7.1"

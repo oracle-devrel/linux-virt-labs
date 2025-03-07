@@ -96,6 +96,42 @@
       - h
       - i
 
+- name: Add block volume for ocfs2
+  when:
+    - "{{ item.value.add_ocfs_block_storage | default('false') | bool }}"
+  block:
+    - name: Create block volume
+      oracle.oci.oci_blockstorage_volume:
+        compartment_id: "{{ my_compartment_id }}"
+        availability_domain: "{{ my_availability_domain }}"
+        display_name: "bv-ocfs2"
+        size_in_gbs: "{{ block_volume_size_in_gbs }}"
+        key_by: [compartment_id, display_name]
+      register: result
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+    - name: Set the block volume id
+      ansible.builtin.set_fact:
+        volume_id: "{{ result.volume.id }}"
+
+    - name: Attach the block volume
+      oracle.oci.oci_compute_volume_attachment:
+        instance_id: "{{ instance_id }}"
+        type: "{{ volume_type }}"
+        volume_id: "{{ volume_id }}"
+        compartment_id: "{{ my_compartment_id }}"
+        device: "/dev/oracleoci/oraclevdo"
+        display_name: "blockvolume-vdo"
+        is_read_only: false
+        is_shareable: true
+        key_by: [compartment_id, display_name]
+      retries: 10
+      delay: 30
+      until: result is not failed
+
+
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
     msg:
