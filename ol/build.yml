@@ -124,6 +124,7 @@
         compartment_id: "{{ my_compartment_id }}"
         device: "/dev/oracleoci/oraclevdo"
         display_name: "blockvolume-vdo"
+        is_agent_auto_iscsi_login_enabled: true
         is_read_only: false
         is_shareable: true
         key_by: [compartment_id, display_name]
