@@ -164,7 +164,6 @@
         is_agent_auto_iscsi_login_enabled: true
         is_read_only: false
         is_shareable: true
-        key_by: [compartment_id, display_name]
       retries: 10
       delay: 30
       until: result is not failed
