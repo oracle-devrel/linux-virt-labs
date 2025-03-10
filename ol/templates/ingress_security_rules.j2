@@ -107,4 +107,16 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 7777
         min: 7777
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 3260
+        min: 3260
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 3260
+        min: 3260
 {% endif %}
