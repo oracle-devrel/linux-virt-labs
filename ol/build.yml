@@ -144,14 +144,14 @@
         display_name: "bv-ocfs2"
         size_in_gbs: "{{ block_volume_size_in_gbs }}"
         key_by: [compartment_id, display_name]
-      register: result
+      register: create_bv
       retries: 10
       delay: 30
-      until: result is not failed
+      until: create_bv is not failed
 
     - name: Set the block volume id
       ansible.builtin.set_fact:
-        volume_id: "{{ result.volume.id }}"
+        volume_id: "{{ create_bv.volume.id }}"
 
     - name: Attach the block volume
       oracle.oci.oci_compute_volume_attachment:
@@ -164,9 +164,10 @@
         is_agent_auto_iscsi_login_enabled: true
         is_read_only: false
         is_shareable: true
+      register: attach_bv
       retries: 10
       delay: 30
-      until: result is not failed
+      until: attach_bv is not failed
 
 
 - name: Print the public and private ip of the newly created instance
