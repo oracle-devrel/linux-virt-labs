@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Launch an instance
+- name: Launch an instance using PV BV
   oracle.oci.oci_compute_instance:
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
@@ -33,6 +33,44 @@
           desired_state: DISABLED
     key_by: [compartment_id, availability_domain, display_name]
   register: result
+  when: volume_type != "iscsi"
+  vars:
+    timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
+  retries: 10
+  delay: 30
+  until: result is not failed
+
+- name: Launch an instance using iSCSI BV
+  oracle.oci.oci_compute_instance:
+    availability_domain: "{{ my_availability_domain }}"
+    compartment_id: "{{ my_compartment_id }}"
+    name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
+    source_details:
+      image_id: "{{ ol_image_id }}"
+      source_type: image
+      boot_volume_size_in_gbs: "{{ item.value.boot_volume_size_in_gbs | default(50) | int }}"
+    shape: "{{ instance_shape }}"
+    shape_config:
+      ocpus: "{{ instance_ocpus }}"
+      memory_in_gbs: "{{ instance_memory }}"
+    create_vnic_details:
+      assign_public_ip: true
+      hostname_label: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
+      subnet_id: "{{ my_subnet_id }}"
+    metadata:
+      ssh_authorized_keys: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+    agent_config:
+      is_monitoring_disabled: false
+      is_management_disabled: false
+      are_all_plugins_disabled: false
+      plugins_config:
+        - name: "OS Management Service Agent"
+          desired_state: DISABLED
+        - name: "Block Volume Management"
+          desired_state: ENABLED
+    key_by: [compartment_id, availability_domain, display_name]
+  register: result
+  when: volume_type == "iscsi"
   vars:
     timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
   retries: 10
@@ -96,9 +134,8 @@
       - h
       - i
 
-- name: Add block volume for ocfs2
-  when:
-    - "{{ item.value.add_ocfs_block_storage | default('false') | bool }}"
+- name: Add host level block volume
+  when: item.value.add_bv | default('false') | bool
   block:
     - name: Create block volume
       oracle.oci.oci_blockstorage_volume:
