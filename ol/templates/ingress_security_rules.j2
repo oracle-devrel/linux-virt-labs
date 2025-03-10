@@ -94,3 +94,29 @@ instance_ingress_security_rules:
         max: 44321
         min: 44321
 {% endif %}
+{% if use_ocfs2 %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 7777
+        min: 7777
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 7777
+        min: 7777
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 3260
+        min: 3260
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 3260
+        min: 3260
+{% endif %}

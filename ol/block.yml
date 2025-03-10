@@ -29,7 +29,7 @@
     - name: Attach the block volume
       oracle.oci.oci_compute_volume_attachment:
         instance_id: "{{ instance_id }}"
-        type: paravirtualized
+        type: "{{ volume_type }}"
         volume_id: "{{ volume_id }}"
         compartment_id: "{{ my_compartment_id }}"
         device: "/dev/oracleoci/oraclevd{{ block_devices[ansible_loop.index0] }}"
