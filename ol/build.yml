@@ -58,6 +58,7 @@
       instance_display_name: "{{ result.instance.display_name }}"
 
 - name: Launch an instance using iSCSI BV
+  when: volume_type == "iscsi"
   block:
   - name: Launch an instance
     oracle.oci.oci_compute_instance:
@@ -89,7 +90,6 @@
             desired_state: ENABLED
       key_by: [compartment_id, availability_domain, display_name]
     register: result
-    when: volume_type == "iscsi"
     vars:
       timestamp: "{{ now().strftime('%Y%m%d-%H%M%S') }}"
     retries: 10
