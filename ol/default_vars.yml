@@ -43,6 +43,7 @@ cleanup_tmp: no
 
 update_all: false
 passwordless_ssh: false
+#oci_yum_region: uk-london-1
 use_podman: false
 use_haproxy: false
 use_nginx: false
