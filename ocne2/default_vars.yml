@@ -28,3 +28,4 @@ ocne_cluster_name: "ocne"
 num_cp_nodes: 3
 num_wk_nodes: 3
 update_all: false
+#oci_yum_region: ".uk-london-1"
