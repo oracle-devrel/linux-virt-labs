@@ -297,11 +297,11 @@
 
     - name: Change OCI YUM region
       ansible.builtin.copy:
-        content: "{{ oci_yum_region }}"
+        content: "{{ oci_yum_region | default(omit) }}"
         dest: /etc/yum/vars/ociregion
         mode: '0644'
       become: true
-      when: oci_yum_region | length > 0
+      when: oci_yum_region | default(omit) | length > 0
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "passwordless_setup.yml"

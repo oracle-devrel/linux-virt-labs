@@ -295,6 +295,14 @@
     - name: Configure instance
       ansible.builtin.include_tasks: "host_setup.yml"
 
+    - name: Change OCI YUM region
+      ansible.builtin.copy:
+        content: "{{ oci_yum_region | default(omit) }}"
+        dest: /etc/yum/vars/ociregion
+        mode: '0644'
+      become: true
+      when: oci_yum_region | default(omit) | length > 0
+
 - name: Update all rpm packages
   ansible.builtin.import_playbook: update_all_rpms.yml
   when: update_all
