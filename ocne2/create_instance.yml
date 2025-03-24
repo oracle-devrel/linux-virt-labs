@@ -261,6 +261,10 @@
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
+    - name: Set file system storage
+      ansible.builtin.include_tasks: "create_fss.yml"
+      when: use_fss
+
 - name: Configure new instances
   hosts: all
   gather_facts: false
@@ -344,6 +348,10 @@
 
   tasks:
 
+    - name: Delete file system storage
+      ansible.builtin.include_tasks: "delete_fss.yml"
+      when: use_fss
+
     - name: Terminate the instances
       oracle.oci.oci_compute_instance:
         id: "{{ hostvars[item]['instance_ocid'] }}"
@@ -380,4 +388,5 @@
         state: absent
         path: "{{ item }}"
       loop:
+        - fss_vars.yml
         - oci_vars.yml

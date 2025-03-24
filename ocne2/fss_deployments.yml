@@ -15,9 +15,7 @@
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
-
+  
 - name: Create file fss-pvc.yaml
   ansible.builtin.template:
     src: fss_pvc.j2
@@ -25,9 +23,7 @@
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
-
+  
 - name: Create file fss-pod.yaml
   ansible.builtin.template:
     src: fss_pod.j2
@@ -35,5 +31,4 @@
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  delegate_to: "{{ item }}"
-  loop: "{{ groups['controlplane'] }}"
+  
