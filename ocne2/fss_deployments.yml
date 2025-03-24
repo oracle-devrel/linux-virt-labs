@@ -8,27 +8,26 @@
   ansible.builtin.include_vars:
     file: fss_vars.yml
 
-- name: Create file fss-pv.yaml
+- name: Create fss pv deployment
   ansible.builtin.template:
     src: fss_pv.j2
     dest: ~/fss-pv.yaml
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  
-- name: Create file fss-pvc.yaml
+
+- name: Create fss pvc deployment
   ansible.builtin.template:
     src: fss_pvc.j2
     dest: ~/fss-pvc.yaml
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  
-- name: Create file fss-pod.yaml
+
+- name: Create fss pod deployment
   ansible.builtin.template:
     src: fss_pod.j2
     dest: ~/fss-pod.yaml
     mode: "0644"
   become: true
   become_user: "{{ username }}"
-  
