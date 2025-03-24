@@ -284,6 +284,10 @@
           become: true
           become_user: "{{ username }}"
 
+        - name: Create fss deployment descriptors
+          ansible.builtin.include_tasks: "fss_deployments.yml"
+          when: use_fss
+
         - name: Provision the cluster
           ansible.builtin.shell: |
             ocne cluster start -u false -c myconfig.yaml
