@@ -276,6 +276,10 @@
               name: {{ ocne_cluster_name }}
               controlPlaneNodes: {{ num_cp_nodes }}
               workerNodes: {{ num_wk_nodes }}
+              ephemeralCluster:
+              node:
+                cpu: 4
+                memory: 16384
               providers:
                 oci:
                   imageBucket: ocne-images-{{ rnd_str.0 }}
