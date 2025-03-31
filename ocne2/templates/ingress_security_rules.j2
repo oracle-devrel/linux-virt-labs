@@ -26,3 +26,30 @@ instance_ingress_security_rules:
         max: 443
         min: 443
 {% endif %}
+{% if use_fss %}
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 111
+        min: 111
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 2050
+        min: 2048
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 111
+        min: 111
+  - source: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 2048
+        min: 2048
+{% endif %}
+

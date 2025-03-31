@@ -15,8 +15,8 @@
       boot_volume_size_in_gbs: "{{ item.value.boot_volume_size_in_gbs | default(50) | int }}"
     shape: "{{ instance_shape }}"
     shape_config:
-      ocpus: "{{ instance_ocpus }}"
-      memory_in_gbs: "{{ instance_memory }}"
+      ocpus: "{{ item.value.instance_ocpus | default(instance_ocpus) }}"
+      memory_in_gbs: "{{ item.value.instance_memory | default(instance_memory) }}"
     create_vnic_details:
       assign_public_ip: true
       hostname_label: "{{ item.value.instance_name | default('instance-'~timestamp) }}"

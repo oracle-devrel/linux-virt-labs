@@ -7,3 +7,23 @@
 instance_egress_security_rules:
   - destination: "0.0.0.0/0"
     protocol: 6
+{% if use_fss %}
+  - destination: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      source_port_range:
+        max: 111
+        min: 111
+  - destination: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      source_port_range:
+        max: 2050
+        min: 2048
+  - destination: "10.0.0.0/24"
+    protocol: 17
+    udp_options:
+      destination_port_range:
+        max: 111
+        min: 111
+{% endif %}
