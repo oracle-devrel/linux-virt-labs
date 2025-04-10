@@ -303,11 +303,14 @@
           poll: 10
           register: cluster_sleeper
           changed_when: cluster_sleeper.rc == 0
+          when: not debug_oci_cluster
 
         - name: Print cluster provision output
           ansible.builtin.debug:
             var: cluster_sleeper
-          when: debug_enabled
+          when: 
+            - debug_enabled
+            - not debug_oci_cluster
 
         # - name: Check on cluster provisioning
         #   ansible.builtin.async_status:
@@ -323,3 +326,4 @@
             line: "export KUBECONFIG=$HOME/.kube/kubeconfig.{{ ocne_cluster_name | default('ocne') }}.local"
           become: true
           become_user: "{{ username }}"
+          when: not debug_oci_cluster
