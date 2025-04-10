@@ -13,6 +13,7 @@
       image_id: "{{ ol_image_id }}"
       source_type: image
       boot_volume_size_in_gbs: "{{ item.value.boot_volume_size_in_gbs | default(50) | int }}"
+      boot_volume_vpus_per_gb: "{{ item.value.boot_volume_vpus_per_gb | default(20) | int }}"
     shape: "{{ instance_shape }}"
     shape_config:
       ocpus: "{{ item.value.instance_ocpus | default(instance_ocpus) }}"
