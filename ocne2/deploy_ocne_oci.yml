@@ -176,6 +176,15 @@
           become: true
           become_user: "{{ username }}"
 
+        - name: Append OCI_API_KEY for key file
+          ansible.builtin.lineinfile:
+            path: ~/.oci/oci.key
+            line: "OCI_API_KEY"
+            insertafter: EOF
+            state: present
+          become: true
+          become_user: "{{ username }}"
+
         - name: Install ol developer repository
           ansible.builtin.dnf:
             name: oraclelinux-developer-release-el8
