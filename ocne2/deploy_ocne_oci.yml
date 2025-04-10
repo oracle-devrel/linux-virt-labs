@@ -308,7 +308,7 @@
         - name: Print cluster provision output
           ansible.builtin.debug:
             var: cluster_sleeper
-          when: 
+          when:
             - debug_enabled
             - not debug_oci_cluster
 
