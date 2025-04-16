@@ -211,6 +211,7 @@
 - name: Provision olam ansible container environment
   containers.podman.podman_image:
     name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
+    tag: 2.2
   become: true
   become_user: awx
 
