@@ -43,7 +43,7 @@
         scope: global
         value: main
 
-    - name: Initialize a bare repo
+    - name: Initialize a bare repo # noqa: command-instead-of-module
       ansible.builtin.shell: |
         git init --bare
       args:

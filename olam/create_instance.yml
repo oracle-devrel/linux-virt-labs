@@ -308,6 +308,8 @@
         inventory_hostname in
           groups['control']|default([])
           + groups['server']|default([])
+          + groups['execution']|default([])
+          + groups['db']|default([])
 
     - name: Configure passwordless SSH
       ansible.builtin.include_tasks: "passwordless_setup.yml"
