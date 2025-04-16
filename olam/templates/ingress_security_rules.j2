@@ -66,11 +66,17 @@ instance_ingress_security_rules:
         max: 443
         min: 443
 {% endif %}
-{% if add_db_ports %}
+{% if add_cluster_ports %}
   - source: "10.0.0.0/24"
     protocol: 6
     tcp_options:
       destination_port_range:
         max: 5432
         min: 5432
+  - source: "10.0.0.0/24"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 27199
+        min: 27199
 {% endif %}  

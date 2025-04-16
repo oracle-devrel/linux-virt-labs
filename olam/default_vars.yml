@@ -27,7 +27,7 @@ use_olam_pah: false
 add_pah_ports: false
 use_freeipa: false
 use_git: false
-add_db_ports: false
+add_cluster_ports: false
 
 use_kvm: false
 create_vm: false
