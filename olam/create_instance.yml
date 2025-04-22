@@ -324,13 +324,11 @@
         - inventory_hostname in groups['control']|default([])
         - use_olae_only
 
-    - name: Install Oracle Linux Automation Manager
-      ansible.builtin.include_tasks: deploy_olam_single.yml
-      vars:
-        control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
-      when:
-        - inventory_hostname in groups['control']|default([])
-        - olam_single_host
+- name: Install Oracle Linux Automation Manager
+  vars:
+    control_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+    install_type: "{{ olam_type if olam_type is defined else (lookup('file', 'default_vars.yml') | from_yaml).olam_type | default('single') }}"
+  ansible.builtin.import_playbook: "deploy_olam_{{ install_type }}.yml"
 
 - name: Update all rpm packages
   ansible.builtin.import_playbook: update_all_rpms.yml

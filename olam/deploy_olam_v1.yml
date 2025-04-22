@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Install a single node OLAM server
+- name: Install a single node v1.0 OLAM server
   hosts: control
   vars_files:
     - default_vars.yml
@@ -17,8 +17,6 @@
         name: oracle-epel-release-el8
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
-      # when:
-      #   - ansible_facts['distribution_major_version'] == '8'
 
     - name: Install version lock plugin
       ansible.builtin.dnf:
@@ -42,98 +40,9 @@
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Install pexpect using pip
+    - name: Install pexpect
       ansible.builtin.pip:
         name: pexpect
-
-    # Install database
-
-    - name: Enable the PostgreSQL 13 module stream
-      ansible.builtin.copy:
-        dest: /etc/dnf/modules.d/postgresql.module
-        content: |
-          [postgresql]
-          name=postgresql
-          stream=13
-          profiles=
-          state=enabled
-        mode: '0644'
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
-      # when:
-      #   - ansible_distribution_major_version | int >= 8
-
-    - name: Install the database
-      ansible.builtin.dnf:
-        name: postgresql-server
-        state: present
-
-    - name: Ensure postgresql data directory exists
-      ansible.builtin.file:
-        path: "/var/lib/pgsql/data"
-        owner: "postgres"
-        group: "postgres"
-        state: directory
-        mode: '0700'
-
-    # Handle the ol-automation-manager-DB-init.sh script
-
-    - name: Check if postgresql is initialized
-      ansible.builtin.stat:
-        path: "/var/lib/pgsql/data/PG_VERSION"
-      register: pgdata_dir_version
-
-    - name: Initialize postgresql database
-      ansible.builtin.command: "postgresql-setup --initdb"
-      when: not pgdata_dir_version.stat.exists
-      become: true
-      become_user: postgres
-      register: dbsetup_result
-      changed_when: dbsetup_result.rc == 0
-
-    - name: Change database password storage encryption
-      ansible.builtin.replace:
-        path: /var/lib/pgsql/data/postgresql.conf
-        regexp: '^#password_encryption.*'
-        replace: 'password_encryption = scram-sha-256'
-
-    - name: Enable and start postgresql.service
-      ansible.builtin.systemd:
-        name: postgresql
-        state: started
-        enabled: true
-
-    - name: Create awx postgresql user
-      community.postgresql.postgresql_user:
-        name: awx
-        password: password
-        role_attr_flags: NOSUPERUSER
-      become: true
-      become_user: postgres
-
-    - name: Create awx postgresql db
-      community.postgresql.postgresql_db:
-        name: awx
-        owner: awx
-      become: true
-      become_user: postgres
-
-    - name: Update host-based authentication
-      ansible.builtin.lineinfile:
-        path: /var/lib/pgsql/data/pg_hba.conf
-        line: "host  all  all 0.0.0.0/0 scram-sha-256"
-
-    - name: Set the database listening address
-      ansible.builtin.lineinfile:
-        path: /var/lib/pgsql/data/postgresql.conf
-        insertbefore: '^#port = 5432'
-        line: "listen_addresses = '{{ control_node_ip }}'"
-
-    - name: Restart the database
-      ansible.builtin.systemd:
-        name: postgresql
-        state: restarted
-
-    # Install Single-Host OLAM v2
 
     - name: Install Oracle Linux Automation Manager repository
       ansible.builtin.dnf:
@@ -141,14 +50,13 @@
         state: present
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Disable Oracle Linux Automation Manager 1.0 repository
+    - name: Enable Oracle Linux Automation Manager 1.0 repository
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation
         option: enabled
-        value: "0"
+        value: "1"
         mode: '0644'
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Disable Oracle Linux Automation Manager 2.0 repository
       community.general.ini_file:
@@ -157,14 +65,13 @@
         option: enabled
         value: "0"
         mode: '0644'
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Enable Oracle Linux Automation Manager 2.2 repository
+    - name: Disable Oracle Linux Automation Manager 2.2 repository
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation2.2
         option: enabled
-        value: "1"
+        value: "0"
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
@@ -188,40 +95,46 @@
         insertafter: '^unixsocket '
         line: unixsocketperm 775
 
-    - name: Configure CLUSTER_HOST_ID setting
-      ansible.builtin.copy:
-        dest: /etc/tower/conf.d/olam.py
-        content: |
-          CLUSTER_HOST_ID = "{{ control_node_ip }}"
-        owner: awx
-        group: awx
-        mode: '0640'
+    - name: Ensure postgresql data directory exists
+      ansible.builtin.file:
+        path: "/var/lib/pgsql/data"
+        owner: "postgres"
+        group: "postgres"
+        state: directory
+        mode: '0700'
 
-    - name: Configure DATABASE settings
-      ansible.builtin.copy:
-        dest: /etc/tower/conf.d/db.py
-        content: |
-          DATABASES = {
-              'default': {
-                  'ATOMIC_REQUESTS': True,
-                  'ENGINE': 'awx.main.db.profiled_pg',
-                  'NAME': 'awx',
-                  'USER': 'awx',
-                  'PASSWORD': 'password',
-                  'HOST': '{{ control_node_ip }}',
-                  'PORT': '5432',
-              }
-          }
-        owner: awx
-        group: awx
-        mode: '0640'
+    - name: Check if postgresql is initialized
+      ansible.builtin.stat:
+        path: "/var/lib/pgsql/data/PG_VERSION"
+      register: pgdata_dir_version
 
-    - name: Provision olam ansible container environment # noqa: syntax-check[unknown-module]
-      containers.podman.podman_image:
-        name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
-        tag: 2.2
+    - name: Initialize postgresql database
+      ansible.builtin.command: "postgresql-setup --initdb"
+      when: not pgdata_dir_version.stat.exists
       become: true
-      become_user: awx
+      become_user: postgres
+      register: dbsetup_result
+      changed_when: dbsetup_result.rc == 0
+
+    - name: Enable and start postgresql.service
+      ansible.builtin.systemd:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Create awx postgresql user
+      community.postgresql.postgresql_user:
+        name: awx
+        role_attr_flags: NOSUPERUSER
+      become: true
+      become_user: postgres
+
+    - name: Create awx postgresql db
+      community.postgresql.postgresql_db:
+        name: awx
+        owner: awx
+      become: true
+      become_user: postgres
 
     - name: Check if awx provisioned
       ansible.builtin.stat:
@@ -231,11 +144,10 @@
     - name: Run awx-manage
       ansible.builtin.shell: |
         awx-manage migrate
-        awx-manage provision_instance --hostname={{ control_node_ip }} --node_type=hybrid
-        awx-manage register_default_execution_environments
-        awx-manage register_queue --queuename=default --hostnames={{ control_node_ip }}
-        awx-manage register_queue --queuename=controlplane --hostnames={{ control_node_ip }}
         awx-manage create_preload_data
+        awx-manage provision_instance --hostname={{ control_node_ip }}
+        awx-manage register_queue --queuename=tower --hostnames={{ control_node_ip }}
+        awx-manage setup_managed_credential_types
         touch /var/lib/awx/.awx-provisioned
       args:
         executable: /bin/bash
@@ -257,11 +169,6 @@
       ignore_errors: true
       changed_when: awx_password.stdout is not search('is already taken')
 
-    - name: Print the AWX admin password
-      ansible.builtin.debug:
-        var: awx_password
-      when: debug_enabled
-
     - name: Generate an OpenSSL private key with a different size (2048 bits)
       community.crypto.openssl_privatekey:
         path: /etc/tower/tower.key
@@ -279,21 +186,19 @@
         csr_path: /etc/tower/tower.csr
         provider: selfsigned
 
-    - name: Remove default server section in nginx configuration
+    - name: Remove default server section in /etc/nginx/nginx.conf
       ansible.builtin.template:
-        src: nginx.conf.j2
+        src: nginx.conf_v1.j2
         dest: /etc/nginx/nginx.conf
         owner: root
         group: root
         mode: '0644'
 
-    - name: Remove default configuration in receptor
-      ansible.builtin.template:
-        src: receptor.conf.j2
-        dest: /etc/receptor/receptor.conf
-        owner: root
-        group: root
-        mode: '0644'
+    - name: Set tower cluster_host_id
+      ansible.builtin.lineinfile:
+        path: /etc/tower/settings.py
+        regexp: '^CLUSTER_HOST_ID'
+        line: CLUSTER_HOST_ID = "{{ control_node_ip }}"
 
     - name: Set firewall service rules
       ansible.posix.firewalld:
@@ -314,7 +219,8 @@
         state: enabled
         immediate: true
       loop:
-        - 27199/tcp
+        - 80/tcp
+        - 443/tcp
 
     - name: Enable and start ol-automation service
       ansible.builtin.systemd:
@@ -323,14 +229,3 @@
         enabled: true
       with_items:
         - ol-automation-manager
-
-    - name: Check if user is lingering
-      ansible.builtin.stat:
-        path: "/var/lib/systemd/linger/awx"
-      register: user_lingering
-
-    - name: Enable lingering is needed
-      ansible.builtin.command: "loginctl enable-linger awx"
-      register: linger_result
-      changed_when: linger_result.rc == 0
-      when: not user_lingering.stat.exists
