@@ -320,6 +320,8 @@
         name:
           - ansible-core
         state: present
+      retries: 5
+      delay: 10
       when:
         - inventory_hostname in groups['control']|default([])
         - use_olae_only

@@ -16,6 +16,8 @@
       ansible.builtin.dnf:
         name: oracle-epel-release-el8
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install version lock plugin
@@ -23,6 +25,8 @@
         name: python3-dnf-plugin-versionlock
         enablerepo: ol8_developer_EPEL
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Version lock python3-click
@@ -38,6 +42,8 @@
           - python3-pip
         enablerepo: ol8_developer_EPEL
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install pexpect
@@ -48,6 +54,8 @@
       ansible.builtin.dnf:
         name: oraclelinux-automation-manager-release-el8
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Enable Oracle Linux Automation Manager 1.0 repository
@@ -79,6 +87,8 @@
       ansible.builtin.dnf:
         name: ol-automation-manager
         state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Edit unixsocket in /etc/redis.conf

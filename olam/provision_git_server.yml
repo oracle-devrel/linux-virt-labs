@@ -28,6 +28,8 @@
       ansible.builtin.dnf:
         name: git
         state: present
+      retries: 5
+      delay: 10
 
     - name: Create new repo on the git server
       ansible.builtin.file:

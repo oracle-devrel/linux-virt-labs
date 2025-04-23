@@ -17,6 +17,8 @@
         name: "*"
         state: latest
         update_only: true
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux'
 
     - name: Check if a reboot is required
