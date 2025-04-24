@@ -112,3 +112,40 @@
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
     instance_ocid: "{{ instance_id }}"
+
+- name: Create host ini file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^\[{{ host_group }}'
+    line: "[{{ host_group }}]"
+    create: true
+    mode: "0664"
+  delegate_to: localhost
+  loop:
+    - control
+    - execution
+    - db
+  loop_control:
+    loop_var: host_group
+
+- name: Add host to ini host file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^{{ instance_name }}'
+    line: >-
+      {{ instance_name }}
+      ansible_host={{ instance_ansible_host }}
+      ansible_user={{ instance_ansible_user }}
+      ansible_private_key_file={{ instance_ansible_private_key_file }}
+      ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}
+    insertafter: '^\[{{ item.value.type }}\]$'
+    create: true
+    mode: "664"
+  delegate_to: localhost
+  vars:
+    instance_name: "{{ instance_display_name }}"
+    instance_ansible_user: opc
+    instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    instance_ansible_host: "{{ instance_public_ip }}"
+    instance_ansible_port: 22
