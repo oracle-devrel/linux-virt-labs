@@ -293,7 +293,7 @@
         - 27199/tcp
 
 - name: Provision control nodes and add db
-- hosts: control,execution
+  hosts: control,execution
   vars_files:
     - default_vars.yml
   become: true
