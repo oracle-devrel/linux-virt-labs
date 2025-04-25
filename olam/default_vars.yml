@@ -44,3 +44,19 @@ vm_ram_mb: 2048
 vm_net: default
 vm_root_pass: 
 cleanup_tmp: no
+
+awx_pguser_password: password
+olam_admin_password: admin
+
+# Set proxy if needed
+# Uncomment both the pip_proxy_env and proxy_env sections, and set the proxy host and port accordingly.
+
+pip_proxy_env:
+#  http_proxy: 'http://www.example.com:80
+#  https_proxy: 'https://www.example.com:80'
+
+proxy_env:
+#  http_proxy: 'www.example.com:80'
+#  https_proxy: 'www.example.com:80'
+#  ftp_proxy: 'www.example.com:80'
+#  no_proxy: 'localhost,127.0.0.1,example.com'
