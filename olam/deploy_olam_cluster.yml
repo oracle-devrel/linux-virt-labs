@@ -1,0 +1,531 @@
+---
+# Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Install required packages on all hosts
+  hosts: control,execution,db
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Install Oracle EPEL repository
+      ansible.builtin.dnf:
+        name: oracle-epel-release-el8
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install version lock plugin
+      ansible.builtin.dnf:
+        name: python3-dnf-plugin-versionlock
+        enablerepo: ol8_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Version lock python3-click
+      community.general.yum_versionlock:
+        state: present
+        name: python3-click
+
+    - name: Install additional packages for ansible
+      ansible.builtin.dnf:
+        name:
+          - python3-psycopg2
+          - python3-pyOpenSSL
+          - python3-pip
+        enablerepo: ol8_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install pexpect
+      ansible.builtin.pip:
+        name: pexpect
+      environment: "{{ pip_proxy_env }}"
+
+  environment: "{{ proxy_env }}"
+
+- name: Install remote database
+  hosts: db
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  vars:
+    db_node_ip: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+
+  tasks:
+
+    - name: Enable the PostgreSQL 13 module stream
+      ansible.builtin.copy:
+       dest: /etc/dnf/modules.d/postgresql.module
+       content: |
+         [postgresql]
+         name=postgresql
+         stream=13
+         profiles=
+         state=enabled
+       mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install the database
+      ansible.builtin.dnf:
+        name: postgresql-server
+        state: present
+      retries: 5
+      delay: 10
+      environment: "{{ proxy_env }}"
+
+    - name: Ensure postgresql data directory exists
+      ansible.builtin.file:
+        path: "/var/lib/pgsql/data"
+        owner: "postgres"
+        group: "postgres"
+        state: directory
+        mode: '0700'
+
+    - name: Check if postgresql is initialized
+      ansible.builtin.stat:
+        path: "/var/lib/pgsql/data/PG_VERSION"
+      register: pgdata_dir_version
+
+    - name: Initialize postgresql database
+      ansible.builtin.command: "postgresql-setup --initdb"
+      when: not pgdata_dir_version.stat.exists
+      become: true
+      become_user: postgres
+      register: dbsetup_result
+      changed_when: dbsetup_result.rc == 0
+
+    - name: Change database password storage encryption
+      ansible.builtin.replace:
+        path: /var/lib/pgsql/data/postgresql.conf
+        regexp: '^#password_encryption.*'
+        replace: 'password_encryption = scram-sha-256'
+
+    - name: Enable and start postgresql.service
+      ansible.builtin.systemd:
+        name: postgresql
+        state: started
+        enabled: true
+
+    - name: Create awx postgresql user
+      community.postgresql.postgresql_user:
+        name: awx
+        password: "{{ awx_pguser_password }}"
+        role_attr_flags: NOSUPERUSER
+      become: true
+      become_user: postgres
+
+    - name: Create awx postgresql db
+      community.postgresql.postgresql_db:
+        name: awx
+        owner: awx
+      become: true
+      become_user: postgres
+
+    - name: Update host-based authentication
+      ansible.builtin.lineinfile:
+        path: /var/lib/pgsql/data/pg_hba.conf
+        line: "host  all  all 0.0.0.0/0 scram-sha-256"
+
+    - name: Set the database listening address
+      ansible.builtin.lineinfile:
+        path: /var/lib/pgsql/data/postgresql.conf
+        insertbefore: '^#port = 5432'
+        line: "listen_addresses = '{{ db_node_ip }}'"
+
+    - name: Set firewall port rules for db
+      ansible.posix.firewalld:
+        zone: public
+        port: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - 5432/tcp
+
+    - name: Restart the database
+      ansible.builtin.systemd:
+        name: postgresql
+        state: restarted
+
+- name: Configure OLAM 2.2 hosts
+  hosts: control,execution
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Install Oracle Linux Automation Manager repository
+      ansible.builtin.dnf:
+        name: oraclelinux-automation-manager-release-el8-2.2
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+      environment: "{{ proxy_env }}"
+
+    - name: Disable Oracle Linux Automation Manager 1.0 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation
+        option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Disable Oracle Linux Automation Manager 2.0 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2
+        option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Enable Oracle Linux Automation Manager 2.2 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.2
+        option: enabled
+        value: "1"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install Oracle Linux Automation Manager
+      ansible.builtin.dnf:
+        name: ol-automation-manager
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+      environment: "{{ proxy_env }}"
+
+    - name: Edit unixsocket in /etc/redis.conf
+      ansible.builtin.lineinfile:
+        path: /etc/redis.conf
+        regexp: '^unixsocket '
+        insertafter: '^# unixsocketperm '
+        line: unixsocket /var/run/redis/redis.sock
+
+    - name: Edit unixsocketperm in /etc/redis.conf
+      ansible.builtin.lineinfile:
+        path: /etc/redis.conf
+        regexp: '^unixsocketperm '
+        insertafter: '^unixsocket '
+        line: unixsocketperm 775
+
+    - name: Configure CLUSTER_HOST_ID setting
+      ansible.builtin.copy:
+        dest: /etc/tower/conf.d/olam.py
+        content: |
+          CLUSTER_HOST_ID = "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+          DEFAULT_EXECUTION_QUEUE_NAME = 'execution'
+          DEFAULT_CONTROL_PLANE_QUEUE_NAME = 'controlplane'
+        owner: awx
+        group: awx
+        mode: '0640'
+
+    - name: Provision olam ansible container environment # noqa: syntax-check[unknown-module]
+      containers.podman.podman_image:
+        name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
+        tag: 2.2
+      become: true
+      become_user: awx
+      retries: 5
+      delay: 10
+      environment: "{{ proxy_env }}"
+
+    - name: Generate an OpenSSL private key with a different size (2048 bits)
+      community.crypto.openssl_privatekey:
+        path: /etc/tower/tower.key
+        size: 2048
+
+    - name: Generate an OpenSSL Certificate Signing Request
+      community.crypto.openssl_csr:
+        path: /etc/tower/tower.csr
+        privatekey_path: /etc/tower/tower.key
+
+    - name: Generate a Self Signed OpenSSL certificate
+      community.crypto.x509_certificate:
+        path: /etc/tower/tower.crt
+        privatekey_path: /etc/tower/tower.key
+        csr_path: /etc/tower/tower.csr
+        provider: selfsigned
+
+    - name: Remove default server section in nginx configuration
+      ansible.builtin.template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Set firewall service rules
+      ansible.posix.firewalld:
+        zone: public
+        service: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - http
+        - https
+
+    - name: Set firewall port rules
+      ansible.posix.firewalld:
+        zone: public
+        port: "{{ item }}"
+        permanent: true
+        state: enabled
+        immediate: true
+      loop:
+        - 27199/tcp
+
+- name: Provision control nodes and add db
+  hosts: control,execution
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Get db ip address
+      ansible.builtin.set_fact:
+        db_node_ip: "{{ hostvars[groups['db'][0]]['ansible_default_ipv4']['address'] }}"
+
+    - name: Configure DATABASE settings
+      ansible.builtin.copy:
+        dest: /etc/tower/conf.d/db.py
+        content: |
+          DATABASES = {
+              'default': {
+                  'ATOMIC_REQUESTS': True,
+                  'ENGINE': 'awx.main.db.profiled_pg',
+                  'NAME': 'awx',
+                  'USER': 'awx',
+                  'PASSWORD': '{{ awx_pguser_password }}',
+                  'HOST': '{{ db_node_ip }}',
+                  'PORT': '5432',
+              }
+          }
+        owner: awx
+        group: awx
+        mode: '0640'
+
+    - name: Check if awx setup
+      ansible.builtin.stat:
+        path: /var/lib/awx/.awx-setup
+      register: awx_setup
+      when: ( inventory_hostname == groups["control"][0] )
+
+    - name: Run awx-manage migrate
+      ansible.builtin.shell: |
+        awx-manage migrate
+        touch /var/lib/awx/.awx-setup
+      args:
+        executable: /bin/bash
+      become: true
+      become_user: awx
+      register: awx_migrate
+      when:
+        - ( inventory_hostname == groups["control"][0] )
+        - not awx_setup.stat.exists
+      changed_when: awx_migrate is not search('already exists')
+
+    - name: Create awx superuser
+      block:
+        - name: Set awx password
+          ansible.builtin.expect:
+            command: "awx-manage createsuperuser --username admin --email admin@example.com"
+            responses:
+              'Password:': "{{ olam_admin_password }}"
+              'Password \(again\):': "{{ olam_admin_password }}"
+          register: awx_password
+          become: true
+          become_user: awx
+          ignore_errors: true
+          changed_when: awx_password.stdout is not search('is already taken')
+      when:
+        - ( inventory_hostname == groups["control"][0] )
+        - not awx_setup.stat.exists
+
+    - name: Print awx password
+      ansible.builtin.debug:
+        var: awx_password
+      when:
+        - ( inventory_hostname == groups["control"][0] )
+        - not awx_setup.stat.exists
+
+- name: Copy olam secret
+  hosts: control:execution:!control[0]
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Copy SECRET from control-node01 to all other hosts
+      ansible.posix.synchronize:
+        src: /etc/tower/SECRET_KEY
+        dest: /etc/tower/SECRET_KEY
+        owner: true
+        group: true
+        private_key: '/home/{{ username }}/.ssh/{{ private_key }}'
+        ssh_args: "-l {{ username }}"
+      delegate_to: "{{ groups['control'][0] }}"
+
+- name: Configure receptor
+  hosts: control,execution
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Create initial configuration in receptor
+      ansible.builtin.template:
+        src: receptor_cluster.conf.j2
+        dest: /etc/receptor/receptor.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Change work type to ansible-runner for execution node
+      ansible.builtin.replace:
+        path: /etc/receptor/receptor.conf
+        regexp: 'worktype: local'
+        replace: 'worktype: ansible-runner'
+      when:
+        - inventory_hostname in groups.execution
+        - inventory_hostname not in groups.hop
+
+    - name: Add tcp-peers if present
+      ansible.builtin.lineinfile:
+        path: /etc/receptor/receptor.conf
+        insertbefore: '^- control-service:'
+        line: |
+          - tcp-peer:
+              address: {{ hostvars[item]['ansible_default_ipv4']['address'] }}:27199
+              redial: true
+      with_inventory_hostnames:
+        - "{{ peers }}"
+      when: peers is defined
+
+    - name: Display receptor.conf contents
+      ansible.builtin.command: cat receptor.conf chdir=/etc/receptor
+      register: command_output
+      when: debug_enabled
+
+    - name: Print to console
+      ansible.builtin.debug:
+        msg: "{{command_output.stdout_lines}}"
+      when: debug_enabled
+
+- name: Provision awx
+  hosts: control[0]
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Check if awx provisioned
+      ansible.builtin.stat:
+        path: /var/lib/awx/.awx-provisioned
+      register: awx_provision
+
+    - name: Generate awx-manage script
+      ansible.builtin.copy:
+        dest: /var/lib/awx/awx_provision.sh
+        content: |
+            #!/bin/bash
+
+            {% for item in groups['control'] %}
+            awx-manage provision_instance --hostname={{ hostvars[item]['ansible_default_ipv4']['address'] }} --node_type=control
+            awx-manage register_queue --queuename=controlplane --hostnames={{ hostvars[item]['ansible_default_ipv4']['address'] }}
+            {% endfor %}
+            {% for item in groups['execution'] %}
+            awx-manage provision_instance --hostname={{ hostvars[item]['ansible_default_ipv4']['address'] }} --node_type={% if item in groups['hop'] %}hop{% else %}execution{% endif %}{{''}}
+            {% endfor %}
+            {% for item in groups['execution'] %}
+            {% if item not in groups['hop'] %}
+            awx-manage register_queue --queuename=execution --hostnames={{ hostvars[item]['ansible_default_ipv4']['address'] }}
+            {% endif %}
+            {% endfor %}
+            awx-manage register_default_execution_environments
+            awx-manage create_preload_data
+            touch /var/lib/awx/.awx-provisioned
+        owner: awx
+        group: awx
+        mode: '0700'
+
+    - name: Cat script
+      ansible.builtin.shell: |
+        cat /var/lib/awx/awx_provision.sh
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: provision_script
+
+    - name: Print script contents
+      ansible.builtin.debug:
+        msg: "{{ provision_script }}"
+      when: debug_enabled
+
+    - name: Run awx-manage provision script
+      ansible.builtin.shell: |
+        /var/lib/awx/awx_provision.sh
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: awx_provision_script
+      changed_when: awx_provision_script is not search('already exists')
+
+    - name: Print awx_provision_script
+      ansible.builtin.debug:
+        msg: "{{ awx_provision_script }}"
+      when: debug_enabled
+
+- name: Configure peers
+  hosts: control,execution
+  vars_files:
+    - default_vars.yml
+  become: true
+
+  tasks:
+
+    - name: Run awx-manage peers
+      ansible.builtin.shell: |
+        awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: awx_peers
+      with_inventory_hostnames:
+        - "{{ peers }}"
+      when: ( peers is defined )
+      delegate_to: "{{ groups['control'][0] }}"
+
+    - name: Print to awx_peers
+      ansible.builtin.debug:
+        msg: "{{awx_peers}}"
+      when: debug_enabled
+
+    - name: Enable and start ol-automation service
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      with_items:
+        - ol-automation-manager
