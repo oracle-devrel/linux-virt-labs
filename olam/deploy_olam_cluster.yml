@@ -382,6 +382,7 @@
         owner: true
         group: true
         private_key: '/home/{{ username }}/.ssh/{{ private_key }}'
+        ssh_args: "-l {{ username }}"
       delegate_to: "{{ groups['control'][0] }}"
 
 - name: Configure receptor
@@ -433,6 +434,8 @@
 
 - name: Provision awx
   hosts: control[0]
+  vars_files:
+    - default_vars.yml
   become: true
 
   tasks:
@@ -496,6 +499,8 @@
 
 - name: Configure peers
   hosts: control,execution
+  vars_files:
+    - default_vars.yml
   become: true
 
   tasks:
