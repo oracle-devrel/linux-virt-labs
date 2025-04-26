@@ -302,7 +302,7 @@
 
     - name: Get db ip address
       ansible.builtin.set_fact:
-        db_node_ip: "{{ hostvars[groups['db_nodes'][0]]['ansible_default_ipv4']['address'] }}"
+        db_node_ip: "{{ hostvars[groups['db'][0]]['ansible_default_ipv4']['address'] }}"
 
     - name: Configure DATABASE settings
       ansible.builtin.copy:
