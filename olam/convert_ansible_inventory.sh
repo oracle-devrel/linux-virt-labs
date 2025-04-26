@@ -31,7 +31,7 @@ echo "peers=local_execution_group"
 echo ""
 
 echo "[execution]"
-grep "^olam-execution-" "$input_file" | sed -E "s/ (ansible_user=opc|ansible_private_key_file=[^ ]+|ansible_ssh_common_args='[^']+')//g" | awk '{print $1, $2, $3}' | sort
+grep -E "^olam-(execution|hop|remote-execution)-" "$input_file" | sed -E "s/ (ansible_user=opc|ansible_private_key_file=[^ ]+|ansible_ssh_common_args='[^']+')//g" | awk '{print $1, $2, $3}' | sort
 echo ""
 
 echo "[local_execution_group]"
