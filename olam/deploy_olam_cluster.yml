@@ -381,7 +381,7 @@
         dest: /etc/tower/SECRET_KEY
         owner: true
         group: true
-        private_key: '/home/{{ username }}/.ssh/id_olam_rsa'
+        private_key: "{{ ansible_private_key_file }}"
       delegate_to: "{{ groups['control'][0] }}"
 
 - name: Configure receptor
