@@ -381,7 +381,7 @@
         dest: /etc/tower/SECRET_KEY
         owner: true
         group: true
-        private_key: "{{ ansible_private_key_file }}"
+        private_key: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key) }}"
       delegate_to: "{{ groups['control'][0] }}"
 
 - name: Configure receptor
