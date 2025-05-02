@@ -42,6 +42,31 @@ http {
     # for more information.
     include /etc/nginx/conf.d/*.conf;
 
+{% if use_haproxy %}
+    server {
+        listen      8080 default_server;
+        listen      [::]:8080 default_server;
+        server_name _;
+        root        /usr/share/nginx/html;
+
+        # Load configuration files for the default server block.
+        include /etc/nginx/default.d/*.conf;
+
+        # OCI LB health check
+        location /nginx-health {
+            access_log off;
+            add_header 'Content-Type' 'text/plain';
+            return 200 "healthy\n";
+        }
+
+        location /health {
+            access_log off;
+            add_header 'Content-Type' 'application/json';
+            return 200 '{"status":"UP"}';
+        }
+    }
+{% endif %}
+
 #    server {
 #        listen       80 default_server;
 #        listen       [::]:80 default_server;
