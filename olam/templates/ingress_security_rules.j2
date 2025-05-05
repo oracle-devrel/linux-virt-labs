@@ -99,4 +99,10 @@ instance_ingress_security_rules:
       destination_port_range:
         max: 8080
         min: 8080
+  - source: "0.0.0.0/0"
+    protocol: 6
+    tcp_options:
+      destination_port_range:
+        max: 8443
+        min: 8443
 {% endif %}
