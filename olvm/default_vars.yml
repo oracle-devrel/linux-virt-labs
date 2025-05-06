@@ -43,3 +43,13 @@ use_vnc_on_engine: false
 install_engine: false
 copy_engine_publickey: false
 copy_ova_template: false
+
+pip_proxy_env:
+#  http_proxy: 'http://www.example.com:80
+#  https_proxy: 'https://www.example.com:80'
+
+proxy_env:
+#  http_proxy: 'www.example.com:80'
+#  https_proxy: 'www.example.com:80'
+#  ftp_proxy: 'www.example.com:80'
+#  no_proxy: 'localhost,127.0.0.1,example.com'

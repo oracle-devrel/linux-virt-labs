@@ -22,6 +22,7 @@
         state: present
       retries: 5
       delay: 10
+      environment: "{{ proxy_env }}"
 
     - name: Set ovirt-4.5 repo to public YUM mirror
       community.general.ini_file:
@@ -58,6 +59,7 @@
       run_once: true
       retries: 5
       delay: 10
+      environment: "{{ proxy_env }}"
 
     - name: Install additional packages for ansible # noqa: run-once[task]
       ansible.builtin.dnf:
@@ -72,12 +74,14 @@
         - ansible_distribution_major_version == '8'
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
+      environment: "{{ proxy_env }}"
 
     - name: Install pexpect using pip # noqa: run-once[task]
       ansible.builtin.pip:
         name: pexpect
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
+      environment: "{{ pip_proxy_env }}"
 
     - name: Check if OLVM Eingine is installed # noqa: run-once[task]
       ansible.builtin.stat:
