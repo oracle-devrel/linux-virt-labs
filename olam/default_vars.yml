@@ -29,6 +29,8 @@ add_pah_ports: false
 use_freeipa: false
 use_git: false
 add_cluster_ports: false
+use_haproxy: false
+add_haproxy_ports: false
 
 use_kvm: false
 create_vm: false
