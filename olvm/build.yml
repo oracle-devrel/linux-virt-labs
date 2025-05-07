@@ -201,13 +201,18 @@
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
 
+- name: Print SSH proxy command
+  ansible.builtin.debug:
+    msg: "SSH Proxy: {{ ssh_proxy_cmd | default(omit) }}"
+  when: debug_enabled
+
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
     ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default(omit) }}"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
     instance_ocid: "{{ my_instance_id }}"

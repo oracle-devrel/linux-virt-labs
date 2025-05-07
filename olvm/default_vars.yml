@@ -44,6 +44,8 @@ install_engine: false
 copy_engine_publickey: false
 copy_ova_template: false
 
+# ssh_proxy_cmd: '-o ProxyCommand="nc --proxy www.example.com:80 %h %p"'
+
 # pip_proxy_env:
 #   http_proxy: 'http://www.example.com:80
 #   https_proxy: 'https://www.example.com:80'
