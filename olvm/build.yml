@@ -249,6 +249,6 @@
     instance_name: "{{ instance_display_name }}"
     instance_ansible_user: opc
     instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
     instance_ansible_host: "{{ instance_public_ip }}"
     instance_ansible_port: 22
