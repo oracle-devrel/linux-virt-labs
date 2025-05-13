@@ -4,20 +4,14 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: OLVM Engine application connection test
+- name: Wait for KVM Hosts to be Up
   hosts: olvm
-
+  gather_facts: false
   vars_files:
     - default_vars.yml
+    - oci_vars.yml
 
   tasks:
-
-    - name: Download engine ca certificate
-      ansible.builtin.get_url:
-        url: "https://{{ engine_fqdn }}/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
-        dest: "{{ ansible_env.HOME + '/pki-resource' }}"
-        mode: '0664'
-        validate_certs: false
 
     - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
       ovirt.ovirt.ovirt_auth:
@@ -31,13 +25,19 @@
       tags:
         - always
 
-    - name: Show connection information
-      ansible.builtin.debug:
-        msg: "Connected to the OLVM Engine application at {{ auth_connection.ansible_facts.ovirt_auth.url }}"
+    - name: Gather host information until it's up
+      ovirt.ovirt.host_info:
+        pattern: name=olkvm*
+      register: host_info
+      until:
+        - host_info.ovirt_hosts | length > 0
+        - host_info.ovirt_hosts[ {{ ansible_loop.index0 }} ].status == "up"
+      loop: "{{ groups['kvm'] }}"
+      loop_control:
+        extended: true
+      retries: 30  # Number of times to retry
+      delay: 10    # Delay between retries in seconds
 
-    - name: Disconnect from the OLVM Engine application
-      ovirt.ovirt.ovirt_auth:
-        state: absent
-        ovirt_auth: "{{ ovirt_auth }}"
-      tags:
-        - always
+    - name: Check if the host is up
+      debug:
+        msg: "Host {{ host_name }} is up and running"

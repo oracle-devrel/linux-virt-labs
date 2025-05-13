@@ -19,7 +19,7 @@
         mode: '0664'
         validate_certs: false
 
-    - name: Connect to the OLVM Engine application
+    - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
       ovirt.ovirt.ovirt_auth:
         url: "{{ engine_url }}"
         username: "{{ engine_user }}"

@@ -19,7 +19,7 @@
         mode: '0664'
         validate_certs: false
 
-    - name: Connect to the OLVM Engine application
+    - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
       ovirt.ovirt.ovirt_auth:
         url: "{{ engine_url }}"
         username: "{{ engine_user }}"
@@ -38,10 +38,14 @@
         address: "vdsm0{{ ansible_loop.index0 + 1 }}.{{ my_subnet2_domain_name }}"
         auth: "{{ ovirt_auth }}"
         timeout: 2200
+        poll_interval: 10
         power_management_enabled: false
         public_key: true
         reboot_after_installation: false
+        activate: true
       loop: "{{ groups['kvm'] }}"
+      loop_control:
+        extended: true
       async: 2200
       poll: 0
       register: kvm_sleeper
