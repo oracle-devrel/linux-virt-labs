@@ -6,7 +6,6 @@
 
 - name: Wait for KVM Hosts to be Up
   hosts: olvm
-  gather_facts: false
   vars_files:
     - default_vars.yml
     - oci_vars.yml
@@ -25,19 +24,36 @@
       tags:
         - always
 
-    - name: Gather host information until it's up
-      ovirt.ovirt.host_info:
+    - name: Gather host inforamtion
+      ovirt.ovirt.ovirt_host_info:
         pattern: name=olkvm*
+        auth: "{{ ovirt_auth }}"
+      register: host_info
+      when: debug_enabled
+
+    - name: Print host_info
+      ansible.builtin.debug:
+        msg: "{{ host_info.ovirt_hosts }}"
+      when: debug_enabled
+
+    - name: Gather host information until it's up
+      ovirt.ovirt.ovirt_host_info:
+        pattern: name=olkvm*
+        auth: "{{ ovirt_auth }}"
       register: host_info
       until:
         - host_info.ovirt_hosts | length > 0
-        - host_info.ovirt_hosts[ {{ ansible_loop.index0 }} ].status == "up"
+        - host_info.ovirt_hosts[ ansible_loop.index0 ].status == "up"
       loop: "{{ groups['kvm'] }}"
       loop_control:
         extended: true
       retries: 30  # Number of times to retry
       delay: 10    # Delay between retries in seconds
 
-    - name: Check if the host is up
-      debug:
-        msg: "Host {{ host_name }} is up and running"
+    - name: Print host status
+      ansible.builtin.debug:
+        msg: "Host: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].name }} Status: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].status }}"
+      loop: "{{ groups['kvm'] }}"
+      loop_control:
+        extended: true
+      when: debug_enabled
