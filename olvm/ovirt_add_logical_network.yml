@@ -26,7 +26,7 @@
 
     - name: Create VM logical network
       ovirt.ovirt.ovirt_network:
-        datacenter: Default
+        data_center: Default
         auth: "{{ ovirt_auth }}"
         name: l2-vm-network
         vm_network: true
@@ -36,6 +36,7 @@
 
     - name: Assign vlan to host interface
       ovirt.ovirt.ovirt_host_network:
+        auth: "{{ ovirt_auth }}"
         name: "olkvm0{{ ansible_loop.index0 + 1 }}"
         interface: ens5
         networks:
@@ -43,7 +44,7 @@
       loop: "{{ groups['kvm'] }}"
       loop_control:
         extended: true
-        
+
     - name: Disconnect from the OLVM Engine application
       ovirt.ovirt.ovirt_auth:
         state: absent
