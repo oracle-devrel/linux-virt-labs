@@ -1,0 +1,83 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+
+- name: Get multipath disk lun id
+  hosts: kvm
+  become: yes
+
+  tasks:
+
+  - name: Get multipath disk information
+    ansible.builtin.command: multipath -ll
+    register: multipath_output
+
+  - name: Extract LUN IDs
+    ansible.builtin.set_fact:
+      lun_ids: "{{ multipath_output.stdout_lines | map('regex_search', 'dm-[0-9]+.*?(?:lun|WWID)[ =:]+([^ ]+)') | select('string') | list }}"
+
+  - name: Display LUN IDs
+    ansible.builtin.debug:
+      msg: "LUN IDs: {{ lun_ids }}"
+
+  - name: Pause play
+    ansible.builtin.pause:
+  
+  - name: Get specific LUN ID details (optional)
+    ansible.builtin.command: multipath -l {{ item }}
+    register: specific_lun_output
+    loop: "{{ lun_ids }}"
+    when: lun_ids | length > 0
+
+  - name: Display specific LUN details (optional)
+    ansible.builtin.debug:
+      msg: "Details for LUN {{ item.item }}: {{ item.stdout }}"
+    loop: "{{ specific_lun_output.results }}"
+    when: item is defined and item.stdout != ''
+
+  
+
+- name: Add storage domain
+  hosts: olvm
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+
+  tasks:
+
+    - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
+      ovirt.ovirt.ovirt_auth:
+        url: "{{ engine_url }}"
+        username: "{{ engine_user }}"
+        password: "{{ engine_pass }}"
+        ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+        insecure: true
+      when: ovirt_auth is undefined or not ovirt_auth
+      register: auth_connection
+      tags:
+        - always
+
+    - name: Create storage domain
+      ovirt.ovirt.ovirt_storage_domain:
+        auth: "{{ ovirt_auth }}"
+        data_center: Default
+        domain_function: data
+        fcp:
+          - lun_id: ""
+        host: "olkvm0{{ ansible_loop.index0 + 1 }}"
+        name: "amd-storage-domain-01"
+        timeout: 2200
+        poll_interval: 10
+      loop: "{{ groups['kvm'] }}"
+      loop_control:
+        extended: true
+
+    - name: Disconnect from the OLVM Engine application
+      ovirt.ovirt.ovirt_auth:
+        state: absent
+        ovirt_auth: "{{ ovirt_auth }}"
+      tags:
+        - always

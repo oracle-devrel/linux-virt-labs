@@ -26,13 +26,26 @@
 
     - name: Create VM logical network
       ovirt.ovirt.ovirt_network:
-        data_center: Default
         auth: "{{ ovirt_auth }}"
+        data_center: Default
         name: l2-vm-network
         vm_network: true
+        clusters:
+          - name: Default
+            assigned: true
+            required: true
 
-    - name: Pause play
-      ansible.builtin.pause:
+    - name: Get logical network info
+      ovirt.ovirt.ovirt_network_info:
+        auth: "{{ ovirt_auth }}"
+        pattern: name=l2*
+      register: network_info
+      when: debug_enabled
+
+    - name: Print logical network info
+      ansible.builtin.debug:
+        msg: "{{ network_info.ovirt_networks }}"
+      when: debug_enabled
 
     - name: Assign vlan to host interface
       ovirt.ovirt.ovirt_host_network:
