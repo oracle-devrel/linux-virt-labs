@@ -17,28 +17,17 @@
 
   - name: Extract LUN IDs
     ansible.builtin.set_fact:
-      lun_ids: "{{ multipath_output.stdout_lines | map('regex_search', 'dm-[0-9]+.*?(?:lun|WWID)[ =:]+([^ ]+)') | select('string') | list }}"
+      lun_ids: "{{ multipath_output.stdout_lines | map('regex_search', '^([0-9a-f]{32})') | select('string') | list }}"
 
   - name: Display LUN IDs
     ansible.builtin.debug:
       msg: "LUN IDs: {{ lun_ids }}"
+    when: debug_enabled
 
-  - name: Pause play
-    ansible.builtin.pause:
-  
-  - name: Get specific LUN ID details (optional)
-    ansible.builtin.command: multipath -l {{ item }}
-    register: specific_lun_output
-    loop: "{{ lun_ids }}"
-    when: lun_ids | length > 0
-
-  - name: Display specific LUN details (optional)
-    ansible.builtin.debug:
-      msg: "Details for LUN {{ item.item }}: {{ item.stdout }}"
-    loop: "{{ specific_lun_output.results }}"
-    when: item is defined and item.stdout != ''
-
-  
+  - name: "Add lun_ids to dummy host"
+    ansible.builtin.add_host:
+      name:   "LUN_IDS_HOLDER"
+      lun_ids:  "{{ lun_ids }}"
 
 - name: Add storage domain
   hosts: olvm
@@ -66,9 +55,9 @@
         data_center: Default
         domain_function: data
         fcp:
-          - lun_id: ""
+          - lun_id: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][ ansible_loop.index0 ] }}"
         host: "olkvm0{{ ansible_loop.index0 + 1 }}"
-        name: "amd-storage-domain-01"
+        name: "amd-storage-domain-0{{ ansible_loop.index0 + 1 }}"
         timeout: 2200
         poll_interval: 10
       loop: "{{ groups['kvm'] }}"
