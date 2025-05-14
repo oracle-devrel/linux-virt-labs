@@ -7,6 +7,9 @@
 
 - name: Get multipath disk lun id
   hosts: kvm
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
   become: yes
 
   tasks:
