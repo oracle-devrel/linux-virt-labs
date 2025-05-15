@@ -1,0 +1,46 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Create and start a VM from a template
+  hosts: olvm
+  
+  vars:
+    olvm_engine_fqdn: olvm.pub.olv.oraclevcn.com
+    olvm_engine_url: https://{{ olvm_engine_fqdn }}/ovirt-engine/api
+    olvm_username: admin@ovirt@internalsso
+    olvm_password: How-2-install
+    ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+    template_name: "OL9U5_x86_64-olvm-b259"
+    vm_name: "test-ol9"
+    cluster_name: Default
+    storage_domain_name: amd-storage-domain-01
+
+  tasks:
+
+    - name: Create and start the VM # noqa: syntax-check[unknown-module]
+      ovirt.ovirt.ovirt_vm:
+        auth:
+          url: "{{ olvm_engine_url }}"
+          username: "{{ olvm_username }}"
+          password: "{{ olvm_password }}"
+          ca_file: "{{ ca_file }}"
+        name: "{{ vm_name }}"
+        state: running
+        cluster: "{{ cluster_name }}"
+        template: "{{ template_name }}"
+        storage_domain: "{{ storage_domain_name }}"
+        nics:
+          - name: nic1
+            profile_name: "l2-vm-network"
+        cloud_init:
+          dns_servers: 10.0.10.1
+          nic_boot_protocol: static
+          nic_ip_address: 10.0.10.253
+          nic_netmask: 255.255.255.0
+          nic_gateway: 10.0.10.1
+          nic_name: eth1
+          user_name: opc
+          root_password: oracle
