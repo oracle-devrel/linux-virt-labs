@@ -58,7 +58,7 @@
       tags:
         - always
 
-    - name: Print first lun_id
+    - name: Print first lun_id in the list
       ansible.builtin.debug:
         msg: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][0] }}"
       when: debug_enabled
@@ -69,7 +69,7 @@
         data_center: Default
         domain_function: data
         fcp:
-          - lun_id: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][ ansible_loop.index0 ] }}"
+          lun_id: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][ ansible_loop.index0 ] }}"
         host: "olkvm0{{ ansible_loop.index0 + 1 }}"
         name: "amd-storage-domain-0{{ ansible_loop.index0 + 1 }}"
         timeout: 2200
