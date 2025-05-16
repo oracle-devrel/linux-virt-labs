@@ -63,9 +63,17 @@
 
     - name: Add NIC to vm
       ovirt.ovirt.ovirt_nic:
+        auth: "{{ ovirt_auth }}"
         state: present
         vm: "{{ vm_name }}"
         name: nic1
         interface: virtio
         profile: l2-vm-network
         network: l2-vm-network
+
+    - name: Disconnect from the OLVM Engine application
+      ovirt.ovirt.ovirt_auth:
+        state: absent
+        ovirt_auth: "{{ ovirt_auth }}"
+      tags:
+        - always
