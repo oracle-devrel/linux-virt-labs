@@ -59,3 +59,15 @@ virtualbox_extpack_version: "7.1.2"
 ol_iso_version: "9"
 ol_update: "4"
 dwnld_ol_iso: false
+
+# ssh_proxy_cmd: '-o ProxyCommand="nc --proxy www.example.com:80 %h %p"'
+
+# pip_proxy_env:
+#   http_proxy: 'http://www.example.com:80
+#   https_proxy: 'https://www.example.com:80'
+
+# proxy_env:
+#   http_proxy: 'www.example.com:80'
+#   https_proxy: 'www.example.com:80'
+#   ftp_proxy: 'www.example.com:80'
+#   no_proxy: 'localhost,127.0.0.1,example.com'

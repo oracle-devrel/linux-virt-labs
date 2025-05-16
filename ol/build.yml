@@ -197,13 +197,45 @@
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
 
+- name: Print SSH proxy command
+  ansible.builtin.debug:
+    msg: "SSH Proxy: {{ ssh_proxy_cmd | default('') }}"
+  when: debug_enabled
+
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
     ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
-    instance_ocid: "{{ instance_id }}"
+    instance_ocid: "{{ my_instance_id }}"
+
+- name: Create host ini file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^\[{{ host_group }}'
+    line: "[{{ host_group }}]"
+    create: true
+    mode: "0664"
+  delegate_to: localhost
+  loop:
+    - engine
+    - kvm
+  loop_control:
+    loop_var: host_group
+
+- name: Add host to ini host file
+  ansible.builtin.lineinfile:
+    path: hosts
+    regexp: '^{{ instance_name }}'
+    line: >-
+      {{ instance_name }}
+      ansible_host={{ instance_ansible_host }}
+      ansible_user={{ instance_ansible_user }}
+      ansible_private_key_file={{ instance_ansible_private_key_file }}
+      ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}
+    insertafter: '^\[{{ item.value.type }}\]$'
+    create: true
