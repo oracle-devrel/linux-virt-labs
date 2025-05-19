@@ -239,3 +239,4 @@
       ansible_ssh_common_args={{ instance_ansible_ssh_common_args | quote }}
     insertafter: '^\[{{ item.value.type }}\]$'
     create: true
+    mode: "0664"
