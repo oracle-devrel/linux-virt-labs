@@ -42,7 +42,7 @@ use_secondary_hostfile: false
 use_vnc_on_engine: false
 install_engine: false
 copy_engine_publickey: false
-copy_ova_template: false
+config_olvm: false
 
 # ssh_proxy_cmd: '-o ProxyCommand="nc --proxy www.example.com:80 %h %p"'
 

@@ -365,6 +365,30 @@
   ansible.builtin.import_playbook: "provision_olvm_engine_publickey.yml"
   when: copy_engine_publickey
 
+- name: Add kvm hosts
+  ansible.builtin.import_playbook: "ovirt_add_hosts.yml"
+  when: config_olvm
+
+- name: Check availability of kvm hosts
+  ansible.builtin.import_playbook: "ovirt_check_hosts.yml"
+  when: config_olvm
+
+- name: Add and assign logical network
+  ansible.builtin.import_playbook: "ovirt_add_logical_network.yml"
+  when: config_olvm
+
+- name: Add storage domains
+  ansible.builtin.import_playbook: "ovirt_add_storage_domain.yml"
+  when: config_olvm
+
+- name: Add OL OVA template
+  ansible.builtin.import_playbook: "ovirt_import_template.yml"
+  when: config_olvm
+
+- name: Create VM from OVA template
+  ansible.builtin.import_playbook: "ovirt_create_vm_from_template.yml"
+  when: config_olvm
+
 - name: Print instances
   hosts: all
   become: true
