@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Add KVM hosts to a Cluster in the Engine server
-  hosts: olvm
+  hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml

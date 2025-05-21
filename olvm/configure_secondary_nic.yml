@@ -87,8 +87,8 @@
     - name: Get network interface
       ansible.builtin.set_fact:
         interface: "{{ item }}"
-      with_items: "{{ ansible_interfaces | reject('==', 'lo') }}"
-      when: ansible_facts[item].macaddress == mac_addr
+      with_items: "{{ ansible_interfaces | select('match', '^(ens|enp|eth)') | list }}"
+      when: ansible_facts[item].macaddress is defined and ansible_facts[item].macaddress == mac_addr
 
     - name: Assign static IP
       community.general.nmcli:

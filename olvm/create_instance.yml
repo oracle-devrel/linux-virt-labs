@@ -425,7 +425,7 @@
       oracle.oci.oci_compute_instance:
         id: "{{ hostvars[item]['instance_ocid'] }}"
         state: absent
-      loop: "{{ ansible_play_hosts_all | difference(['localhost']) }}"
+      loop: "{{ groups['all'] | difference(['localhost']) }}"
 
     - name: Delete the vlan
       oracle.oci.oci_network_vlan:
