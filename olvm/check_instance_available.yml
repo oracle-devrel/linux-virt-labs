@@ -13,13 +13,6 @@
 
   tasks:
 
-    - name: Wait for connection to systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
-      when: ssh_proxy_cmd is undefined
-
     - name: Wait for systems to become reachable using ssh
       ansible.builtin.wait_for:
         port: 22
@@ -27,7 +20,6 @@
         search_regex: OpenSSH
         delay: 10
         timeout: 300
-      when: ssh_proxy_cmd is defined
 
     - name: Get a set of all available facts
       ansible.builtin.setup:

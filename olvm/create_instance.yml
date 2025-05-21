@@ -11,8 +11,6 @@
   vars:
     oci_config_section: DEFAULT
     ad_placement: 1
-    compartment_name:
-    compartment_id:
     compute_instances:
       1:
         instance_name: "olvm"
@@ -28,7 +26,6 @@
     os_version: "8"
     instance_shape: "VM.Standard.E4.Flex"
     private_key: "id_rsa"
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
     debug_enabled: false
 
   tasks:
@@ -41,6 +38,11 @@
       ansible.builtin.set_fact:
         my_tenancy_id: "{{ lookup('ini', 'tenancy section={{ oci_config_section }} file={{ oci_config_file }}') }}"
 
+    - name: Print tenacy id
+      ansible.builtin.debug:
+        msg: "{{ my_tenancy_id }}"
+      when: debug_enabled
+
     - name: Get region id
       ansible.builtin.set_fact:
         my_region_id: "{{ lookup('ini', 'region section={{ oci_config_section }} file={{ oci_config_file }}') }}"
@@ -52,6 +54,8 @@
 
     - name: Get list availbility domains
       oracle.oci.oci_identity_availability_domain_facts:
+        config_file_location: "{{ coi_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_tenancy_id }}"
         region: "{{ my_region_id }}"
       register: result
@@ -82,7 +86,7 @@
         env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARTMENT_OCID') }}"
         ini_lookup: "{{ lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}') }}"
       ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
+        my_compartment_id: "{{ compartment_id | default(env_lookup, true | default(ini_lookup, true)) }}"
 
     - name: Print compartment id
       ansible.builtin.debug:
@@ -414,8 +418,6 @@
   hosts: localhost
   vars_files:
     - default_vars.yml
-  vars:
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
 
   tasks:
 
