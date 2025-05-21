@@ -5,7 +5,7 @@
 ---
 
 - name: Copy OLVM engine public key to kvm host
-  hosts: all
+  hosts: engine:kvm:!localhost
   order: sorted
   vars_files:
     - default_vars.yml
