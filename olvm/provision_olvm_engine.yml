@@ -82,6 +82,8 @@
       delegate_to: "{{ groups['engine'][0] }}"
       run_once: true
       environment: "{{ pip_proxy_env | default({}) }}"
+      vars:
+        ansible_python_interpreter: "/usr/bin/python3"
 
     - name: Check if OLVM Engine is installed # noqa: run-once[task]
       ansible.builtin.stat:

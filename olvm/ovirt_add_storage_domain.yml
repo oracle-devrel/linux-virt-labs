@@ -23,7 +23,7 @@
 
   - name: Extract LUN IDs
     ansible.builtin.set_fact:
-      lun_ids: "{{ multipath_output.stdout_lines | map('regex_search', '^([0-9a-f]{33})') | select('string') | list }}"
+      lun_ids: "{{ multipath_output.stdout_lines | select('search', '^[a-f0-9]') | map('split', ' ') | map(attribute=0) | list }}"
     run_once: true
 
   - name: Display LUN IDs
