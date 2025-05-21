@@ -394,7 +394,7 @@
   when: config_olvm
 
 - name: Print instances
-  hosts: all
+  hosts: all:!localhost
   become: true
   gather_facts: false
 
