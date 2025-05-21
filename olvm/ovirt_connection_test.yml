@@ -6,7 +6,6 @@
 
 - name: OLVM Engine application connection test
   hosts: olvm
-
   vars_files:
     - default_vars.yml
 

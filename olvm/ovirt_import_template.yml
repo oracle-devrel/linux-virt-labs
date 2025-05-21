@@ -6,6 +6,8 @@
 
 - name: Upload ova image to storage domain
   hosts: olvm
+  vars_files:
+    - default_vars.yml
   
   vars:
     ova_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/OL9U5_x86_64-olvm-b259.ova
