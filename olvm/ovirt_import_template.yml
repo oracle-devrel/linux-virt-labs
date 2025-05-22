@@ -8,8 +8,8 @@
   hosts: olvm
   vars_files:
     - default_vars.yml
-  
   vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
     ova_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/OL9U5_x86_64-olvm-b259.ova
     ova_path: "/tmp/OL9U5_x86_64-olvm-b259.ova"
     olvm_engine_fqdn: olvm.pub.olv.oraclevcn.com

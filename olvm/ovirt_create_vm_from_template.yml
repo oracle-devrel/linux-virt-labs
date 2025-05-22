@@ -9,8 +9,8 @@
   vars_files:
     - default_vars.yml
     - oci_vars.yml
-
   vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
     template_name: "OL9U5_x86_64-olvm-b259"
     vm_name: "test-ol9"
     cluster_name: Default

@@ -43,7 +43,9 @@
   vars_files:
     - default_vars.yml
     - oci_vars.yml
-
+  vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
+    
   tasks:
 
     - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
