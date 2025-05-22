@@ -16,6 +16,8 @@ instance_shape: "VM.Standard.E4.Flex"
 subnet1_cidr_block: "10.0.0.0/24"
 subnet2_cidr_block: "10.0.1.0/24"
 vlan_cidr_block: 10.0.10.0/24
+oci_config_section: DEFAULT
+ad_placement: 1
 
 username: "oracle"
 usergroup: "{{ username }}"

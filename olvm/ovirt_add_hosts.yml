@@ -58,3 +58,16 @@
         ovirt_auth: "{{ ovirt_auth }}"
       tags:
         - always
+
+- name: Create .olvm-provisioned file in /tmp
+  hosts: engine:kvm
+  vars_files:
+    - default_vars.yml
+
+  tasks:
+
+    - name: Create provisioned status file
+      ansible.builtin.file:
+        path: /tmp/.olvm-provisioned
+        state: touch
+        mode: '0755'
