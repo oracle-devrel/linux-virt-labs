@@ -125,3 +125,5 @@
       delegate_to: "{{ item[1] }}"
       loop: "{{ ['libvirt', 'libvirt-tls', 'cockpit'] | product(groups['kvm']) | list }}"
       run_once: true
+      vars:
+        ansible_python_interpreter: "/usr/bin/python3"
