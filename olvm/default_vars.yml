@@ -37,6 +37,7 @@ engine_fqdn: olvm.pub.olv.oraclevcn.com
 engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
 engine_user: admin@ovirt@internalsso
 engine_pass: How-2-install
+ovirt_python_version: python3.12
 # engine_cafile: /tmp/pki-resource
 use_secondary_hostfile: false
 use_vnc_on_engine: false

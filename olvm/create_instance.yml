@@ -394,7 +394,7 @@
   when: config_olvm
 
 - name: Print instances
-  hosts: all:!localhost
+  hosts: engine:kvm
   become: true
   gather_facts: false
 
