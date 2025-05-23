@@ -1,0 +1,41 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Delete a failed host
+  hosts: olvm
+  vars_files:
+    - default_vars.yml
+    - oci_vars.yml
+  vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
+
+  tasks:
+
+    - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
+      ovirt.ovirt.ovirt_auth:
+        url: "{{ engine_url }}"
+        username: "{{ engine_user }}"
+        password: "{{ engine_pass }}"
+        ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+        insecure: true
+      when: ovirt_auth is undefined or not ovirt_auth
+      register: auth_connection
+      tags:
+        - always
+
+    - name: Remove the specific host
+      ovirt.ovirt.ovirt_host:
+        auth: "{{ ovirt_auth }}"
+        state: absent
+        name: "{{ name_of_host }}"
+        force: true
+
+    - name: Disconnect from the OLVM Engine application
+      ovirt.ovirt.ovirt_auth:
+        state: absent
+        ovirt_auth: "{{ ovirt_auth }}"
+      tags:
+        - always

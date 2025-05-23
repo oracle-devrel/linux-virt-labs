@@ -4,7 +4,7 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Wait for KVM Hosts to be Up
+- name: Get list of kvm hosts
   hosts: olvm
   vars_files:
     - default_vars.yml
@@ -31,34 +31,10 @@
         pattern: name=olkvm*
         auth: "{{ ovirt_auth }}"
       register: host_info
-      when: debug_enabled
 
     - name: Print host_info
       ansible.builtin.debug:
         msg: "{{ host_info.ovirt_hosts }}"
-      when: debug_enabled
-
-    - name: Gather host information until it's up
-      ovirt.ovirt.ovirt_host_info:
-        pattern: name=olkvm*
-        auth: "{{ ovirt_auth }}"
-      register: host_info
-      until:
-        - host_info.ovirt_hosts | length > 0
-        - host_info.ovirt_hosts[ ansible_loop.index0 ].status == "up"
-      loop: "{{ groups['kvm'] }}"
-      loop_control:
-        extended: true
-      retries: 40  # Number of times to retry
-      delay: 15    # Delay between retries in seconds
-
-    - name: Print host status
-      ansible.builtin.debug:
-        msg: "Host: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].name }} Status: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].status }}"
-      loop: "{{ groups['kvm'] }}"
-      loop_control:
-        extended: true
-      when: debug_enabled
 
     - name: Disconnect from the OLVM Engine application
       ovirt.ovirt.ovirt_auth:
