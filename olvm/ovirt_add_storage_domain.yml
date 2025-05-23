@@ -39,7 +39,7 @@
     run_once: true
 
 - name: Add storage domain
-  hosts: olvm
+  hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml

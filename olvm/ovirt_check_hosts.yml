@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Wait for KVM Hosts to be Up
-  hosts: olvm
+  hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml

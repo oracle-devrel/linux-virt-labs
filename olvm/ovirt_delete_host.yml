@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Delete a failed host
-  hosts: olvm
+  hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml
