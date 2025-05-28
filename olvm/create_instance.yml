@@ -365,7 +365,7 @@
     - name: Add private subnet id to state file
       ansible.builtin.lineinfile:
         path: .ansible-state
-        line: "compartment_ocid: {{ my_subnet2_id }}"
+        line: "private_subnet_ocid: {{ my_subnet2_id }}"
         mode: "0755"
 
     - name: Set private subnet domain_name

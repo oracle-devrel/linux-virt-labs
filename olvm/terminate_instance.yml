@@ -4,68 +4,94 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Terminate instances and delete OCI resources
+- name: Terminate instances and delete oci resources
   hosts: localhost
   vars_files:
     - default_vars.yml
 
   tasks:
 
-    - name: Terminate the instances
+    - name: Check if ansible state file exists
+      ansible.builtin.stat:
+        path: .ansible-state
+      register: state_exists
+
+    - name: Fail if ansible state file does not exist
+      ansible.builtin.fail:
+        msg: "Exit instance termination as an instance doesn't exist."
+      when: not state_exists.stat.exists
+
+    - name: Read ansible.state file
+      ansible.builtin.set_fact:
+        ocid_state: "{{ lookup('file', '.ansible-state') | from_yaml }}"
+
+    - name: Delete the instances
       oracle.oci.oci_compute_instance:
-        id: "{{ hostvars[item]['instance_ocid'] }}"
+        id: "{{ item.value }}"
         state: absent
-      loop: "{{ groups['engine'] + groups['kvm'] }}"
+      loop: "{{ ocid_state | dict2items | selectattr('key', 'match', '^instance.*') }}"
+
+    - name: Delete the storage volumes
+      oracle.oci.oci_blockstorage_volume:
+        volume_id: "{{ item.value }}"
+        state: absent
+      loop: "{{ ocid_state | dict2items | selectattr('key', 'match', '^amd-storage.*') }}"
 
     - name: Delete the vlan
       oracle.oci.oci_network_vlan:
-        vlan_id: "{{ my_vlan_id }}"
+        vlan_id: "{{ ocid_state.vlan_ocid }}"
         state: absent
 
     - name: Delete network_security_group
       oracle.oci.oci_network_security_group:
-        network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
+        network_security_group_id: "{{ ocid_state.l2_nsg_ocid }}"
         state: absent
 
     - name: Delete the subnet2
       oracle.oci.oci_network_subnet:
-        id: "{{ my_subnet2_id }}"
+        id: "{{ ocid_state.private_subnet_ocid }}"
         state: absent
 
     - name: Delete the subnet1
       oracle.oci.oci_network_subnet:
-        id: "{{ my_subnet1_id }}"
+        id: "{{ ocid_state.public_subnet_ocid }}"
         state: absent
 
     - name: Delete the security list
       oracle.oci.oci_network_security_list:
-        id: "{{ my_security_list_id }}"
+        id: "{{ ocid_state.security_list_ocid }}"
         state: absent
 
     - name: Delete the private route table
       oracle.oci.oci_network_route_table:
-        id: "{{ my_private_rt_id }}"
+        id: "{{ ocid_state.private_route_table_ocid }}"
         state: absent
 
     - name: Delete the public route table
       oracle.oci.oci_network_route_table:
-        id: "{{ my_public_rt_id }}"
+        id: "{{ ocid_state.public_route_table_ocid }}"
         state: absent
 
     - name: Delete the Service Gateway
       oracle.oci.oci_network_service_gateway:
-        id: "{{ my_service_gateway_id }}"
+        id: "{{ ocid_state.service_gateway_ocid }}"
         state: absent
 
     - name: Delete the Internet Gateway
       oracle.oci.oci_network_internet_gateway:
-        id: "{{ my_internet_gateway_id }}"
+        id: "{{ ocid_state.internet_gateway_ocid }}"
         state: absent
 
     - name: Delete the VCN
       oracle.oci.oci_network_vcn:
-        vcn_id: "{{ my_vcn_id }}"
+        vcn_id: "{{ ocid_state.vcn_ocid }}"
         state: absent
+
+    - name: Prompt user to confirm removal of artifacts
+      ansible.builtin.pause:
+        prompt: "Are you sure you want to remove these artifacts? (Y/N)"
+        echo: true
+      register: confirm_removal
 
     - name: Remove artifacts
       ansible.builtin.file:
@@ -75,3 +101,5 @@
         - oci_vars.yml
         - buffer
         - hosts
+        - .ansible-state
+      when: confirm_removal.user_response | lower in ['y', 'yes']
