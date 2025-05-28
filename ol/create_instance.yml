@@ -49,6 +49,11 @@
       ansible.builtin.set_fact:
         my_tenancy_id: "{{ lookup('ini', 'tenancy section={{ oci_config_section }} file={{ oci_config_file }}') }}"
 
+    - name: Print tenancy id
+      ansible.builtin.debug:
+        msg: "{{ my_tenancy_id }}"
+      when: debug_enabled
+
     - name: Get region id
       ansible.builtin.set_fact:
         my_region_id: "{{ lookup('ini', 'region section={{ oci_config_section }} file={{ oci_config_file }}') }}"

@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Create a host file for secondary nic hostnames
-  hosts: all
+  hosts: engine:kvm:!localhost
   vars_files:
     - default_vars.yml
     - oci_vars.yml
@@ -31,7 +31,7 @@
         regexp: "^.*vdsm.*$"
         line: "{{ dns_ip.stdout }} vdsm.{{ my_subnet2_domain_name }} vdsm"
       delegate_to: "{{ item }}"
-      loop: "{{ groups['all'] }}"
+      loop: "{{ ansible_play_hosts_all | difference(['localhost']) }}"
       become: true
 
     - name: Get kvm host IP address # noqa: run-once[task]
@@ -54,5 +54,5 @@
         block: "{{ lookup('template', 'etc_hosts_kvm.j2') }}"
         marker: "# {mark} ANSIBLE MANAGED BLOCK kvm"
       delegate_to: "{{ item }}"
-      loop: "{{ groups['all'] }}"
+      loop: "{{ ansible_play_hosts_all | difference(['localhost']) }}"
       become: true

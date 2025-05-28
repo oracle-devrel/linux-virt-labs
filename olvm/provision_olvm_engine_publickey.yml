@@ -5,7 +5,7 @@
 ---
 
 - name: Copy OLVM engine public key to kvm host
-  hosts: all
+  hosts: engine:kvm:!localhost
   order: sorted
   vars_files:
     - default_vars.yml
@@ -38,17 +38,3 @@
       delegate_to: "{{ item }}"
       loop: "{{ groups['kvm'] }}"
       run_once: true
-
-    - name: Download ol9 ova image # noqa: run-once[task]
-      ansible.builtin.get_url:
-        url: "{{ base_image_url }}"
-        dest: "/tmp/{{ base_image_name }}"
-        checksum: "sha256:{{ base_image_sha }}"
-        mode: "0664"
-      vars:
-        base_image_name: OL9U5_x86_64-olvm-b253.ova
-        base_image_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/{{ base_image_name }}
-        base_image_sha: dc5befa484c9aeb51fb0244d5926d53ab482453bd702512066734d8cb2c20600
-      delegate_to: "{{ groups['kvm'] | sort | first }}"
-      run_once: true
-      when: copy_ova_template

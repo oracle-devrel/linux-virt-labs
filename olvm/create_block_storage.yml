@@ -20,6 +20,12 @@
   ansible.builtin.set_fact:
     volume_id: "{{ kvm_create_block.volume.id }}"
 
+- name: Add storage id to state file
+  ansible.builtin.lineinfile:
+    path: .ansible-state
+    line: "{{ storage_name }}_ocid: {{ volume_id }}"
+    mode: "0755"
+
 - name: Attach shared block volume for vm storage
   oracle.oci.oci_compute_volume_attachment:
     instance_id: "{{ my_instance_id }}"

@@ -48,6 +48,12 @@
   ansible.builtin.set_fact:
     my_instance_id: "{{ result.instance.id }}"
 
+- name: Add instance id to state file
+  ansible.builtin.lineinfile:
+    path: .ansible-state
+    line: "instance{{ ansible_loop.index0 + 1 }}_ocid: {{ my_instance_id }}"
+    mode: "0755"
+
 - name: Set the compute instance display_name
   ansible.builtin.set_fact:
     instance_display_name: "{{ result.instance.display_name }}"
@@ -201,13 +207,18 @@
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
 
+- name: Print SSH proxy command
+  ansible.builtin.debug:
+    msg: "SSH Proxy: {{ ssh_proxy_cmd | default('') }}"
+  when: debug_enabled
+
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
     name: "{{ instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
     ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
     instance_ocid: "{{ my_instance_id }}"
@@ -244,6 +255,6 @@
     instance_name: "{{ instance_display_name }}"
     instance_ansible_user: opc
     instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
-    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
     instance_ansible_host: "{{ instance_public_ip }}"
     instance_ansible_port: 22

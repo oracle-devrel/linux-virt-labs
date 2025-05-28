@@ -20,11 +20,21 @@
     #     search_regex: OpenSSH
     #     delay: 10
 
-    - name: Wait for system to become reachable
+    - name: Wait for connection to systems to become reachable
       ansible.builtin.wait_for_connection:
       vars:
         python_version: "/usr/bin/python3"
         ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+      when: ssh_proxy_cmd is undefined
+
+    - name: Wait for systems to become reachable using ssh
+      ansible.builtin.wait_for:
+        port: 22
+        host: '{{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}'
+        search_regex: OpenSSH
+        delay: 10
+        timeout: 300
+      when: ssh_proxy_cmd is defined
 
     # - name: Run ansible adhoc ping module
     #   ansible.builtin.command: ansible all -i '{{ hostvars[inventory_hostname].ansible_host }},' -m ping

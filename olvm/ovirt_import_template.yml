@@ -1,0 +1,48 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Upload ova image to storage domain
+  hosts: engine
+  vars_files:
+    - default_vars.yml
+  vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
+    ova_url: https://yum.oracle.com/templates/OracleLinux/OL9/u5/x86_64/OL9U5_x86_64-olvm-b259.ova
+    ova_path: "/tmp/OL9U5_x86_64-olvm-b259.ova"
+    olvm_engine_fqdn: olvm.pub.olv.oraclevcn.com
+    olvm_engine_url: https://{{ olvm_engine_fqdn }}/ovirt-engine/api
+    olvm_username: admin@ovirt@internalsso
+    olvm_password: How-2-install
+    ca_file: "{{ ansible_env.HOME + '/pki-resource' }}"
+    template_name: "OL9U5_x86_64-olvm-b259"
+    cluster_name: Default
+    storage_domain_name: amd-storage-domain-01
+
+  tasks:
+
+    - name: Download OVA file
+      ansible.builtin.get_url:
+        url: "{{ ova_url }}"
+        dest: "{{ ova_path }}"
+        mode: '0644'
+      delegate_to: "{{ groups['kvm'][0] }}"
+
+    - name: Import OVA template # noqa: syntax-check[unknown-module]
+      ovirt_template:
+        auth:
+          url: "{{ olvm_engine_url }}"
+          username: "{{ olvm_username }}"
+          password: "{{ olvm_password }}"
+          ca_file: "{{ ca_file }}"
+        name: "{{ template_name }}"
+        state: present
+        cluster: "{{ cluster_name }}"
+        timeout: 1800
+        poll_interval: 30
+        kvm:
+          host: "{{ groups['kvm'][0] }}"
+          url: "ova://{{ ova_path }}"
+          storage_domain: "{{ storage_domain_name }}"

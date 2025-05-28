@@ -5,10 +5,11 @@
 # See LICENSE.TXT for details.
 
 - name: OLVM Engine application connection test
-  hosts: olvm
-
+  hosts: engine
   vars_files:
     - default_vars.yml
+  vars:
+    ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
 
   tasks:
 
@@ -19,7 +20,7 @@
         mode: '0664'
         validate_certs: false
 
-    - name: Connect to the OLVM Engine application
+    - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
       ovirt.ovirt.ovirt_auth:
         url: "{{ engine_url }}"
         username: "{{ engine_user }}"

@@ -16,6 +16,8 @@ instance_shape: "VM.Standard.E4.Flex"
 subnet1_cidr_block: "10.0.0.0/24"
 subnet2_cidr_block: "10.0.1.0/24"
 vlan_cidr_block: 10.0.10.0/24
+oci_config_section: DEFAULT
+ad_placement: 1
 
 username: "oracle"
 usergroup: "{{ username }}"
@@ -37,9 +39,22 @@ engine_fqdn: olvm.pub.olv.oraclevcn.com
 engine_url: https://{{ engine_fqdn }}/ovirt-engine/api
 engine_user: admin@ovirt@internalsso
 engine_pass: How-2-install
+ovirt_python_version: python3.12
 # engine_cafile: /tmp/pki-resource
 use_secondary_hostfile: false
 use_vnc_on_engine: false
 install_engine: false
 copy_engine_publickey: false
-copy_ova_template: false
+config_olvm: false
+
+# ssh_proxy_cmd: '-o ProxyCommand="nc --proxy www.example.com:80 %h %p"'
+
+# pip_proxy_env:
+#   http_proxy: 'http://www.example.com:80
+#   https_proxy: 'https://www.example.com:80'
+
+# proxy_env:
+#   http_proxy: 'www.example.com:80'
+#   https_proxy: 'www.example.com:80'
+#   ftp_proxy: 'www.example.com:80'
+#   no_proxy: 'localhost,127.0.0.1,example.com'

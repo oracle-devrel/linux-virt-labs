@@ -4,14 +4,18 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Add KVM hosts to a Cluster in the Engine server
+- name: Create and start a VM from a template
   hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml
   vars:
     ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
-    
+    template_name: "OL9U5_x86_64-olvm-b259"
+    vm_name: "test-ol9"
+    cluster_name: Default
+    storage_domain_name: amd-storage-domain-01
+
   tasks:
 
     - name: Download ca-cert
@@ -33,24 +37,39 @@
       tags:
         - always
 
-    - name: Add KVM host
-      ovirt.ovirt.ovirt_host:
-        cluster: "Default"
-        name: "olkvm0{{ ansible_loop.index0 + 1 }}"
-        address: "vdsm0{{ ansible_loop.index0 + 1 }}.{{ my_subnet2_domain_name }}"
+    - name: Create and start the VM # noqa: syntax-check[unknown-module]
+      ovirt.ovirt.ovirt_vm:
         auth: "{{ ovirt_auth }}"
-        timeout: 2200
-        poll_interval: 10
-        power_management_enabled: false
-        public_key: true
-        reboot_after_installation: false
-        activate: true
-      loop: "{{ groups['kvm'] }}"
-      loop_control:
-        extended: true
-      async: 2200
-      poll: 0
-      register: kvm_sleeper
+        name: "{{ vm_name }}"
+        state: running
+        cluster: "{{ cluster_name }}"
+        type: server
+        template: "{{ template_name }}"
+        storage_domain: "{{ storage_domain_name }}"
+        nics:
+          - name: nic1
+            interface: virtio
+            profile_name: l2-vm-network
+        cloud_init_persist: true
+        cloud_init:
+          dns_servers: 10.0.10.1
+          nic_boot_protocol: static
+          nic_ip_address: 10.0.10.253
+          nic_netmask: 255.255.255.0
+          nic_gateway: 10.0.10.1
+          nic_name: eth0
+          user_name: opc
+          root_password: oracle
+
+    - name: Add NIC to vm
+      ovirt.ovirt.ovirt_nic:
+        auth: "{{ ovirt_auth }}"
+        state: present
+        vm: "{{ vm_name }}"
+        name: nic1
+        interface: virtio
+        profile: l2-vm-network
+        network: l2-vm-network
 
     - name: Disconnect from the OLVM Engine application
       ovirt.ovirt.ovirt_auth:
@@ -58,16 +77,3 @@
         ovirt_auth: "{{ ovirt_auth }}"
       tags:
         - always
-
-- name: Create .olvm-provisioned file in /tmp
-  hosts: engine:kvm
-  vars_files:
-    - default_vars.yml
-
-  tasks:
-
-    - name: Create provisioned status file
-      ansible.builtin.file:
-        path: /tmp/.olvm-provisioned
-        state: touch
-        mode: '0755'

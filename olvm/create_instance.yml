@@ -11,8 +11,6 @@
   vars:
     oci_config_section: DEFAULT
     ad_placement: 1
-    compartment_name:
-    compartment_id:
     compute_instances:
       1:
         instance_name: "olvm"
@@ -28,7 +26,6 @@
     os_version: "8"
     instance_shape: "VM.Standard.E4.Flex"
     private_key: "id_rsa"
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
     debug_enabled: false
 
   tasks:
@@ -41,6 +38,11 @@
       ansible.builtin.set_fact:
         my_tenancy_id: "{{ lookup('ini', 'tenancy section={{ oci_config_section }} file={{ oci_config_file }}') }}"
 
+    - name: Print tenacy id
+      ansible.builtin.debug:
+        msg: "{{ my_tenancy_id }}"
+      when: debug_enabled
+
     - name: Get region id
       ansible.builtin.set_fact:
         my_region_id: "{{ lookup('ini', 'region section={{ oci_config_section }} file={{ oci_config_file }}') }}"
@@ -52,6 +54,8 @@
 
     - name: Get list availbility domains
       oracle.oci.oci_identity_availability_domain_facts:
+        config_file_location: "{{ coi_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_tenancy_id }}"
         region: "{{ my_region_id }}"
       register: result
@@ -79,10 +83,22 @@
 
     - name: Get compartment id from .oci/config or env OCI_COMPARTMENT_OCID
       vars:
-        env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARMENT_OCID') }}"
+        env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARTMENT_OCID') }}"
         ini_lookup: "{{ lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}') }}"
       ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
+        my_compartment_id: "{{ compartment_id | default(env_lookup, true | default(ini_lookup, true)) }}"
+
+    - name: Create oci state file
+      ansible.builtin.file:
+        path: .ansible-state
+        state: touch
+        mode: "0755"
+
+    - name: Add compartment id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "compartment_ocid: {{ my_compartment_id }}"
+        mode: "0755"
 
     - name: Print compartment id
       ansible.builtin.debug:
@@ -115,6 +131,12 @@
       ansible.builtin.set_fact:
         my_vcn_id: "{{ result.vcn.id }}"
 
+    - name: Add vcn id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "vcn_ocid: {{ my_vcn_id }}"
+        mode: "0755"
+
     - name: Create internet gateway
       oracle.oci.oci_network_internet_gateway:
         compartment_id: "{{ my_compartment_id }}"
@@ -131,6 +153,12 @@
       ansible.builtin.set_fact:
         my_internet_gateway_id: "{{ result.internet_gateway.id }}"
 
+    - name: Add internet_gateway id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "internet_gateway_ocid: {{ my_internet_gateway_id }}"
+        mode: "0755"
+
     - name: Get list of services
       oracle.oci.oci_network_service_facts:
       register: result
@@ -146,6 +174,12 @@
     - name: Set service id
       ansible.builtin.set_fact:
         my_service_id: "{{ result.services[0].id }}"
+
+    - name: Add service id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "service_ocid: {{ my_service_id }}"
+        mode: "0755"
 
     - name: Set service cidr cidr_block
       ansible.builtin.set_fact:
@@ -164,9 +198,15 @@
       delay: 30
       until: result is not failed
 
-    - name: Set services gateway id
+    - name: Set service gateway id
       ansible.builtin.set_fact:
         my_service_gateway_id: "{{ result.service_gateway.id }}"
+
+    - name: Add service gateway id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "service_gateway_ocid: {{ my_service_gateway_id }}"
+        mode: "0755"
 
     - name: Create route table for public subnet
       oracle.oci.oci_network_route_table:
@@ -188,6 +228,12 @@
       ansible.builtin.set_fact:
         my_public_rt_id: "{{ result.route_table.id }}"
 
+    - name: Add public route table id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "public_route_table_ocid: {{ my_public_rt_id }}"
+        mode: "0755"
+
     - name: Create route table for private subnet
       oracle.oci.oci_network_route_table:
         compartment_id: "{{ my_compartment_id }}"
@@ -207,6 +253,12 @@
     - name: Set private subnet route table id
       ansible.builtin.set_fact:
         my_private_rt_id: "{{ result.route_table.id }}"
+
+    - name: Add private route table id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "private_route_table_ocid: {{ my_private_rt_id }}"
+        mode: "0755"
 
     - name: Create ingress rules yaml list
       ansible.builtin.template:
@@ -256,6 +308,12 @@
       ansible.builtin.set_fact:
         my_security_list_id: "{{ result.security_list.id }}"
 
+    - name: Add security list id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "security_list_ocid: {{ my_security_list_id }}"
+        mode: "0755"
+
     - name: Create public subnet
       oracle.oci.oci_network_subnet:
         compartment_id: "{{ my_compartment_id }}"
@@ -274,6 +332,12 @@
     - name: Set public subnet id
       ansible.builtin.set_fact:
         my_subnet1_id: "{{ result.subnet.id }}"
+
+    - name: Add public subnet id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "public_subnet_ocid: {{ my_subnet1_id }}"
+        mode: "0755"
 
     - name: Set public subnet domain_name
       ansible.builtin.set_fact:
@@ -297,6 +361,12 @@
     - name: Set private subnet id
       ansible.builtin.set_fact:
         my_subnet2_id: "{{ result.subnet.id }}"
+
+    - name: Add private subnet id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "private_subnet_ocid: {{ my_subnet2_id }}"
+        mode: "0755"
 
     - name: Set private subnet domain_name
       ansible.builtin.set_fact:
@@ -336,6 +406,8 @@
     - name: Build an instance
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
+      loop_control:
+        extended: true
 
 - name: Check if instances are available
   ansible.builtin.import_playbook: "check_instance_available.yml"
@@ -365,8 +437,32 @@
   ansible.builtin.import_playbook: "provision_olvm_engine_publickey.yml"
   when: copy_engine_publickey
 
+- name: Add kvm hosts
+  ansible.builtin.import_playbook: "ovirt_add_hosts.yml"
+  when: config_olvm
+
+- name: Check availability of kvm hosts
+  ansible.builtin.import_playbook: "ovirt_check_hosts.yml"
+  when: config_olvm
+
+- name: Add and assign logical network
+  ansible.builtin.import_playbook: "ovirt_add_logical_network.yml"
+  when: config_olvm
+
+- name: Add storage domains
+  ansible.builtin.import_playbook: "ovirt_add_storage_domain.yml"
+  when: config_olvm
+
+- name: Add OL OVA template
+  ansible.builtin.import_playbook: "ovirt_import_template.yml"
+  when: config_olvm
+
+- name: Create VM from OVA template
+  ansible.builtin.import_playbook: "ovirt_create_vm_from_template.yml"
+  when: config_olvm
+
 - name: Print instances
-  hosts: all
+  hosts: engine:kvm
   become: true
   gather_facts: false
 
@@ -387,75 +483,4 @@
           Aborting at this stage requires manual removal of all cloud resources this playbook creates.
 
 - name: Terminate instances and delete OCI resources
-  hosts: localhost
-  vars_files:
-    - default_vars.yml
-  vars:
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
-
-  tasks:
-
-    - name: Terminate the instances
-      oracle.oci.oci_compute_instance:
-        id: "{{ hostvars[item]['instance_ocid'] }}"
-        state: absent
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-
-    - name: Delete the vlan
-      oracle.oci.oci_network_vlan:
-        vlan_id: "{{ my_vlan_id }}"
-        state: absent
-
-    - name: Delete network_security_group
-      oracle.oci.oci_network_security_group:
-        network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
-        state: absent
-
-    - name: Delete the subnet2
-      oracle.oci.oci_network_subnet:
-        id: "{{ my_subnet2_id }}"
-        state: absent
-
-    - name: Delete the subnet1
-      oracle.oci.oci_network_subnet:
-        id: "{{ my_subnet1_id }}"
-        state: absent
-
-    - name: Delete the security list
-      oracle.oci.oci_network_security_list:
-        id: "{{ my_security_list_id }}"
-        state: absent
-
-    - name: Delete the private route table
-      oracle.oci.oci_network_route_table:
-        id: "{{ my_private_rt_id }}"
-        state: absent
-
-    - name: Delete the public route table
-      oracle.oci.oci_network_route_table:
-        id: "{{ my_public_rt_id }}"
-        state: absent
-
-    - name: Delete the Service Gateway
-      oracle.oci.oci_network_service_gateway:
-        id: "{{ my_service_gateway_id }}"
-        state: absent
-
-    - name: Delete the Internet Gateway
-      oracle.oci.oci_network_internet_gateway:
-        id: "{{ my_internet_gateway_id }}"
-        state: absent
-
-    - name: Delete the VCN
-      oracle.oci.oci_network_vcn:
-        vcn_id: "{{ my_vcn_id }}"
-        state: absent
-
-    - name: Remove artifacts
-      ansible.builtin.file:
-        state: absent
-        path: "{{ item }}"
-      loop:
-        - oci_vars.yml
-        - buffer
-        - hosts
+  ansible.builtin.import_playbook: "terminate_instance.yml"

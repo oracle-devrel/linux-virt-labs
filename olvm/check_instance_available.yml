@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Configure new instances
-  hosts: all
+  hosts: engine:kvm:!localhost
   gather_facts: false
   vars_files:
     - default_vars.yml
@@ -13,11 +13,13 @@
 
   tasks:
 
-    - name: Wait for systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+    - name: Wait for systems to become reachable using ssh
+      ansible.builtin.wait_for:
+        port: 22
+        host: '{{ (ansible_ssh_host | default(ansible_host)) | default(inventory_hostname) }}'
+        search_regex: OpenSSH
+        delay: 10
+        timeout: 300
 
     - name: Get a set of all available facts
       ansible.builtin.setup:

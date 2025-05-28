@@ -4,22 +4,15 @@
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
-- name: Add KVM hosts to a Cluster in the Engine server
+- name: Add logical VM network
   hosts: engine
   vars_files:
     - default_vars.yml
     - oci_vars.yml
   vars:
     ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
-    
-  tasks:
 
-    - name: Download ca-cert
-      ansible.builtin.get_url:
-        url: "https://{{ engine_fqdn }}/ovirt-engine/services/pki-resource?resource=ca-certificate&format=X509-PEM-CA"
-        dest: "{{ ansible_env.HOME + '/pki-resource' }}"
-        mode: '0664'
-        validate_certs: false
+  tasks:
 
     - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
       ovirt.ovirt.ovirt_auth:
@@ -33,24 +26,39 @@
       tags:
         - always
 
-    - name: Add KVM host
-      ovirt.ovirt.ovirt_host:
-        cluster: "Default"
-        name: "olkvm0{{ ansible_loop.index0 + 1 }}"
-        address: "vdsm0{{ ansible_loop.index0 + 1 }}.{{ my_subnet2_domain_name }}"
+    - name: Create VM logical network
+      ovirt.ovirt.ovirt_network:
         auth: "{{ ovirt_auth }}"
-        timeout: 2200
-        poll_interval: 10
-        power_management_enabled: false
-        public_key: true
-        reboot_after_installation: false
-        activate: true
+        data_center: Default
+        name: l2-vm-network
+        vm_network: true
+        clusters:
+          - name: Default
+            assigned: true
+            required: true
+
+    - name: Get logical network info
+      ovirt.ovirt.ovirt_network_info:
+        auth: "{{ ovirt_auth }}"
+        pattern: name=l2*
+      register: network_info
+      when: debug_enabled
+
+    - name: Print logical network info
+      ansible.builtin.debug:
+        msg: "{{ network_info.ovirt_networks }}"
+      when: debug_enabled
+
+    - name: Assign vlan to host interface
+      ovirt.ovirt.ovirt_host_network:
+        auth: "{{ ovirt_auth }}"
+        name: "olkvm0{{ ansible_loop.index0 + 1 }}"
+        interface: ens5
+        networks:
+          - name: l2-vm-network
       loop: "{{ groups['kvm'] }}"
       loop_control:
         extended: true
-      async: 2200
-      poll: 0
-      register: kvm_sleeper
 
     - name: Disconnect from the OLVM Engine application
       ovirt.ovirt.ovirt_auth:
@@ -58,16 +66,3 @@
         ovirt_auth: "{{ ovirt_auth }}"
       tags:
         - always
-
-- name: Create .olvm-provisioned file in /tmp
-  hosts: engine:kvm
-  vars_files:
-    - default_vars.yml
-
-  tasks:
-
-    - name: Create provisioned status file
-      ansible.builtin.file:
-        path: /tmp/.olvm-provisioned
-        state: touch
-        mode: '0755'
