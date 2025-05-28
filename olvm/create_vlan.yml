@@ -18,6 +18,12 @@
   ansible.builtin.set_fact:
     my_l2_vlan_nsg_id: "{{ result.network_security_group.id }}"
 
+- name: Add l2 vlan nsg id to state file
+  ansible.builtin.lineinfile:
+    path: .ansible-state
+    line: "l2_nsg_ocid: {{ my_l2_vlan_nsg_id }}"
+    mode: "0755"
+
 - name: Perform action add on network_security_group_security_rule
   oracle.oci.oci_network_security_group_security_rule_actions:
     network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
@@ -61,3 +67,9 @@
   ansible.builtin.debug:
     msg: "Created a new vlan {{ result }}"
   when: debug_enabled
+
+- name: Add vlan id to state file
+  ansible.builtin.lineinfile:
+    path: .ansible-state
+    line: "vlan_ocid: {{ my_vlan_id }}"
+    mode: "0755"

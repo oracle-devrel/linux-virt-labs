@@ -88,6 +88,18 @@
       ansible.builtin.set_fact:
         my_compartment_id: "{{ compartment_id | default(env_lookup, true | default(ini_lookup, true)) }}"
 
+    - name: Create oci state file
+      ansible.builtin.file:
+        patth: .ansible-state
+        state: touch
+        mode: "0755"
+
+    - name: Add compartment id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "compartment_ocid: {{ my_compartment_id }}"
+        mode: "0755"
+
     - name: Print compartment id
       ansible.builtin.debug:
         msg: "{{ my_compartment_id }}"
@@ -119,6 +131,12 @@
       ansible.builtin.set_fact:
         my_vcn_id: "{{ result.vcn.id }}"
 
+    - name: Add vcn id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "vcn_ocid: {{ my_vcn_id }}"
+        mode: "0755"
+
     - name: Create internet gateway
       oracle.oci.oci_network_internet_gateway:
         compartment_id: "{{ my_compartment_id }}"
@@ -135,6 +153,12 @@
       ansible.builtin.set_fact:
         my_internet_gateway_id: "{{ result.internet_gateway.id }}"
 
+    - name: Add internet_gateway id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "internet_gateway_ocid: {{ my_internet_gateway_id }}"
+        mode: "0755"
+
     - name: Get list of services
       oracle.oci.oci_network_service_facts:
       register: result
@@ -150,6 +174,12 @@
     - name: Set service id
       ansible.builtin.set_fact:
         my_service_id: "{{ result.services[0].id }}"
+
+    - name: Add service id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "service_ocid: {{ my_service_id }}"
+        mode: "0755"
 
     - name: Set service cidr cidr_block
       ansible.builtin.set_fact:
@@ -168,9 +198,15 @@
       delay: 30
       until: result is not failed
 
-    - name: Set services gateway id
+    - name: Set service gateway id
       ansible.builtin.set_fact:
         my_service_gateway_id: "{{ result.service_gateway.id }}"
+
+    - name: Add service gateway id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "service_gateway_ocid: {{ my_service_gateway_id }}"
+        mode: "0755"
 
     - name: Create route table for public subnet
       oracle.oci.oci_network_route_table:
@@ -192,6 +228,12 @@
       ansible.builtin.set_fact:
         my_public_rt_id: "{{ result.route_table.id }}"
 
+    - name: Add public route table id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "public_route_table_ocid: {{ my_public_rt_id }}"
+        mode: "0755"
+
     - name: Create route table for private subnet
       oracle.oci.oci_network_route_table:
         compartment_id: "{{ my_compartment_id }}"
@@ -211,6 +253,12 @@
     - name: Set private subnet route table id
       ansible.builtin.set_fact:
         my_private_rt_id: "{{ result.route_table.id }}"
+
+    - name: Add private route table id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "private_route_table_ocid: {{ my_private_rt_id }}"
+        mode: "0755"
 
     - name: Create ingress rules yaml list
       ansible.builtin.template:
@@ -260,6 +308,12 @@
       ansible.builtin.set_fact:
         my_security_list_id: "{{ result.security_list.id }}"
 
+    - name: Add security list id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "security_list_ocid: {{ my_security_list_id }}"
+        mode: "0755"
+
     - name: Create public subnet
       oracle.oci.oci_network_subnet:
         compartment_id: "{{ my_compartment_id }}"
@@ -278,6 +332,12 @@
     - name: Set public subnet id
       ansible.builtin.set_fact:
         my_subnet1_id: "{{ result.subnet.id }}"
+
+    - name: Add public subnet id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "public_subnet_ocid: {{ my_subnet1_id }}"
+        mode: "0755"
 
     - name: Set public subnet domain_name
       ansible.builtin.set_fact:
@@ -301,6 +361,12 @@
     - name: Set private subnet id
       ansible.builtin.set_fact:
         my_subnet2_id: "{{ result.subnet.id }}"
+
+    - name: Add private subnet id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "compartment_ocid: {{ my_subnet2_id }}"
+        mode: "0755"
 
     - name: Set private subnet domain_name
       ansible.builtin.set_fact:
@@ -340,6 +406,8 @@
     - name: Build an instance
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
+      loop_control:
+        extended: true
 
 - name: Check if instances are available
   ansible.builtin.import_playbook: "check_instance_available.yml"
