@@ -51,9 +51,9 @@
 - name: Add instance id to state file
   ansible.builtin.lineinfile:
     path: .ansible-state
-    line: "instance{{ ansible_loop.index0 +1 }}_ocid: {{ my_instance_id }}"
+    line: "instance{{ ansible_loop.index0 + 1 }}_ocid: {{ my_instance_id }}"
     mode: "0755"
- 
+
 - name: Set the compute instance display_name
   ansible.builtin.set_fact:
     instance_display_name: "{{ result.instance.display_name }}"

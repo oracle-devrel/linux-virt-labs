@@ -90,7 +90,7 @@
 
     - name: Create oci state file
       ansible.builtin.file:
-        patth: .ansible-state
+        path: .ansible-state
         state: touch
         mode: "0755"
 
