@@ -102,4 +102,4 @@
         - buffer
         - hosts
         - .ansible-state
-      when: confirm_removal.user_response | lower in ['y', 'yes']
+      when: confirm_removal.user_input | lower in ['y', 'yes']
