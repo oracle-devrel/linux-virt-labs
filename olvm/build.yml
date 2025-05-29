@@ -6,6 +6,8 @@
 
 - name: Launch an instance
   oracle.oci.oci_compute_instance:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -88,6 +90,8 @@
   block:
     - name: Create subnet2 vnic_attachment
       oracle.oci.oci_compute_vnic_attachment:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         create_vnic_details:
           assign_public_ip: false
@@ -113,6 +117,8 @@
   block:
     - name: Create subnet2 vnic_attachment
       oracle.oci.oci_compute_vnic_attachment:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         create_vnic_details:
           assign_public_ip: false
@@ -138,6 +144,8 @@
   block:
     - name: Create vlan vnic_attachment
       oracle.oci.oci_compute_vnic_attachment:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         create_vnic_details:
           assign_public_ip: false
