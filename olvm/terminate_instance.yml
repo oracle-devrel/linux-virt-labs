@@ -27,72 +27,96 @@
 
     - name: Delete the instances
       oracle.oci.oci_compute_instance:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ item.value }}"
         state: absent
       loop: "{{ ocid_state | dict2items | selectattr('key', 'match', '^instance.*') }}"
 
     - name: Delete the storage volumes
       oracle.oci.oci_blockstorage_volume:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         volume_id: "{{ item.value }}"
         state: absent
       loop: "{{ ocid_state | dict2items | selectattr('key', 'match', '^amd-storage.*') }}"
 
     - name: Delete the vlan
       oracle.oci.oci_network_vlan:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         vlan_id: "{{ ocid_state.vlan_ocid }}"
         state: absent
       when: ocid_state.vlan_ocid is defined and ocid_state.vlan_ocid != ''
 
     - name: Delete network_security_group
       oracle.oci.oci_network_security_group:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         network_security_group_id: "{{ ocid_state.l2_nsg_ocid }}"
         state: absent
       when: ocid_state.l2_nsg_ocid is defined and ocid_state.l2_nsg_ocid != ''
 
     - name: Delete the subnet2
       oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.private_subnet_ocid }}"
         state: absent
       when: ocid_state.private_subnet_ocid is defined and ocid_state.private_subnet_ocid != ''
 
     - name: Delete the subnet1
       oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.public_subnet_ocid }}"
         state: absent
       when: ocid_state.public_subnet_ocid is defined and ocid_state.public_subnet_ocid != ''
 
     - name: Delete the security list
       oracle.oci.oci_network_security_list:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.security_list_ocid }}"
         state: absent
       when: ocid_state.security_list_ocid is defined and ocid_state.security_list_ocid != ''
 
     - name: Delete the private route table
       oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.private_route_table_ocid }}"
         state: absent
       when: ocid_state.private_route_table_ocid is defined and ocid_state.private_route_table_ocid != ''
 
     - name: Delete the public route table
       oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.public_route_table_ocid }}"
         state: absent
       when: ocid_state.public_route_table_ocid is defined and ocid_state.public_route_table_ocid != ''
 
     - name: Delete the Service Gateway
       oracle.oci.oci_network_service_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.service_gateway_ocid }}"
         state: absent
       when: ocid_state.service_gateway_ocid is defined and ocid_state.service_gateway_ocid != ''
 
     - name: Delete the Internet Gateway
       oracle.oci.oci_network_internet_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         id: "{{ ocid_state.internet_gateway_ocid }}"
         state: absent
       when: ocid_state.internet_gateway_ocid is defined and ocid_state.internet_gateway_ocid != ''
 
     - name: Delete the VCN
       oracle.oci.oci_network_vcn:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         vcn_id: "{{ ocid_state.vcn_ocid }}"
         state: absent
       when: ocid_state.vcn_ocid is defined and ocid_state.vcn_ocid != ''
