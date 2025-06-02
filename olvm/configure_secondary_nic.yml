@@ -15,6 +15,8 @@
 
     - name: Get instance details
       oracle.oci.oci_compute_instance_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         display_name: "{{ inventory_hostname }}"
         sort_by: TIMECREATED
@@ -33,6 +35,8 @@
 
     - name: Get vnic attachments of a specific instance
       oracle.oci.oci_compute_vnic_attachment_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         instance_id: "{{ instance_details.instances[0].id }}"
       delegate_to: localhost
@@ -64,6 +68,8 @@
 
     - name: Get secondary vnic facts
       oracle.oci.oci_network_vnic_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         vnic_id: "{{ secondary_vnic_id[0] }}"
       delegate_to: localhost
       register: secondary_vnic_facts

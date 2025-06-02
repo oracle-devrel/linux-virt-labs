@@ -54,7 +54,7 @@
 
     - name: Get list availbility domains
       oracle.oci.oci_identity_availability_domain_facts:
-        config_file_location: "{{ coi_config_file | default(omit) }}"
+        config_file_location: "{{ oci_config_file | default(omit) }}"
         config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_tenancy_id }}"
         region: "{{ my_region_id }}"
@@ -118,6 +118,8 @@
 
     - name: Create a virtual cloud network
       oracle.oci.oci_network_vcn:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         display_name: "OLV-VCN"
         cidr_blocks: "10.0.0.0/16"
@@ -139,6 +141,8 @@
 
     - name: Create internet gateway
       oracle.oci.oci_network_internet_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         is_enabled: true
@@ -161,6 +165,8 @@
 
     - name: Get list of services
       oracle.oci.oci_network_service_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
       register: result
       retries: 10
       delay: 30
@@ -187,6 +193,8 @@
 
     - name: Create service gateway
       oracle.oci.oci_network_service_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         services:
           - service_id: "{{ my_service_id }}"
@@ -210,6 +218,8 @@
 
     - name: Create route table for public subnet
       oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Default Route Table for OLV-VCN"
@@ -236,6 +246,8 @@
 
     - name: Create route table for private subnet
       oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Route Table for Private Subnet-OLV-VCN"
@@ -294,6 +306,8 @@
 
     - name: Create security_list
       oracle.oci.oci_network_security_list:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         display_name: "Default Security List for OLV-VCN"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
@@ -316,6 +330,8 @@
 
     - name: Create public subnet
       oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         cidr_block: "{{ subnet1_cidr_block }}"
@@ -345,6 +361,8 @@
 
     - name: Create private subnet
       oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         cidr_block: "{{ subnet2_cidr_block }}"
@@ -383,6 +401,8 @@
 
     - name: Get image
       oracle.oci.oci_compute_image_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         operating_system: "{{ os }}"
         operating_system_version: "{{ os_version }}"

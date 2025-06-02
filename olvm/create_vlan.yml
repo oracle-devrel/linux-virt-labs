@@ -6,6 +6,8 @@
 
 - name: Create network_security_group
   oracle.oci.oci_network_security_group:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     compartment_id: "{{ my_compartment_id }}"
     vcn_id: "{{ my_vcn_id }}"
     display_name: "L2 Network"
@@ -26,6 +28,8 @@
 
 - name: Perform action add on network_security_group_security_rule
   oracle.oci.oci_network_security_group_security_rule_actions:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     network_security_group_id: "{{ my_l2_vlan_nsg_id }}"
     action: add
     security_rules:
@@ -46,6 +50,8 @@
 
 - name: Create a vlan
   oracle.oci.oci_network_vlan:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     cidr_block: "{{ vlan_cidr_block }}"
     compartment_id: "{{ my_compartment_id }}"
     display_name: "VLAN-VMs"
