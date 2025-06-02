@@ -51,7 +51,7 @@ The easiest way to do this is using a Python Virtual environment. For example, o
    ansible --version
    ```
 
-   The output reports the version 2.16 if everything installed correctly.
+   The output should report the version as 2.16 if everything installs correctly.
 
 1. Install the OCI SDK for Python
 
@@ -74,7 +74,7 @@ The easiest way to do this is using a Python Virtual environment. For example, o
 
 ## Instructions
 
-1. Create custom varibles file.
+1. Create a custom variables file.
 
    Rather than modify the `default_vars.yml` file directly, create a new YAML custom variables file. Provide values specific to your tenancy and environment.
 
@@ -105,7 +105,7 @@ The easiest way to do this is using a Python Virtual environment. For example, o
 
 1. (Optional) Create an inventory file for localhost.
 
-   This is required in environments that use non-venv environments for the Python and Ansible to ensure that Ansible can find the OCI and oVirt modules.
+   The control node requires this step in environments that use non-venv environments for Python and Ansible to ensure that Ansible can find the OCI and oVirt modules.
 
    ```shell
    cat << EOF | tee hosts > /dev/null
@@ -126,6 +126,14 @@ The easiest way to do this is using a Python Virtual environment. For example, o
    > ```shell
    > ansible-playbook create_instance.yml -e "@sample.yml" -e debug_enabled=true
    > ```
+
+## Install Oracle Linux Virtualization Engine
+
+The `default_vars.yml` file contains several variables that enable you to automate steps in the setup and configuration of Oracle Linux Virtualization Manager. Here is a list of those variables and what they do:
+
+- **install_engine:** Runs the *provision_olvm_engine.yml* playbook, which installs the packages for the engine and KVM hosts and then executes `engine-setup`.
+- **copy_engine_publickey:** Runs the *provision_olvm_engine_publickey.yml* playbook, which copies the engine public key to each KVM host.
+- **config_olvm:** Runs a series of *ovirt* playbooks that configure Oracle Linux Virtualization Manager based on the steps provided in the associated [lab](https://luna.oracle.com/lab/c912c867-a5cd-420e-9ee5-ee9017b2b957).
 
 ## Related Links
 
