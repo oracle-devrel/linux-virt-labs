@@ -31,8 +31,7 @@
           is_management_disabled: false
           are_all_plugins_disabled: false
           plugins_config:
-            -
-              name: "OS Management Service Agent"
+            - name: "OS Management Service Agent"
               desired_state: DISABLED
         key_by: [compartment_id, availability_domain, display_name]
       register: result
@@ -188,7 +187,6 @@
       delay: 30
       until: attach_bv is not failed
 
-
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
     msg:
@@ -211,7 +209,7 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
-    instance_ocid: "{{ my_instance_id }}"
+    instance_ocid: "{{ instance_id }}"
 
 - name: Create host ini file
   ansible.builtin.lineinfile:
@@ -230,7 +228,7 @@
 - name: Add host to ini host file
   ansible.builtin.lineinfile:
     path: hosts
-    regexp: '^{{ instance_name }}'
+    regexp: "^{{ instance_name }}"
     line: >-
       {{ instance_name }}
       ansible_host={{ instance_ansible_host }}
@@ -240,3 +238,9 @@
     insertafter: '^\[{{ item.value.type }}\]$'
     create: true
     mode: "0664"
+  vars:
+    instance_name: "{{ instance_display_name }}"
+    instance_ansible_user: opc
+    instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
+    instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no {{ ssh_proxy_cmd | default('') }}"
+    instance_ansible_host: "{{ instance_public_ip }}"
