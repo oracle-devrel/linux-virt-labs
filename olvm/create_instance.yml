@@ -29,7 +29,6 @@
     debug_enabled: false
 
   tasks:
-
     - name: Get location of oci_config
       ansible.builtin.set_fact:
         oci_config_file: "{{ lookup('env', 'HOME') + '/.oci/config' }}"
@@ -86,7 +85,7 @@
         env_lookup: "{{ lookup('ansible.builtin.env', 'OCI_COMPARTMENT_OCID') }}"
         ini_lookup: "{{ lookup('ini', 'compartment-id section={{ oci_config_section }} file={{ oci_config_file }}') }}"
       ansible.builtin.set_fact:
-        my_compartment_id: "{{ compartment_id | default(env_lookup, true | default(ini_lookup, true)) }}"
+        my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
 
     - name: Create oci state file
       ansible.builtin.file:
@@ -112,7 +111,7 @@
 
     - name: Generate random hex string
       vars:
-        hex_chars: '0123456789abcdef'
+        hex_chars: "0123456789abcdef"
       ansible.builtin.set_fact:
         vcn_code: "{{ query('community.general.random_string', upper=false, lower=false, override_special=hex_chars, numbers=false) }}"
 
@@ -147,7 +146,7 @@
         vcn_id: "{{ my_vcn_id }}"
         is_enabled: true
         display_name: "Internet Gateway-OLV-VCN"
-        state: 'present'
+        state: "present"
       register: result
       retries: 10
       delay: 30
@@ -200,7 +199,7 @@
           - service_id: "{{ my_service_id }}"
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Service Gateway-OLV-VCN"
-        state: 'present'
+        state: "present"
       register: result
       retries: 10
       delay: 30
@@ -224,11 +223,10 @@
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Default Route Table for OLV-VCN"
         route_rules:
-          -
-            network_entity_id: "{{ my_internet_gateway_id }}"
+          - network_entity_id: "{{ my_internet_gateway_id }}"
             destination: "0.0.0.0/0"
             destination_type: CIDR_BLOCK
-        state: 'present'
+        state: "present"
       register: result
       retries: 10
       delay: 30
@@ -252,11 +250,10 @@
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Route Table for Private Subnet-OLV-VCN"
         route_rules:
-          -
-            network_entity_id: "{{ my_service_gateway_id }}"
+          - network_entity_id: "{{ my_service_gateway_id }}"
             destination: "{{ my_service_cidr_block }}"
             destination_type: SERVICE_CIDR_BLOCK
-        state: 'present'
+        state: "present"
       register: result
       retries: 10
       delay: 30
@@ -487,7 +484,6 @@
   gather_facts: false
 
   tasks:
-
     - name: Print instance details
       ansible.builtin.debug:
         msg:
