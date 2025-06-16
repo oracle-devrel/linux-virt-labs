@@ -10,8 +10,10 @@ collections:
   - ansible.posix
   - community.general
   - community.postgresql
-  - community.crypto
+  - name: community.crypto
+    version: ">=2.26.0,<2.26.99"
   - freeipa.ansible_freeipa
   - community.libvirt
   - oracle.oci
+  - ovirt.ovirt
   - containers.podman
