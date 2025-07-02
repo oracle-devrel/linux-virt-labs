@@ -10,6 +10,8 @@
   block:
     - name: Create block volume
       oracle.oci.oci_blockstorage_volume:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         availability_domain: "{{ my_availability_domain }}"
         display_name: "blockvolume-{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -27,6 +29,8 @@
 
     - name: Attach the block volume
       oracle.oci.oci_compute_volume_attachment:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         instance_id: "{{ instance_id }}"
         type: paravirtualized
         volume_id: "{{ volume_id }}"

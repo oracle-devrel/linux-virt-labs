@@ -1,0 +1,99 @@
+---
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
+# This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
+# The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
+# See LICENSE.TXT for details.
+
+- name: Terminate instances and delete oci resources
+  hosts: localhost
+  vars_files:
+    - default_vars.yml
+
+  tasks:
+
+    - name: Check if ansible state file exists
+      ansible.builtin.stat:
+        path: .ansible-state
+      register: state_exists
+
+    - name: Fail if ansible state file does not exist
+      ansible.builtin.fail:
+        msg: "Exit instance termination as an instance doesn't exist."
+      when: not state_exists.stat.exists
+
+    - name: Read ansible.state file
+      ansible.builtin.set_fact:
+        ocid_state: "{{ lookup('file', '.ansible-state') | from_yaml }}"
+
+    - name: Delete the instances
+      oracle.oci.oci_compute_instance:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ item.value }}"
+        state: absent
+      loop: "{{ ocid_state | dict2items | selectattr('key', 'match', '^instance.*') }}"
+
+    - name: Delete the subnet
+      oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ ocid_state.subnet_ocid }}"
+        state: absent
+      when: ocid_state.subnet_ocid is defined and ocid_state.subnet_ocid != ''
+
+    - name: Delete the security list
+      oracle.oci.oci_network_security_list:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ ocid_state.security_list_ocid }}"
+        state: absent
+      when: ocid_state.security_list_ocid is defined and ocid_state.security_list_ocid != ''
+
+    - name: Delete the route table
+      oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ ocid_state.route_table_ocid }}"
+        state: absent
+      when: ocid_state.route_table_ocid is defined and ocid_state.route_table_ocid != ''
+
+    - name: Delete the Service Gateway
+      oracle.oci.oci_network_service_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ ocid_state.service_gateway_ocid }}"
+        state: absent
+      when: ocid_state.service_gateway_ocid is defined and ocid_state.service_gateway_ocid != ''
+
+    - name: Delete the Internet Gateway
+      oracle.oci.oci_network_internet_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        id: "{{ ocid_state.internet_gateway_ocid }}"
+        state: absent
+      when: ocid_state.internet_gateway_ocid is defined and ocid_state.internet_gateway_ocid != ''
+
+    - name: Delete the VCN
+      oracle.oci.oci_network_vcn:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
+        vcn_id: "{{ ocid_state.vcn_ocid }}"
+        state: absent
+      when: ocid_state.vcn_ocid is defined and ocid_state.vcn_ocid != ''
+
+    - name: Prompt user to confirm removal of artifacts
+      ansible.builtin.pause:
+        prompt: "Are you sure you want to remove these artifacts? (Y/N)"
+        echo: true
+      register: confirm_removal
+
+    - name: Remove artifacts
+      ansible.builtin.file:
+        state: absent
+        path: "{{ item }}"
+      loop:
+        - oci_vars.yml
+        - buffer
+        - hosts
+        - .ansible-state
+      when: confirm_removal.user_input | lower in ['y', 'yes']

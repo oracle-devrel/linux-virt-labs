@@ -1,11 +1,13 @@
 ---
-# Copyright (c) 2024 Oracle and/or its affiliates.
+# Copyright (c) 2024 2025 Oracle and/or its affiliates.
 # This software is made available to you under the terms of the Universal Permissive License (UPL), Version 1.0.
 # The Universal Permissive License (UPL), Version 1.0 (see COPYING or https://oss.oracle.com/licenses/upl)
 # See LICENSE.TXT for details.
 
 - name: Launch an instance
   oracle.oci.oci_compute_instance:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     availability_domain: "{{ my_availability_domain }}"
     compartment_id: "{{ my_compartment_id }}"
     display_name: "{{ item.value.instance_name | default('instance-'~timestamp) }}"
@@ -50,16 +52,24 @@
 
 - name: Set the compute instance id
   ansible.builtin.set_fact:
-    instance_id: "{{ result.instance.id }}"
+    my_instance_id: "{{ result.instance.id }}"
+
+- name: Add instance id to state file
+  ansible.builtin.lineinfile:
+    path: .ansible-state
+    line: "instance{{ ansible_loop.index0 + 1 }}_ocid: {{ my_instance_id }}"
+    mode: "0755"
 
 - name: Set the compute instance display_name
   ansible.builtin.set_fact:
-    instance_display_name: "{{ result.instance.display_name }}"
+    my_instance_display_name: "{{ result.instance.display_name }}"
 
 - name: Get the vnic attachment details of instance
   oracle.oci.oci_compute_vnic_attachment_facts:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     compartment_id: "{{ my_compartment_id }}"
-    instance_id: "{{ instance_id }}"
+    instance_id: "{{ my_instance_id }}"
   register: result
   retries: 10
   delay: 30
@@ -67,6 +77,8 @@
 
 - name: Get vnic details
   oracle.oci.oci_network_vnic_facts:
+    config_file_location: "{{ oci_config_file | default(omit) }}"
+    config_profile_name: "{{ oci_config_section | default(omit) }}"
     id: "{{ result.vnic_attachments[0].vnic_id }}"
   register: result
   retries: 10
@@ -97,14 +109,14 @@
 - name: Print the public and private ip of the newly created instance
   ansible.builtin.debug:
     msg:
-      - "Instance name: {{ instance_display_name }}"
+      - "Instance name: {{ my_instance_display_name }}"
       - "  public ip: {{ instance_public_ip }}"
       - "  private ip: {{ instance_private_ip }}"
   when: debug_enabled
 
 - name: Add host to in-memory host file
   ansible.builtin.add_host:
-    name: "{{ instance_display_name }}"
+    name: "{{ my_instance_display_name }}"
     groups: "{{ item.value.type }}"
     ansible_user: opc
     ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
@@ -143,7 +155,7 @@
     mode: "664"
   delegate_to: localhost
   vars:
-    instance_name: "{{ instance_display_name }}"
+    instance_name: "{{ my_instance_display_name }}"
     instance_ansible_user: opc
     instance_ansible_private_key_file: "{{ lookup('env', 'HOME') + '/.ssh/' + private_key }}"
     instance_ansible_ssh_common_args: "-o StrictHostKeyChecking=no"

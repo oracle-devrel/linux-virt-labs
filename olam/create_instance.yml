@@ -26,20 +26,9 @@
     instance_ocpus: 2
     instance_memory: 32
     private_key: "id_rsa"
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
     debug_enabled: false
 
   tasks:
-
-    # - name: Check if state file exists
-    #   ansible.builtin.stat:
-    #     path: /tmp/ansible.state
-    #   register: state_exists
-
-    # - name: Fail if state file already exists
-    #   ansible.builtin.fail:
-    #     msg: "Exit instance creation as a state file already exists."
-    #   when: hosts_exists.stat.exists
 
     - name: Get location of oci_config
       ansible.builtin.set_fact:
@@ -60,6 +49,8 @@
 
     - name: Get list availbility domains
       oracle.oci.oci_identity_availability_domain_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_tenancy_id }}"
         region: "{{ my_region_id }}"
       register: result
@@ -92,6 +83,18 @@
       ansible.builtin.set_fact:
         my_compartment_id: "{{ compartment_id | default(env_lookup, true) | default(ini_lookup, true) }}"
 
+    - name: Create oci state file
+      ansible.builtin.file:
+        path: .ansible-state
+        state: touch
+        mode: "0755"
+
+    - name: Add compartment id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "compartment_ocid: {{ my_compartment_id }}"
+        mode: "0755"
+
     - name: Print compartment id
       ansible.builtin.debug:
         msg: "{{ my_compartment_id }}"
@@ -110,6 +113,8 @@
 
     - name: Create a virtual cloud network
       oracle.oci.oci_network_vcn:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         display_name: "Linuxvirt Virtual Cloud Network"
         cidr_blocks: "10.0.0.0/16"
@@ -123,8 +128,16 @@
       ansible.builtin.set_fact:
         my_vcn_id: "{{ result.vcn.id }}"
 
+    - name: Add vcn id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "vcn_ocid: {{ my_vcn_id }}"
+        mode: "0755"
+
     - name: Create internet_gateway
       oracle.oci.oci_network_internet_gateway:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         is_enabled: true
@@ -139,8 +152,16 @@
       ansible.builtin.set_fact:
         my_internet_gateway_id: "{{ result.internet_gateway.id }}"
 
+    - name: Add internet_gateway id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "internet_gateway_ocid: {{ my_internet_gateway_id }}"
+        mode: "0755"
+
     - name: Create route_table
       oracle.oci.oci_network_route_table:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         display_name: "Linuxvirt Route Table"
@@ -157,6 +178,12 @@
     - name: Set route table id
       ansible.builtin.set_fact:
         my_rt_id: "{{ result.route_table.id }}"
+
+    - name: Add route table id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "route_table_ocid: {{ my_rt_id }}"
+        mode: "0755"
 
     - name: Create ingress rules yaml list
       ansible.builtin.template:
@@ -192,6 +219,8 @@
 
     - name: Create security_list
       oracle.oci.oci_network_security_list:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         display_name: "Linuxvirt Security List"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
@@ -206,8 +235,16 @@
       ansible.builtin.set_fact:
         my_security_list_id: "{{ result.security_list.id }}"
 
+    - name: Add security list id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "security_list_ocid: {{ my_security_list_id }}"
+        mode: "0755"
+
     - name: Create subnet
       oracle.oci.oci_network_subnet:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         vcn_id: "{{ my_vcn_id }}"
         cidr_block: "{{ subnet_cidr_block }}"
@@ -225,6 +262,12 @@
       ansible.builtin.set_fact:
         my_subnet_id: "{{ result.subnet.id }}"
 
+    - name: Add public subnet id to state file
+      ansible.builtin.lineinfile:
+        path: .ansible-state
+        line: "subnet_ocid: {{ my_subnet_id }}"
+        mode: "0755"
+
     - name: Set subnet domain_name
       ansible.builtin.set_fact:
         my_subnet_domain_name: "{{ result.subnet.subnet_domain_name }}"
@@ -237,6 +280,8 @@
 
     - name: Get image
       oracle.oci.oci_compute_image_facts:
+        config_file_location: "{{ oci_config_file | default(omit) }}"
+        config_profile_name: "{{ oci_config_section | default(omit) }}"
         compartment_id: "{{ my_compartment_id }}"
         operating_system: "{{ os }}"
         operating_system_version: "{{ os_version }}"
@@ -260,6 +305,8 @@
     - name: Build an instance
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
+      loop_control:
+        extended: true
 
 - name: Check if instances are available
   ansible.builtin.import_playbook: "check_instance_available.yml"
@@ -305,11 +352,9 @@
   when: use_olam_pah
 
 - name: Print instances
-  hosts: all
+  hosts: all:!localhost
   become: true
-  gather_facts: true
-  vars_files:
-    - oci_vars.yml
+  gather_facts: false
 
   tasks:
 
@@ -328,48 +373,4 @@
           Aborting at this stage requires manual removal of all cloud resources this playbook creates.
 
 - name: Terminate instances and delete OCI resources
-  hosts: localhost
-  vars_files:
-    - default_vars.yml
-  vars:
-    ansible_python_interpreter: "{{ localhost_python_interpreter | default(omit) }}"
-
-  tasks:
-
-    - name: Terminate the instances
-      oracle.oci.oci_compute_instance:
-        id: "{{ hostvars[item]['instance_ocid'] }}"
-        state: absent
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-
-    - name: Delete the subnet
-      oracle.oci.oci_network_subnet:
-        id: "{{ my_subnet_id }}"
-        state: absent
-
-    - name: Delete the security list
-      oracle.oci.oci_network_security_list:
-        id: "{{ my_security_list_id }}"
-        state: absent
-
-    - name: Delete the route table
-      oracle.oci.oci_network_route_table:
-        id: "{{ my_rt_id }}"
-        state: absent
-
-    - name: Delete the Internet Gateway
-      oracle.oci.oci_network_internet_gateway:
-        id: "{{ my_internet_gateway_id }}"
-        state: absent
-
-    - name: Delete the VCN
-      oracle.oci.oci_network_vcn:
-        vcn_id: "{{ my_vcn_id }}"
-        state: absent
-
-    - name: Remove artifacts
-      ansible.builtin.file:
-        state: absent
-        path: "{{ item }}"
-      loop:
-        - oci_vars.yml
+  ansible.builtin.import_playbook: "terminate_instance.yml"
