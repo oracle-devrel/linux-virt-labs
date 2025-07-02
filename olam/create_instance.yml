@@ -317,9 +317,9 @@
 - name: Configure passwordless SSH
   ansible.builtin.import_playbook: "configure_passwordless_ssh.yml"
 
-- name: Install Oracle Linux Automation Engine
-  ansible.builtin.import_playbook: "deploy_olae.yml"
-  when: use_olae_only
+# - name: Install Oracle Linux Automation Engine
+#   ansible.builtin.import_playbook: "deploy_olae.yml"
+#   when: use_olae_only
 
 - name: Install Oracle Linux Automation Manager
   vars:
@@ -354,7 +354,6 @@
 - name: Print instances
   hosts: all:!localhost
   become: true
-  gather_facts: false
 
   tasks:
 
