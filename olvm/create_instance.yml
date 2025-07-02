@@ -232,7 +232,7 @@
       delay: 30
       until: result is not failed
 
-    - name: Set private subnet route table id
+    - name: Set public subnet route table id
       ansible.builtin.set_fact:
         my_public_rt_id: "{{ result.route_table.id }}"
 

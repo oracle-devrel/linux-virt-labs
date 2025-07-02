@@ -54,7 +54,7 @@
 
     - name: Print host status
       ansible.builtin.debug:
-        msg: "Host: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].name }} Status: {{ host_info.results[0].ovirt_hosts[ ansible_loop.index0 ].status }}"
+        msg: "Host: {{ host_info.results[0].ovirt_hosts[ansible_loop.index0].name }} Status: {{ host_info.results[0].ovirt_hosts[ansible_loop.index0].status }}"
       loop: "{{ groups['kvm'] }}"
       loop_control:
         extended: true

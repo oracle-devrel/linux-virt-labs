@@ -31,7 +31,7 @@
       delegate_to: "{{ groups['kvm'][0] }}"
 
     - name: Import OVA template # noqa: syntax-check[unknown-module]
-      ovirt_template:
+      ovirt.ovirt.ovirt_template:
         auth:
           url: "{{ olvm_engine_url }}"
           username: "{{ olvm_username }}"

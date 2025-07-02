@@ -11,32 +11,33 @@
   vars_files:
     - default_vars.yml
     - oci_vars.yml
-  become: yes
+  become: true
   gather_facts: false
 
   tasks:
 
-  - name: Get multipath disk information
-    ansible.builtin.command: multipath -ll
-    register: multipath_output
-    run_once: true
+    - name: Get multipath disk information # noqa: run-once[task]
+      ansible.builtin.command: multipath -ll
+      register: multipath_output
+      changed_when: multipath_output != 0
+      run_once: true
 
-  - name: Extract LUN IDs
-    ansible.builtin.set_fact:
-      lun_ids: "{{ multipath_output.stdout_lines | select('search', '^[a-f0-9]') | map('split', ' ') | map(attribute=0) | list }}"
-    run_once: true
+    - name: Extract LUN IDs # noqa: run-once[task]
+      ansible.builtin.set_fact:
+        lun_ids: "{{ multipath_output.stdout_lines | select('search', '^[a-f0-9]') | map('split', ' ') | map(attribute=0) | list }}"
+      run_once: true
 
-  - name: Display LUN IDs
-    ansible.builtin.debug:
-      msg: "LUN IDs: {{ lun_ids }}"
-    run_once: true
-    when: debug_enabled
+    - name: Display LUN IDs # noqa: run-once[task]
+      ansible.builtin.debug:
+        msg: "LUN IDs: {{ lun_ids }}"
+      run_once: true
+      when: debug_enabled
 
-  - name: "Add lun_ids to dummy host"
-    ansible.builtin.add_host:
-      name:   "LUN_IDS_HOLDER"
-      lun_ids:  "{{ lun_ids }}"
-    run_once: true
+    - name: "Add lun_ids to dummy host" # noqa: run-once[task]
+      ansible.builtin.add_host:
+        name: "LUN_IDS_HOLDER"
+        lun_ids: "{{ lun_ids }}"
+      run_once: true
 
 - name: Add storage domain
   hosts: engine
@@ -45,7 +46,7 @@
     - oci_vars.yml
   vars:
     ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
-    
+
   tasks:
 
     - name: Connect to the OLVM Engine application # noqa: syntax-check[unknown-module]
@@ -71,7 +72,7 @@
         data_center: Default
         domain_function: data
         fcp:
-          lun_id: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][ ansible_loop.index0 ] }}"
+          lun_id: "{{ hostvars['LUN_IDS_HOLDER']['lun_ids'][ansible_loop.index0] }}"
         host: "olkvm0{{ ansible_loop.index0 + 1 }}"
         name: "amd-storage-domain-0{{ ansible_loop.index0 + 1 }}"
         timeout: 2200
