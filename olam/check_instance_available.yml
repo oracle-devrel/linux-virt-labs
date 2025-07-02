@@ -15,7 +15,7 @@
 
     - name: Wait for systems to become reachable and usable
       ansible.builtin.wait_for_connection:
-    
+
     # - name: Wait for systems to become reachable using ssh
     #   ansible.builtin.wait_for:
     #     port: 22
