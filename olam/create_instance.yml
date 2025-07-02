@@ -261,70 +261,18 @@
       ansible.builtin.include_tasks: "build.yml"
       loop: "{{ lookup('dict', compute_instances, wantlist=True) }}"
 
-- name: Configure new instances
-  hosts: all
-  become: true
-  gather_facts: false
-  vars_files:
-    - default_vars.yml
-    - oci_vars.yml
-  vars:
-    username: "oracle"
-    user_default_password: "oracle"
-    private_key: "id_rsa"
-    debug_enabled: false
+- name: Check if instances are available
+  ansible.builtin.import_playbook: "check_instance_available.yml"
 
-  tasks:
+- name: Setup and configure instance basics
+  ansible.builtin.import_playbook: "provision_instance_basics.yml"
 
-    - name: Wait for systems to become reachable
-      ansible.builtin.wait_for_connection:
-      vars:
-        python_version: "/usr/bin/python3"
-        ansible_python_interpreter: "{{ python_version if localhost_python_interpreter is defined | default(omit) }}"
+- name: Configure passwordless SSH
+  ansible.builtin.import_playbook: "configure_passwordless_ssh.yml"
 
-    - name: Get a set of all available facts
-      ansible.builtin.setup:
-
-    - name: Print in-memory inventory
-      ansible.builtin.debug:
-        msg: "{{ groups['all'] }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Print all variables/facts known for a host
-      ansible.builtin.debug:
-        msg: "{{ hostvars[item] }}"
-      loop: "{{ groups['all'] | flatten(levels=1) }}"
-      delegate_to: localhost
-      when:
-        - debug_enabled
-        - inventory_hostname == ansible_play_hosts_all[0]
-
-    - name: Configure instance
-      ansible.builtin.include_tasks: "host_setup.yml"
-      when: >-
-        inventory_hostname in
-          groups['control']|default([])
-          + groups['server']|default([])
-          + groups['execution']|default([])
-          + groups['db']|default([])
-
-    - name: Configure passwordless SSH
-      ansible.builtin.include_tasks: "passwordless_setup.yml"
-      when: passwordless_ssh
-
-    - name: Install Oracle Linux Automation Engine
-      ansible.builtin.dnf:
-        name:
-          - ansible-core
-        state: present
-      retries: 5
-      delay: 10
-      when:
-        - inventory_hostname in groups['control']|default([])
-        - use_olae_only
+- name: Install Oracle Linux Automation Engine
+  ansible.builtin.import_playbook: "deploy_olae.yml"
+  when: use_olae_only
 
 - name: Install Oracle Linux Automation Manager
   vars:
