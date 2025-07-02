@@ -129,17 +129,17 @@
 - name: Create host ini file
   ansible.builtin.lineinfile:
     path: hosts
-    regexp: '^\[{{ host_group }}'
-    line: "[{{ host_group }}]"
+    regexp: '^\[{{ item.value.type }}'
+    line: "[{{ item.value.type }}]"
     create: true
     mode: "0664"
   delegate_to: localhost
-  loop:
-    - control
-    - execution
-    - db
-  loop_control:
-    loop_var: host_group
+  # loop:
+  #   - control
+  #   - execution
+  #   - db
+  # loop_control:
+  #   loop_var: host_group
 
 - name: Add host to ini host file
   ansible.builtin.lineinfile:
