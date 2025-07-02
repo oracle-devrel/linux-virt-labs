@@ -11,7 +11,7 @@
     - oci_vars.yml
   vars:
     ansible_python_interpreter: "/usr/bin/{{ ovirt_python_version }}"
-    
+
   tasks:
 
     - name: Download ca-cert
