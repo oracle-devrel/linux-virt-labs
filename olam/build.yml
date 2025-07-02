@@ -98,6 +98,7 @@
   loop: "{{ query('sequence', 'start=1 end=' + (block_count) | string) }}"
   loop_control:
     extended: true
+    loop_var: blk_item
   vars:
     block_devices:
       - b
