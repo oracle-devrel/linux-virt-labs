@@ -123,7 +123,7 @@
     ansible_ssh_common_args: "-o StrictHostKeyChecking=no"
     ansible_host: "{{ instance_public_ip }}"
     ansible_port: 22
-    instance_ocid: "{{ instance_id }}"
+    instance_ocid: "{{ my_instance_id }}"
 
 - name: Create host ini file
   ansible.builtin.lineinfile:
