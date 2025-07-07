@@ -20,6 +20,14 @@
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
+    - name: Install Oracle EPEL repository
+      ansible.builtin.dnf:
+        name: oracle-epel-release-el9
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
     - name: Install version lock plugin
       ansible.builtin.dnf:
         name: python3-dnf-plugin-versionlock
@@ -28,6 +36,15 @@
       retries: 5
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install version lock plugin
+      ansible.builtin.dnf:
+        name: python3-dnf-plugin-versionlock
+        enablerepo: ol9_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Version lock python3-click
       community.general.yum_versionlock:
@@ -45,6 +62,18 @@
       retries: 5
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+    
+    - name: Install additional packages for ansible
+      ansible.builtin.dnf:
+        name:
+          - python3-psycopg2
+          - python3-pyOpenSSL
+          - python3-pip
+        enablerepo: ol9_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install pexpect using pip
       ansible.builtin.pip:
@@ -52,17 +81,16 @@
 
     # Install database
 
-    - name: Enable the PostgreSQL 13 module stream
+    - name: Enable the PostgreSQL 16 module stream
       ansible.builtin.copy:
         dest: /etc/dnf/modules.d/postgresql.module
         content: |
           [postgresql]
           name=postgresql
-          stream=13
+          stream=16
           profiles=
           state=enabled
         mode: '0644'
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install the database
       ansible.builtin.dnf:
