@@ -50,6 +50,7 @@
       community.general.yum_versionlock:
         state: present
         name: python3-click
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install additional packages for ansible
       ansible.builtin.dnf:
@@ -217,6 +218,15 @@
         state: present
       retries: 5
       delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Enable Oracle Linux Automation Manager 2.3 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol9.repo"
+        section: ol9_automation2.3
+        option: enabled
+        value: "1"
+        mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install Oracle Linux Automation Manager
