@@ -27,7 +27,7 @@ echo ""
 
 echo "[control:vars]"
 echo "node_type=control"
-echo "peers=local_execution_group"
+# echo "peers=local_execution_group"
 echo ""
 
 echo "[execution]"
@@ -40,6 +40,7 @@ echo ""
 
 echo "[local_execution_group:vars]"
 echo "node_type=execution"
+echo "peers=control"
 echo ""
 
 echo "[hop]"

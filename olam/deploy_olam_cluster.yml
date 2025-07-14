@@ -607,22 +607,53 @@
 
   tasks:
 
-    # - name: Run awx-manage peers
-    #   ansible.builtin.shell: |
-    #     awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
-    #   args:
-    #     executable: /bin/bash
-    #   become_user: awx
-    #   register: awx_peers
-    #   with_inventory_hostnames:
-    #     - "{{ peers }}"
-    #   when: ( peers is defined )
-    #   delegate_to: "{{ groups['control'][0] }}"
+    - name: Add receptor address to each instance
+      ansible.builtin.shell: |
+        axw-manage add_receptor_address --instance={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --address={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --port=27199 --canonical
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: awx_receptor_address
+      delegate_to: "{{ groups['control'][0] }}"
 
-    # - name: Print to awx_peers
-    #   ansible.builtin.debug:
-    #     msg: "{{awx_peers}}"
-    #   when: debug_enabled
+    - name: Print to awx_receptor_address
+      ansible.builtin.debug:
+        msg: "{{awx_receptor_address}}"
+      when: debug_enabled
+
+    - name: Add links between control nodes
+      ansible.builtin.shell: |
+        awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: awx_control_peers
+      with_inventory_hostnames:
+        - "{{ groups.control | difference([inventory_hostname]) | join(',') }}"
+      when: inventory_hostname in groups['control'][0]
+      delegate_to: "{{ groups['control'][0] }}"
+
+    - name: Print to awx_control_peers
+      ansible.builtin.debug:
+        msg: "{{awx_control_peers}}"
+      when: debug_enabled
+
+    - name: Add links between receptor nodes
+      ansible.builtin.shell: |
+        awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
+      args:
+        executable: /bin/bash
+      become_user: awx
+      register: awx_peers
+      with_inventory_hostnames:
+        - "{{ peers }}"
+      when: ( peers is defined )
+      delegate_to: "{{ groups['control'][0] }}"
+
+    - name: Print to awx_peers
+      ansible.builtin.debug:
+        msg: "{{awx_peers}}"
+      when: debug_enabled
 
     - name: Enable and start ol-automation service
       ansible.builtin.systemd:
