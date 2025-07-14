@@ -493,6 +493,18 @@
       when:
         - inventory_hostname in groups.execution
         - inventory_hostname not in groups.hop
+    
+    - name: Add tcp-peers for control nodes
+      ansible.builtin.lineinfile:
+        path: /etc/receptor/receptor.conf
+        insertbefore: '^- control-service:'
+        line: |
+          - tcp-peer:
+              address: {{ hostvars[item]['ansible_default_ipv4']['address'] }}:27199
+              redial: true
+      with_inventory_hostnames:
+        - "{{ groups.control | difference([inventory_hostname]) | join(',') }}"
+      when: inventory_hostname in groups.control
 
     - name: Add tcp-peers if present
       ansible.builtin.lineinfile:
@@ -515,6 +527,12 @@
       ansible.builtin.debug:
         msg: "{{command_output.stdout_lines}}"
       when: debug_enabled
+
+    - name: Enable and start receptor service
+      ansible.builtin.systemd:
+        name: receptor-awx
+        state: started
+        enabled: true
 
 - name: Provision awx
   hosts: control[0]
@@ -589,22 +607,22 @@
 
   tasks:
 
-    - name: Run awx-manage peers
-      ansible.builtin.shell: |
-        awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
-      args:
-        executable: /bin/bash
-      become_user: awx
-      register: awx_peers
-      with_inventory_hostnames:
-        - "{{ peers }}"
-      when: ( peers is defined )
-      delegate_to: "{{ groups['control'][0] }}"
+    # - name: Run awx-manage peers
+    #   ansible.builtin.shell: |
+    #     awx-manage register_peers {{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --peers {{ hostvars[item]['ansible_default_ipv4']['address'] }}
+    #   args:
+    #     executable: /bin/bash
+    #   become_user: awx
+    #   register: awx_peers
+    #   with_inventory_hostnames:
+    #     - "{{ peers }}"
+    #   when: ( peers is defined )
+    #   delegate_to: "{{ groups['control'][0] }}"
 
-    - name: Print to awx_peers
-      ansible.builtin.debug:
-        msg: "{{awx_peers}}"
-      when: debug_enabled
+    # - name: Print to awx_peers
+    #   ansible.builtin.debug:
+    #     msg: "{{awx_peers}}"
+    #   when: debug_enabled
 
     - name: Enable and start ol-automation service
       ansible.builtin.systemd:
