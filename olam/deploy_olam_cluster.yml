@@ -609,7 +609,7 @@
 
     - name: Add receptor address to each instance
       ansible.builtin.shell: |
-        axw-manage add_receptor_address --instance={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --address={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --port=27199 --canonical
+        awx-manage add_receptor_address --instance={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --address={{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }} --port=27199 --canonical
       args:
         executable: /bin/bash
       become_user: awx
