@@ -129,9 +129,9 @@
       become_user: "{{ username }}"
 
     - name: Create bindep.txt
-      ansible.builtin.file:
-        path: ~/my_custom_ee_project/bindep.txt
-        state: touch
+      ansible.builtin.template:
+        src: templates/bindep.txt.j2
+        dest: ~/my_custom_ee_project/bindep.txt
         mode: '0644'
       become: true
       become_user: "{{ username }}"
