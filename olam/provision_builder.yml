@@ -57,7 +57,7 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Install Oracle Linux Automation Manager repository
+    - name: Install Oracle Linux Automation Manager repository on OL9
       ansible.builtin.dnf:
         name: oraclelinux-automation-manager-release-el9
         state: present
@@ -65,24 +65,14 @@
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
-    - name: Enable Oracle Linux Automation Manager 2.3 repository
+    - name: Enable Oracle Linux Automation Manager 2.3 repository on OL9
       community.general.ini_file:
-        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
-        section: ol8_automation2.3
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol9.repo"
+        section: ol9_automation2.3
         option: enabled
         value: "1"
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
-
-    - name: Install Oracle Linux Automation Manager Builder Utility on OL8
-      ansible.builtin.dnf:
-        name:
-          - python3.11-ansible-builder
-          - python3.11-pip
-        state: present
-      retries: 5
-      delay: 10
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install Oracle Linux Automation Manager Builder Utility
       ansible.builtin.dnf:
@@ -92,9 +82,8 @@
         state: present
       retries: 5
       delay: 10
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
-    - name: Install Ansible Runner using pip
+    - name: Install Ansible Navigator using pip
       ansible.builtin.pip:
         name: ansible-navigator
         executable: pip3.11
