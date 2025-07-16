@@ -13,7 +13,7 @@
 
   tasks:
 
-    - name: Install Oracle Linux Automation Manager repository
+    - name: Install Oracle Linux Automation Manager repository on OL8
       ansible.builtin.dnf:
         name: oraclelinux-automation-manager-release-el8
         state: present
@@ -21,7 +21,7 @@
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Disable Oracle Linux Automation Manager 1.0 repository
+    - name: Disable Oracle Linux Automation Manager 1.0 repository on OL8
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation
@@ -30,7 +30,7 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Disable Oracle Linux Automation Manager 2.0 repository
+    - name: Disable Oracle Linux Automation Manager 2.0 repository on OL8
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation2
@@ -39,13 +39,49 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Enable Oracle Linux Automation Manager 2.2 repository
+    - name: Disable Oracle Linux Automation Manager 2.2 repository on OL8
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation2.2
         option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Enable Oracle Linux Automation Manager 2.3 repository on OL8
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.3
+        option: enabled
         value: "1"
         mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install Oracle Linux Automation Manager repository
+      ansible.builtin.dnf:
+        name: oraclelinux-automation-manager-release-el9
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Enable Oracle Linux Automation Manager 2.3 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.3
+        option: enabled
+        value: "1"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Install Oracle Linux Automation Manager Builder Utility on OL8
+      ansible.builtin.dnf:
+        name:
+          - python3.11-ansible-builder
+          - python3.11-pip
+        state: present
+      retries: 5
+      delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install Oracle Linux Automation Manager Builder Utility
@@ -56,11 +92,11 @@
         state: present
       retries: 5
       delay: 10
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install Ansible Runner using pip
       ansible.builtin.pip:
-        name: ansible-runner
+        name: ansible-navigator
         executable: pip3.11
 
     - name: Create project directory
@@ -125,7 +161,7 @@
         msg: "{{ builder_output.stdout }}"
       when: debug_enabled
 
-    - name: Create runner private_data_dir
+    - name: Create ansible project directory
       ansible.builtin.file:
         path: /tmp/private/project
         state: directory
