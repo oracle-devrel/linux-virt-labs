@@ -74,6 +74,17 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
+    - name: Check if user is lingering
+      ansible.builtin.stat:
+        path: "/var/lib/systemd/linger/{{ username }}"
+      register: user_lingering
+
+    - name: Enable lingering is needed
+      ansible.builtin.command: "loginctl enable-linger {{ username }}"
+      register: linger_result
+      changed_when: linger_result.rc == 0
+      when: not user_lingering.stat.exists
+
     - name: Install Oracle Linux Automation Manager Builder Utility
       ansible.builtin.dnf:
         name:
