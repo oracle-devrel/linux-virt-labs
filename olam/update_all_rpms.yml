@@ -5,7 +5,7 @@
 # See LICENSE.TXT for details.
 
 - name: Install latest Oracle Linux packages
-  hosts: server
+  hosts: all:!localhost:!remote
   vars_files:
     - default_vars.yml
   become: true
