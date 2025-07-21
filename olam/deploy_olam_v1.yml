@@ -83,6 +83,15 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
+    - name: Disable Oracle Linux Automation Manager 2.3 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.3
+        option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
     - name: Install Oracle Linux Automation Manager
       ansible.builtin.dnf:
         name: ol-automation-manager
@@ -97,6 +106,7 @@
         regexp: '^unixsocket '
         insertafter: '^# unixsocketperm '
         line: unixsocket /var/run/redis/redis.sock
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Edit unixsocketperm in /etc/redis.conf
       ansible.builtin.lineinfile:
@@ -104,6 +114,7 @@
         regexp: '^unixsocketperm '
         insertafter: '^unixsocket '
         line: unixsocketperm 775
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Ensure postgresql data directory exists
       ansible.builtin.file:

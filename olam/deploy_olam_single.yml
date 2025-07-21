@@ -20,6 +20,14 @@
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
+    - name: Install Oracle EPEL repository
+      ansible.builtin.dnf:
+        name: oracle-epel-release-el9
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
     - name: Install version lock plugin
       ansible.builtin.dnf:
         name: python3-dnf-plugin-versionlock
@@ -29,10 +37,20 @@
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
+    - name: Install version lock plugin
+      ansible.builtin.dnf:
+        name: python3-dnf-plugin-versionlock
+        enablerepo: ol9_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
     - name: Version lock python3-click
       community.general.yum_versionlock:
         state: present
         name: python3-click
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install additional packages for ansible
       ansible.builtin.dnf:
@@ -45,6 +63,18 @@
       retries: 5
       delay: 10
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+    
+    - name: Install additional packages for ansible
+      ansible.builtin.dnf:
+        name:
+          - python3-psycopg2
+          - python3-pyOpenSSL
+          - python3-pip
+        enablerepo: ol9_developer_EPEL
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install pexpect using pip
       ansible.builtin.pip:
@@ -52,17 +82,16 @@
 
     # Install database
 
-    - name: Enable the PostgreSQL 13 module stream
+    - name: Enable the PostgreSQL 16 module stream
       ansible.builtin.copy:
         dest: /etc/dnf/modules.d/postgresql.module
         content: |
           [postgresql]
           name=postgresql
-          stream=13
+          stream=16
           profiles=
           state=enabled
         mode: '0644'
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Install the database
       ansible.builtin.dnf:
@@ -165,14 +194,40 @@
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
-    - name: Enable Oracle Linux Automation Manager 2.2 repository
+    - name: Disable Oracle Linux Automation Manager 2.2 repository
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
         section: ol8_automation2.2
         option: enabled
+        value: "0"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Enable Oracle Linux Automation Manager 2.3 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol8.repo"
+        section: ol8_automation2.3
+        option: enabled
         value: "1"
         mode: '0644'
       when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Install Oracle Linux Automation Manager repository
+      ansible.builtin.dnf:
+        name: oraclelinux-automation-manager-release-el9
+        state: present
+      retries: 5
+      delay: 10
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
+
+    - name: Enable Oracle Linux Automation Manager 2.3 repository
+      community.general.ini_file:
+        path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol9.repo"
+        section: ol9_automation2.3
+        option: enabled
+        value: "1"
+        mode: '0644'
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Install Oracle Linux Automation Manager
       ansible.builtin.dnf:
@@ -180,7 +235,6 @@
         state: present
       retries: 5
       delay: 10
-      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
 
     - name: Edit unixsocket in /etc/redis.conf
       ansible.builtin.lineinfile:
@@ -188,6 +242,7 @@
         regexp: '^unixsocket '
         insertafter: '^# unixsocketperm '
         line: unixsocket /var/run/redis/redis.sock
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'  
 
     - name: Edit unixsocketperm in /etc/redis.conf
       ansible.builtin.lineinfile:
@@ -195,6 +250,23 @@
         regexp: '^unixsocketperm '
         insertafter: '^unixsocket '
         line: unixsocketperm 775
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Edit unixsocket in /etc/redis/redis.conf
+      ansible.builtin.lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^unixsocket '
+        insertafter: '^# unixsocketperm '
+        line: unixsocket /var/run/redis/redis.sock
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'  
+
+    - name: Edit unixsocketperm in /etc/redis/redis.conf
+      ansible.builtin.lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^unixsocketperm '
+        insertafter: '^unixsocket '
+        line: unixsocketperm 775
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Configure CLUSTER_HOST_ID setting
       ansible.builtin.copy:
@@ -227,9 +299,18 @@
     - name: Provision olam ansible container environment # noqa: syntax-check[unknown-module]
       containers.podman.podman_image:
         name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
-        tag: 2.2
+        tag: 2.3-ol8
       become: true
       become_user: awx
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '8'
+
+    - name: Provision olam ansible container environment # noqa: syntax-check[unknown-module]
+      containers.podman.podman_image:
+        name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee
+        tag: 2.3-ol9
+      become: true
+      become_user: awx
+      when: ansible_distribution == 'OracleLinux' and ansible_distribution_major_version == '9'
 
     - name: Check if awx provisioned
       ansible.builtin.stat:

@@ -1,27 +1,35 @@
 ---
-version: 2
+version: 3
 
 build_arg_defaults:
- ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: "--ignore-certs"
-
-ansible_config: 'ansible.cfg'
+ ANSIBLE_GALAXY_CLI_COLLECTION_OPTS: '--pre --ignore-certs'
 
 dependencies:
+ ansible_runner:
+   package_pip: ansible-runner
  galaxy: requirements.yml
  python: requirements.txt
  system: bindep.txt
 
 images:
  base_image:
-  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee:2.2
- builder_image:
-  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-builder:2.2
+{% if ansible_distribution_major_version == '8' %}
+  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee:2.3-ol8
+{% endif %}
+{% if ansible_distribution_major_version == '9' %}
+  name: container-registry.oracle.com/oracle_linux_automation_manager/olam-ee:2.3-ol9
+{% endif %}
 
+additional_build_files:
+    - src: ansible.cfg
+      dest: configs 
+    
 additional_build_steps:
-  prepend: |
+  prepend_galaxy:
+    - COPY _build/configs/ansible.cfg /etc/ansible/ansible.cfg
+  prepend_final: |
     RUN whoami
     RUN cat /etc/os-release
-  append:
+  append_final:
     - RUN echo This is a post-install command!
     - RUN ls -la /etc
-
