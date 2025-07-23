@@ -76,7 +76,7 @@
     - name: Enable Oracle Linux Automation Manager 2.3 repository on OL9
       community.general.ini_file:
         path: "/etc/yum.repos.d/oraclelinux-automation-manager-ol9.repo"
-        section: ol8_automation2.3
+        section: ol9_automation2.3
         option: enabled
         value: "1"
         mode: '0644'
