@@ -343,6 +343,10 @@
   ansible.builtin.import_playbook: provision_kvm.yml
   when: use_kvm
 
+- name: Provision vnc server on devops node
+  ansible.builtin.import_playbook: provision_vnc.yml
+  when: use_devops_vnc
+
 - name: Provision Oracle Linux Automation Builder Utility
   ansible.builtin.import_playbook: provision_builder.yml
   when: use_olam_builder
