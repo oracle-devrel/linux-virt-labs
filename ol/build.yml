@@ -26,6 +26,8 @@
           subnet_id: "{{ my_subnet_id }}"
         metadata:
           ssh_authorized_keys: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+        instance_options:
+          are_legacy_imds_endpoints_disabled: true
         agent_config:
           is_monitoring_disabled: false
           is_management_disabled: false
@@ -78,6 +80,8 @@
           subnet_id: "{{ my_subnet_id }}"
         metadata:
           ssh_authorized_keys: "{{ lookup('file', lookup('env', 'HOME') + '/.ssh/' + private_key + '.pub') }}"
+        instance_options:
+          are_legacy_imds_endpoints_disabled: true
         agent_config:
           is_monitoring_disabled: false
           is_management_disabled: false
